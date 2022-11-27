@@ -1,0 +1,8 @@
+{
+    "ltex.latex.commands": {
+        "\\sys": "dummy",
+        "\\query": "dummy",
+        "\\store": "dummy",
+        "\\del": "dummy"
+    }
+}
