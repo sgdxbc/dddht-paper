@@ -4,5 +4,10 @@
         "\\query": "dummy",
         "\\store": "dummy",
         "\\del": "dummy"
+    },
+    "ltex.bibtex.fields": {
+        "title": false,
+        "series": false,
+        "journal": false
     }
 }
