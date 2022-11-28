@@ -1,6 +1,35 @@
 \subsection{System Model}
+We consider a decentralized system in which nodes can freely join and leave.
+Each node maintains finite local storage, and the entire set of participants collectively implements a storage system.
+\sys exposes a \textit{synchronous} object storage interface with three API calls: \query, \store, and \del.
+\store takes an object, and returns an ID when the object is successfully stored.
+\del takes an object ID and removes the object from the system.
+\query takes an object ID and returns the object if it exists in the system.
+\lijl{Should we clarify that object ID is the hash of the object here?}
+\sys does not provide an explicit interface to update an existing object.
+Update can be done by issuing a \del followed by a \store to overwrite the entire object.
+Note that the \store will return a different object ID for the updated object.
+Consistently mapping client objects to \sys issued IDs is out of the scope of the paper.
 
-\subsection{Overview}
+\sys guarantees \textit{data durability}.
+Once a \store successfully returns, all subsequent \query{}s for the generated ID return the original object.
+\del is best-effort in \sys: After a completed \del, a \query may still return the object.
+Combined with the fact that \sys does not support explicit object update, data durability also implies linearizability~\cite{linearizability} of client \query{}s and \store{}s.
+\lijl{Need to be more careful with this claim}
+
+We assume two types of failures that relate to data losses: storage device failures and Byzantine failures.
+Storage device failures lead to unrecoverable data loss of the entire or part of a device.
+They are stochastic events: the failure probability of a device is modeled after annualized failure rate (AFR), which depends on factors such as device makes, models, and years of usage~\cite{disk_failure}.
+A node exhibiting Byzantine failure can deviate arbitrarily from the protocol, including losing or modifying any data stored locally.
+For other types of node failures that are recoverable such as crashes or power failures, we treat them as transient faults.
+Permanent node failures are equivalent to nodes leaving the system.
+
+We consider a strong Byzantine fault model in which Byzantine participants can freely generate identities.
+We, however, assume a stake-based system, and that the Byzantine participants do not possess more than half of the stakes in aggregate.
+Note that using stake is not an inherent part of the protocol.
+\sys only leverages stake to defend against Sybil attacks; other approaches, e.g., proof-of-work and permissioned settings, can be applied.
+
+\subsection{Protocol Overview}
 
 \subsection{Protocol Details}
 
