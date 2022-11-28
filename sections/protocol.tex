@@ -24,13 +24,39 @@ A node exhibiting Byzantine failure can deviate arbitrarily from the protocol, i
 For other types of node failures that are recoverable such as crashes or power failures, we treat them as transient faults.
 Permanent node failures are equivalent to nodes leaving the system.
 
-We consider a strong Byzantine fault model in which Byzantine participants can freely generate identities.
+We consider a strong Byzantine fault model in which Byzantine participants can generate arbitrary identities.
 We, however, assume a stake-based system, and that the Byzantine participants do not possess more than half of the stakes in aggregate.
 Note that using stake is not an inherent part of the protocol.
-\sys only leverages stake to defend against Sybil attacks; other approaches, e.g., proof-of-work and permissioned settings, can be applied.
+\sys only leverages stake to defend against Sybil attacks; other approaches such as proof-of-work and permissioned settings can also be applied.
 
-\subsection{Protocol Overview}
+We also make standard cryptography assumptions, i.e., the probability of subverting cryptographic hash functions or public-key cryptography algorithms we used in the protocol is negligible.
+
+
+\subsection{Design Overview}
+
+\begin{figure}
+    \begin{mdframed}[style=protocol]
+        \textbf{\sys node:}
+        \begin{itemize}
+            \setlength\itemsep{0em}
+            \item \textit{sk}: secret key of the node
+            \item \textit{store}: local storage of data fragments, indexed by object ID
+        \end{itemize}
+    \end{mdframed}
+    \caption{Local state of \sys nodes.}
+    \label{fig:node-state}
+\end{figure}
+
+\autoref{fig:node-state} shows the local state maintained by each \sys node.
+Each node generates a (\textit{sk}, \textit{pk}) key pair, and stores the secret key \textit{sk} locally.
+Public keys are assumed to be known by all nodes in the system.
+Each node locally stores a set of data fragments generated from fountain code encoding.
+They also maintain indices to lookup data fragments from object IDs.
+
+\sys nodes communicate through point-to-point channels and a gossip protocol.
 
 \subsection{Protocol Details}
+
+
 
 \subsection{Correctness}

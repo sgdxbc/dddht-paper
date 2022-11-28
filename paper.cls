@@ -13,8 +13,9 @@
 \RequirePackage{graphicx}
 \RequirePackage{subcaption}
 \RequirePackage{enumitem}
-
 \RequirePackage{authblk}
+\RequirePackage[framemethod=tikz]{mdframed}
+\mdfdefinestyle{protocol}{,,roundcorner=10pt,}
 
 \def\Snospace~{\S{}}
 % Autoref
