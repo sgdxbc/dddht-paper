@@ -17,6 +17,8 @@
 \RequirePackage[framemethod=tikz]{mdframed}
 \mdfdefinestyle{protocol}{,,roundcorner=10pt,}
 
+\hypersetup{linkcolor=blue}
+
 \def\Snospace~{\S{}}
 % Autoref
 \def\chapterautorefname{Chapter}
