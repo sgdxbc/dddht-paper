@@ -8,7 +8,7 @@ Each node maintains finite local storage, and the entire set of participants col
 \lijl{Should we clarify that object ID is the hash of the object here?}
 \sys does not provide an explicit interface to update an existing object.
 Update can be done by issuing a \del followed by a \store to overwrite the entire object.
-Note that the \store will return a different object ID for the updated object.
+Note that in this case, the \store will return a different object ID for the updated object.
 Consistently mapping client objects to \sys issued IDs is out of the scope of the paper.
 
 \sys guarantees \textit{data durability}.
@@ -24,10 +24,10 @@ A node exhibiting Byzantine failure can deviate arbitrarily from the protocol, i
 For other types of node failures that are recoverable such as crashes or power failures, we treat them as transient faults.
 Permanent node failures are equivalent to nodes leaving the system.
 
-We consider a strong Byzantine fault model in which Byzantine participants can generate arbitrary identities.
-We, however, assume a stake-based system, and that the Byzantine participants do not possess more than half of the stakes in aggregate.
+We consider a strong Byzantine fault model in which Byzantine participants can collude with each other and generate arbitrary identities.
+We, however, assume a stake-based system, and that the Byzantine participants do not possess more than half of the system stakes in aggregate.
 Note that using stake is not an inherent part of the protocol.
-\sys only leverages stake to defend against Sybil attacks; other approaches such as proof-of-work and permissioned settings can also be applied.
+\sys only leverages stake to defend against Sybil attacks; other approaches such as proof-of-work or permissioned settings can also be applied.
 
 We also make standard cryptography assumptions, i.e., the probability of subverting cryptographic hash functions or public-key cryptography algorithms we used in the protocol is negligible.
 
@@ -53,7 +53,11 @@ Public keys are assumed to be known by all nodes in the system.
 Each node locally stores a set of data fragments generated from fountain code encoding.
 They also maintain indices to lookup data fragments from object IDs.
 
-\sys nodes communicate through point-to-point channels and a gossip protocol.
+\sys nodes communicate through both point-to-point channels and a gossip protocol.
+Point-to-point channels are \textit{reliable}.
+They can be implemented using protocols such as TCP and Reliable User Datagram Protocol (RUDP).
+The gossip protocol is best-effort and only provides weak guarantees: If a node sends a message through the protocol indefinitely, eventually all non-faulty nodes receive the message.
+
 
 \subsection{Protocol Details}
 
