@@ -18,9 +18,9 @@ Once a \store successfully returns, all subsequent \query{}s for the generated I
 Combined with the fact that \sys does not support explicit object update, data durability also implies linearizability~\cite{linearizability} of client \query{}s and \store{}s.
 \lijl{Need to be more careful with this claim}
 
-We assume two types of failures that relate to data losses: storage device failures and Byzantine failures.
+We assume two types of failures that relate to data losses -- storage device failures and Byzantine failures.
 Storage device failures lead to unrecoverable data loss of the entire or part of a device.
-They are stochastic events: the failure probability of a device is modeled after annualized failure rate (AFR), which depends on factors such as device makes, models, and years of usage~\cite{disk_failure}.
+They are stochastic events: The failure probability of a device is modeled after annualized failure rate (AFR), which depends on factors such as device makes, models, and years of usage~\cite{disk_failure}.
 A node exhibiting Byzantine failure can deviate arbitrarily from the protocol, including losing or modifying any data stored locally.
 For other types of node failures that are recoverable such as crashes or power failures, we treat them as transient faults.
 Permanent node failures are equivalent to nodes leaving the system.
@@ -64,6 +64,14 @@ They also maintain indices to lookup data fragments from object IDs.
 Point-to-point channels are \textit{reliable}.
 They can be implemented using protocols such as TCP and Reliable User Datagram Protocol (RUDP).
 The gossip protocol is best-effort and only provides weak guarantees: If a node sends a message through the protocol indefinitely, eventually all non-faulty nodes receive the message.
+
+\sys uses a publicly-known fountain code to encode each stored object into an infinite stream of encoding fragments.
+As introduced in \autoref{sec:background:fc}, any $k + \epsilon$ distinct encoding fragments can be used to reconstruct the original object with overwhelmingly high probability.
+To guarantee data durability, \sys enforces the following \textit{invariant}: at any time $t$ after a \store is completed, at least $k + \epsilon$ encoding fragments of the object are present in the system.
+
+Storage device failures and nodes leaving the system can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
+To eschew relying on a centralized trusted service to detect fragment losses, each node periodically broadcasts \textit{health proof} of its stored fragments through the gossip protocol.
+\lijl{Need to define health proof.}
 
 
 \subsection{Protocol Details}
