@@ -70,12 +70,15 @@ As introduced in \autoref{sec:background:fc}, any $k + \epsilon$ distinct encodi
 To guarantee data durability, \sys enforces the following \textit{invariant}: at any time $t$ after a \store is completed, at least $k + \epsilon$ encoding fragments of the object are present in the system.
 
 Storage device failures and nodes leaving the system can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
-To eschew relying on a centralized trusted service to detect fragment losses, each node periodically broadcasts \textit{health proof} of its stored fragments through the gossip protocol.
-\lijl{Need to define health proof.}
+To avoid relying on a centralized trusted service to detect fragment losses, each node periodically broadcasts \textit{persistence proof} of its stored fragments through the gossip protocol.
+\lijl{Need to properly define persistence proof. Do we care if a node lie about persistence? Or only rely on collective behavior? Trade-off?}
+By monitoring the persistence proofs, \sys nodes can independently generate and store new encoding fragments when the number of remaining fragments is below a threshold.
 
+Naively implementing the above scheme has two issues.
+Firstly, tracking and maintaining all persistence proofs on each node scales poorly.
+Second, Byzantine nodes can collude and claim persistence of enough fragments for an object, such that less than $k + \epsilon$ fragments are stored on non-faulty nodes.
+Once the Byzantine nodes discard their fragments, the object is permanently lost.
 
 \subsection{Protocol Details}
-
-
 
 \subsection{Correctness}
