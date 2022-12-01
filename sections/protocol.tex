@@ -72,6 +72,7 @@ To guarantee data durability, \sys enforces the following \textit{invariant}: at
 Storage device failures and nodes leaving the system can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
 To avoid relying on a centralized trusted service to detect fragment losses, each node periodically broadcasts \textit{persistence proof} of its stored fragments through the gossip protocol.
 \lijl{Need to properly define persistence proof. Do we care if a node lie about persistence? Or only rely on collective behavior? Trade-off?}
+\sgd{Even if we care there's no way (at least very hard/expensive) to verify persistence proof.}
 By monitoring the persistence proofs, \sys nodes can independently generate and store new encoding fragments when the number of remaining fragments is below a threshold.
 
 Naively implementing the above scheme has two issues.
@@ -81,10 +82,15 @@ Once those Byzantine nodes discard their local fragments, the object is permanen
 
 \sys uses verifiable random functions (VRFs) to address both issues.
 \sys partitions the lifetime of an object into \textit{epochs}.
+\sgd{Candidate additional detail: epochs are supposed to be overlapping because it is hard to select exact number of peers to be
+responsible, just a weak partial ordering. "Partition the lifetime into epochs" sounds like there is only one epoch at a time,
+let reader suspect whether we are assuming a strong synchronous network (which we actually do not).}
 In each epoch, a randomly selected set of nodes using VRF are responsible for storing the encoding fragments of an object.
 VRF ensures that each node can independently generate a selection proof, the selection probability of a node is proportional to the fraction of stakes it owns, and that the selection proof is publicly verifiable.
 By properly setting the desired storage redundancy in an epoch, \sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
-Moreover, a node only needs to actively monitor persistence proofs for objects that the node is responsible for in the next epoch, which is a small constant proportional to its stake.
+Moreover, a node only needs to actively monitor persistence proofs for objects that the node is responsible for in the next epoch,
+\sgd{along with the objects it is currently responsible for in order to reduce unnecessary redundancy}
+which is a small constant proportional to its stake.
 
 \subsection{Protocol Details}
 
@@ -111,5 +117,13 @@ To avoid expensive homomorphic hashing operations, peers can do optimistic recov
 It recovers the data object first, then check the hash of recovered object. If the hash is correct then recovery is successful.
 Otherwise, it computes homomorphic hashes for each fragment and filter out incorrect fragments.
 Then it fetches for more fragments and try to recover again later.
+
+\textbf{Put new data object into system.} Observe enough gossip.
+
+\textbf{Retrieve data object from system.} Gossip + back pointer optimization.
+
+\textbf{Event-driven peer behavior.}
+
+\textbf{Peer bootstrap.} Set up gossip mesh. \sgd{Can go into implementation section.}
 
 \subsection{Correctness}
