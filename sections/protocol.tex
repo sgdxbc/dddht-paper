@@ -76,8 +76,15 @@ By monitoring the persistence proofs, \sys nodes can independently generate and 
 
 Naively implementing the above scheme has two issues.
 Firstly, tracking and maintaining all persistence proofs on each node scales poorly.
-Second, Byzantine nodes can collude and claim persistence of enough fragments for an object, such that less than $k + \epsilon$ fragments are stored on non-faulty nodes.
-Once the Byzantine nodes discard their fragments, the object is permanently lost.
+Second, Byzantine nodes can collude and claim persistence of enough fragments for an object, such that less than $k + \epsilon$ fragments are stored on honest nodes.
+Once those Byzantine nodes discard their local fragments, the object is permanently lost.
+
+\sys uses verifiable random functions (VRFs) to address both issues.
+\sys partitions the lifetime of an object into \textit{epochs}.
+In each epoch, a randomly selected set of nodes using VRF are responsible for storing the encoding fragments of an object.
+VRF ensures that each node can independently generate a selection proof, the selection probability of a node is proportional to the fraction of stakes it owns, and that the selection proof is publicly verifiable.
+By properly setting the desired storage redundancy in an epoch, \sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
+Moreover, a node only needs to actively monitor persistence proofs for objects that the node is responsible for in the next epoch, which is a small constant proportional to its stake.
 
 \subsection{Protocol Details}
 
