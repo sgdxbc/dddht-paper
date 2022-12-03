@@ -92,6 +92,17 @@ Moreover, a node only needs to actively monitor persistence proofs for objects t
 \sgd{along with the objects it is currently responsible for in order to reduce unnecessary redundancy}
 which is a small constant proportional to its stake.
 
+Placing encoding fragments at randomly selected nodes complicates object lookup.
+\sys solves this issue with another level of indirection.
+When a node constructs and stores a new fragment for an object, it registers a \textit{fragment pointer} at a peer node responsible for the object in the Distributed Hash Table (DHT).
+To handle a \query, the requesting node queries the DHT to retrieve $k + \epsilon$ distinct fragment pointers, fetches the respective encoding fragments, and reconstructs the original object.
+Fragment pointer registration is best-effort.
+To handle the case where less than $k + \epsilon$ pointers are stored in the DHT, \sys nodes store a maximum of $log(k)$ \textit{fragment links} alongside each locally stored fragment.
+A fragment link points to another node that stores a fragment for the same object in the same epoch.
+A traversal of fragment links largely increase the probability to recover all $k + \epsilon$ fragments.
+\lijl{We should calculate the likelihood. Likely close to 1.}
+In the worst case, a global query using the gossip protocol can be used to find all the fragments.
+
 \subsection{Protocol Details}
 
 \textbf{Randomized placement group.} \sys selects a random set of peers to monitor and store a data object.
