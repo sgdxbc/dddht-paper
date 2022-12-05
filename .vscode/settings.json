@@ -3,7 +3,8 @@
         "\\sys": "dummy",
         "\\query": "dummy",
         "\\store": "dummy",
-        "\\del": "dummy"
+        "\\del": "dummy",
+        "\\Procedure{}{}": "dummy",
     },
     "ltex.bibtex.fields": {
         "title": false,
