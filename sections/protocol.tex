@@ -56,6 +56,7 @@ We also make standard cryptography assumptions, i.e., the probability of subvert
 
 \autoref{fig:node-state} shows the local state maintained by each \sys node.
 Each node generates a (\textit{sk}, \textit{pk}) key pair, and stores the secret key \textit{sk} locally.
+\sgd{According to Algorand there are certain limitations on generating secret keys or the randomization may be vulnerable. Mention we are aware of this somewhere if necessary.}
 Public keys are assumed to be known by all nodes in the system.
 Each node locally stores a set of data fragments generated from fountain code encoding.
 They also maintain indices to lookup data fragments from object IDs.
@@ -64,6 +65,7 @@ They also maintain indices to lookup data fragments from object IDs.
 Point-to-point channels are \textit{reliable}.
 They can be implemented using protocols such as TCP and Reliable User Datagram Protocol (RUDP).
 The gossip protocol is best-effort and only provides weak guarantees: If a node sends a message through the protocol indefinitely, eventually all non-faulty nodes receive the message.
+\sgd{We probably want a (although very lossy) synchronous guarantee on gossip, i.e., message should be received before sender crashes.}
 
 \sys uses a publicly-known fountain code to encode each stored object into an infinite stream of encoding fragments.
 As introduced in \autoref{sec:background:fc}, any $k + \epsilon$ distinct encoding fragments can be used to reconstruct the original object with overwhelmingly high probability.
@@ -89,8 +91,10 @@ In each epoch, a randomly selected set of nodes using VRF are responsible for st
 VRF ensures that each node can independently generate a selection proof, the selection probability of a node is proportional to the fraction of stakes it owns, and that the selection proof is publicly verifiable.
 By properly setting the desired storage redundancy in an epoch, \sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
 Moreover, a node only needs to actively monitor persistence proofs for objects that the node is responsible for in the next epoch,
-\sgd{along with the objects it is currently responsible for in order to reduce unnecessary redundancy}
 which is a small constant proportional to its stake.
+\sgd{What do you mean by "a small constant proportional to its stake"? If "stake" here refers to raw capacity, it's not constant since raw capacity is unknown and varies on different peers.
+If "stake" here refers to number of stored fragments, it's not constant because e.g. a newly-joined peer has no stored fragment but need to keep track of several objects.
+By the way we don't really define how peers suppose to hold more than one stake currently.}
 
 Placing encoding fragments at randomly selected nodes complicates object lookup.
 \sys solves this challenge with another level of indirection.
@@ -102,6 +106,13 @@ A fragment link points to another node that stores a fragment for the same objec
 A traversal of fragment links significantly increases the probability to recover all $k + \epsilon$ fragments.
 \lijl{We should calculate the likelihood. Likely close to 1.}
 In the worst case, a global query using the gossip protocol can be used to locate all the fragments.
+\sgd{Not sure about this approach. Firstly a persistence-proof-like gossip initiated by client is not very complicated.
+Just depends on how we optimize gossip protocol for traffic-efficiency, latency behavior could be poor.
+If in such case a speedup DHT is leveraged, then the value associated with key (i.e. data object id) should be a set of peers who currently keeps track of health of data object, instead of the peers who currently store the fragments.
+This is because the peers who are keeping track of objects (1) is more likely to still be alive (2) know at least $k$ other peers who recently store fragments.
+Thus, only contacting one peer from DHT is enough to recover the object. It is more reasonable approach since we are not focusing on a secure DHT at all.
+The only problem is that this exposes following responsible peers earlier. But anyway this supposes to be the direction.
+Also check out repair booster in details section. An even better approach may be contacting booster first.}
 
 \subsection{Protocol Details}
 
@@ -242,6 +253,16 @@ Then it fetches for more fragments and try to recover again later.
 \textbf{Event-driven peer behavior.}
 
 \textbf{Peer bootstrap.} Set up gossip mesh. \sgd{Can go into implementation section.}
+
+\textbf{Repair booster to reduce repair traffic.} One problem with \sys is that it can suffer from amplified network traffic caused by repairing.
+Each responsible peer has to individually fetch $k + \epsilon$ fragments before storing, and it only stores one generated fragment.
+This issue can be addressed by a set of repair booster peers, who fetch fragments, decode objects and generate fragments on behalf of responsible peers.
+Thanks to VRF, booster peers can verify responsibility of peers. And thanks to homomorphic hashing, peers can verify the fragments generated by booster peers.
+Booster peers do a best-effort caching after recovering data objects, so when later another fragment need to be generated for the same object, it does not need to fetch fragments again and significantly reduce repair traffic.
+Any peer participants in \sys can behave as booster peer, but heuristically the first peer of each epoch becomes booster peer automatically.
+This peer is responsible for the object so it has to recover the object anyway, and other responsible can easily be aware of it through gossip.
+Notice that a faulty booster peer has no effect on object durability, but only can increase network usage.
+Even though, faulty peers still cannot gain more chance to become booster peers by faulty behavior, because a booster peer, which is also a responsible peer, is randomly and unpredictably chosen as we stated before.
 
 \subsection{Optimizations}
 
