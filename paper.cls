@@ -16,6 +16,9 @@
 \RequirePackage{authblk}
 \RequirePackage[framemethod=tikz]{mdframed}
 \mdfdefinestyle{protocol}{,,roundcorner=10pt,}
+\RequirePackage{algorithm}
+\RequirePackage[noend]{algpseudocode}
+\RequirePackage{braket}
 
 \hypersetup{linkcolor=blue}
 
@@ -29,5 +32,12 @@
 \def\thmautorefname{Theorem}
 \def\lemautorefname{Lemma}
 \def\defnautorefname{Definition}
+
+\algnewcommand\algorithmicswitch{\textbf{switch}}
+\algnewcommand\algorithmiccase{\textbf{case}}
+\algdef{SE}[SWITCH]{Switch}{EndSwitch}[1]{\algorithmicswitch\ #1\ \algorithmicdo}{\algorithmicend\ \algorithmicswitch}
+\algdef{SE}[CASE]{Case}{EndCase}[1]{\algorithmiccase\ #1}{\algorithmicend\ \algorithmiccase}
+\algtext*{EndSwitch}
+\algtext*{EndCase}
 
 \IfFileExists{macros.tex}{\input{macros}}{}
