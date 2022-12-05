@@ -93,17 +93,123 @@ Moreover, a node only needs to actively monitor persistence proofs for objects t
 which is a small constant proportional to its stake.
 
 Placing encoding fragments at randomly selected nodes complicates object lookup.
-\sys solves this issue with another level of indirection.
+\sys solves this challenge with another level of indirection.
 When a node constructs and stores a new fragment for an object, it registers a \textit{fragment pointer} at a peer node responsible for the object in the Distributed Hash Table (DHT).
 To handle a \query, the requesting node queries the DHT to retrieve $k + \epsilon$ distinct fragment pointers, fetches the respective encoding fragments, and reconstructs the original object.
-Fragment pointer registration is best-effort.
-To handle the case where less than $k + \epsilon$ pointers are stored in the DHT, \sys nodes store a maximum of $log(k)$ \textit{fragment links} alongside each locally stored fragment.
+Fragment pointer registration, however, is best-effort.
+To handle the case where less than $k + \epsilon$ pointers are found in the DHT, \sys nodes store a maximum of $log(k)$ \textit{fragment links} alongside each locally stored fragment.
 A fragment link points to another node that stores a fragment for the same object in the same epoch.
-A traversal of fragment links largely increase the probability to recover all $k + \epsilon$ fragments.
+A traversal of fragment links significantly increases the probability to recover all $k + \epsilon$ fragments.
 \lijl{We should calculate the likelihood. Likely close to 1.}
-In the worst case, a global query using the gossip protocol can be used to find all the fragments.
+In the worst case, a global query using the gossip protocol can be used to locate all the fragments.
 
 \subsection{Protocol Details}
+
+\begin{algorithm}
+    \begin{algorithmic}[1]
+        \State $\var{sk} \gets$ node secret key
+        \State $\var{pk} \gets$ node public key
+        \State $\var{addr} \gets$ node address
+        \State $S \gets$ total stake in the system
+        \State $s \gets$ stake of the node
+        \State $N \gets$ number of encoding fragments in each epoch
+        \State $\var{store} \gets \set{}$ \Comment{locally stored fragments}
+        \State $\var{next} \gets \set{}$  \Comment{objects which the node is chosen in the next epoch \lijl{map from obj ID to set of fragments}}
+        \State $\var{pnd} \gets \langle \bot, \set{}\rangle$ \Comment{pending op. hash and fragments}
+        \Procedure{\store}{$obj$}
+            \State $\var{hash} \gets \fn{Hash}(obj)$
+            \State $\var{pnd} \gets \langle \var{hash}, \set{} \rangle$
+            \State $\fn{Gossip}(\msg{frag}{\var{hash}, 0, \bot, \bot, \bot, \bot, \var{pk}})$
+            \State wait until $|\var{pnd.frags}| \ge k + \epsilon$
+            \State \Return $hash$
+        \EndProcedure
+        \Procedure{\query}{$id$}
+            \State do something
+        \EndProcedure
+        \Procedure{\del}{$id$}
+            \State do something
+        \EndProcedure
+    \end{algorithmic}
+    \caption{\sys client protocol}
+\end{algorithm}
+
+\begin{algorithm}
+    \begin{algorithmic}[1]
+        \Procedure{RecvMsgFrag}{$m$}
+            \State $\var{oh} \gets \var{m.ohash}$
+            \State $\var{fh} \gets \var{m.fhash}$
+            \If{$\neg \fn{VerifyFrag}(m)$}
+                \Return
+            \EndIf
+            \If{$\var{oh} = \var{pnd.hash}$}
+                \State $\var{pnd.frags} \gets \var{pnd.frags} \cup \set{\var{fh}}$
+            \EndIf
+            \lijl{If already in or passed epoch e + 1, can skip. Can probably also cache this result.}
+            \State $\langle \tau, \pi, c \rangle \gets \fn{Kleroterion}(\var{oh}, m.e + 1)$
+            \If{$c$}
+                \State $\var{next[oh].\tau} \gets \tau$
+                \State $\var{next[oh].\pi} \gets \pi$
+                \State $\var{next[oh].e} \gets \var{m.e + 1}$
+                \State $\var{next[oh].live} \gets \var{next[oh].live} \cup \set{\var{fh}}$
+                \State $\var{frag} \gets$ fetch fragment from source node \lijl{if fragment is not already available. For the first epoch, fetch the whole object from the requester.}
+                \State $\var{next[oh].frags} \gets \var{next[oh].frags} \cup \set{\var{frag}}$
+            \EndIf
+        \EndProcedure
+        \Procedure{Kleroterion}{$\var{oh}, e$}
+            \State $\langle \var{hash}, \pi \rangle \gets \fn{VRF}_{sk}(\var{oh} \parallel e)$
+            \State $c \gets$ \lijl{insert right formula here}
+            \State \Return $\langle \var{hash}, \pi, c \rangle$
+        \EndProcedure
+        \Procedure{VerifyFrag}{$\var{oh}, e, \tau, \pi, \var{fh}, \var{idx}$}
+            \If{$\neg \fn{VerifyVRF}_{pk}(\tau, \pi, \var{oh} \parallel e)$}
+                \Return false
+            \EndIf
+            \State $c \gets$ \lijl{insert right formula here}
+            \If{$\neg c$}
+                \Return false
+            \EndIf
+            \If{$\var{idx \neq \tau \bmod N}$}
+                \Return false
+            \EndIf
+            \If{$\var{fh} \neq \fn{FragHash}(oh, e, idx)$}
+                \Return false
+            \EndIf
+            \State \Return true
+        \EndProcedure
+        \Procedure{ConstrFrag}{$obj, \var{oh}, \tau, \pi, e$}
+            \State $\var{idx} \gets \tau \bmod N$
+            \State $\var{frag} \gets \fn{Encode}(obj, e, idx)$
+            \State $\var{fh} \gets \fn{Hash}(\var{frag})$
+            \State $\var{store} \gets \var{store} \cup \set{\langle \var{oh}, \var{fh}, \var{e}, \tau, \pi, \var{idx}, \var{frag} \rangle}$
+            \State $\fn{DHT-Put}(\var{oh}, \langle \var{fh}, \var{addr} \rangle)$
+        \EndProcedure
+        \Procedure{TimerCallback}{}
+            \ForAll{$\langle \var{oh}, \var{fh}, \var{e}, \tau, \pi, \var{idx} \rangle \in \var{store}$}
+                \State $\fn{Gossip}(\msg{frag}{\var{oh}, \var{e}, \var{fh}, \var{idx}, \var{\tau}, \var{\pi}, \var{pk}})$
+            \EndFor
+            \ForAll{$\langle \var{oh}, \var{live}, \var{frags}, \tau, \pi, e \rangle \in \var{next}$}
+                \ForAll{$f \in \var{live}$}
+                    \If{$\neg$ received $f$ in $T$}
+                        \State $\var{live} \gets \var{live} \setminus \set{f}$
+                    \EndIf
+                \EndFor
+                \If{$|\var{live}| < k + \epsilon$}
+                    \State $\var{obj} \gets \fn{Decode}(\var{frags})$ \lijl{may not have enough fragments.}
+                    \State $\fn{ConstrFrag}(\var{oh}, \tau, \pi, e)$
+                \EndIf
+            \EndFor
+        \EndProcedure
+    \end{algorithmic}
+    \caption{\sys protocol on each node}
+\end{algorithm}
+
+\subsubsection{Storing Client Objects}
+
+\subsubsection{Encoding Fragment Regeneration}
+
+\subsubsection{Object Retrieval}
+
+\subsubsection{Object Deletion}
 
 \textbf{Randomized placement group.} \sys selects a random set of peers to monitor and store a data object.
 The set of peers changes from time to time. We call the set of peer are \textit{eligible} for taking care of the object.
@@ -136,5 +242,7 @@ Then it fetches for more fragments and try to recover again later.
 \textbf{Event-driven peer behavior.}
 
 \textbf{Peer bootstrap.} Set up gossip mesh. \sgd{Can go into implementation section.}
+
+\subsection{Optimizations}
 
 \subsection{Correctness}
