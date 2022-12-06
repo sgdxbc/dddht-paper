@@ -1,6 +1,9 @@
 \textbf{Problem with replication/small code.} Fixed set of peers to be responsible, vulnerable to targeted attack.
 Replication: high redundancy rate. Short repair interval, have to do eager repair.
 
+\textbf{Problem with static large code.} Can only tolerance limited number of extra faulty nodes. 
+It's not practical to tolerance targeted attack only with erasure code (i.e. let $r > B$): either $k$ too large or too much redundancy.
+
 \textbf{Problem with replication with rotation.} Predictable rotation is still vulnerable. Periodical downtime.
 
 \textbf{Insight of randomized rotation.} Only encounter a small subset of Byzantine node for all the time.
