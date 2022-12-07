@@ -29,4 +29,14 @@ So we can extend the protocol as follows: \begin{itemize}
 \end{itemize}
 Notice that a faulty booster peer has no effect on object durability, but only can increase network usage.
 
-\textbf{Select parameters.}
+\textbf{Select parameters.} A fixed $B$ is given such that at most $BN$ nodes are faulty where $N$ is the total number of nodes.
+A proper repair threshold $k_0$ 
+\sgd{$k_0$ is analog to $n$ in typical $(n, k, r)$ code. Should we use symbol $n$ instead?}
+should be selected, and the VRF should be configured as 
+(a) it selects at least $k_0$ peers for each epoch with high probability, so the peers do not observe unhealthy objects by false positive and repair too soon, and
+(b) it selects at most $k_0/B$ peers for each epoch with high probability, so there's no more than $k_0$ faulty peers get selected in every epoch and ensure safety.
+This implies $k_0$ should be sufficiently large so the range between (a) and (b) is large enough to make is possible to configure the VRF.
+Finally, the $k$ should be selected so that 
+(a) $k + \epsilon \le (1 - B - \beta)k_0$ where $\beta$ is determined based on a conservative estimation of AFR, and
+(b) $1 - k/k_0 \le \alpha$ where $\alpha$ is the desired storage redundant rate.
+In practice, we found that \XXX selection of parameters can work well when $B$ is no more than \XXX and AFR is no more than \XXX, which is expected in our deployment.

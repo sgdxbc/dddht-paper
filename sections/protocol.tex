@@ -61,6 +61,24 @@ Public keys are assumed to be known by all nodes in the system.
 Each node locally stores a set of data fragments generated from fountain code encoding.
 They also maintain indices to lookup data fragments from object IDs.
 
+\begin{figure}
+   \begin{tikzpicture}
+        \tikzstyle{state} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
+        \tikzstyle{arrow} = [thick,->,>=stealth]
+
+        \matrix[row sep = 1.5cm, column sep = -0.5cm] {
+            & \node (listen) [state, fill = gray!10] {Listening}; \\
+            \node (act) [state] {Activated}; & & \node (resp) [state] {Responsible}; \\
+        };
+        \draw [arrow] (listen.west) to [out = 180] node[anchor = east, text width = 1.5cm]{kleroterion in next epoch} (act.north);
+        \draw [arrow] (act.east) to [out = 330, in = 210] node[anchor = south]{not healthy} (resp.west);
+        \draw [arrow] (resp.north) to [out = 90, in = 0] node[anchor = west, text width = 1.5cm]{too redundant} (listen.east);
+        \draw [arrow] (act.north) to [out = 90, in = 220] node[anchor = west]{too redundant} (listen.south);
+    \end{tikzpicture}
+    \caption{State transition of \sys nodes for every object. An unheard object starts with Listening state by default.}
+    \label{fig:node-state-machine}
+\end{figure}
+
 \sys nodes communicate through both point-to-point channels and a gossip protocol.
 Point-to-point channels are \textit{reliable}.
 They can be implemented using protocols such as TCP and Reliable User Datagram Protocol (RUDP).
@@ -71,7 +89,7 @@ The gossip protocol is best-effort and only provides weak guarantees: If a node 
 As introduced in \autoref{sec:background:fc}, any $k + \epsilon$ distinct encoding fragments can be used to reconstruct the original object with overwhelmingly high probability.
 To guarantee data durability, \sys enforces the following \textit{invariant}: at any time $t$ after a \store is completed, at least $k + \epsilon$ encoding fragments of the object are present in the system.
 
-Storage device failures and nodes leaving the system can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
+Storage device failures and nodes leaving the system \sgd{IPFS paper call this "churn"} can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
 To avoid relying on a centralized trusted service to detect fragment losses, each node periodically broadcasts \textit{persistence proof} of its stored fragments through the gossip protocol.
 \lijl{Need to properly define persistence proof. Do we care if a node lie about persistence? Or only rely on collective behavior? Trade-off?}
 \sgd{Even if we care there's no way (at least very hard/expensive) to verify persistence proof.}

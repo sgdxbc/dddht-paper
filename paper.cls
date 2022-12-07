@@ -19,6 +19,7 @@
 \RequirePackage{algorithm}
 \RequirePackage[noend]{algpseudocode}
 \RequirePackage{braket}
+\RequirePackage{tikz}
 
 \hypersetup{linkcolor=blue}
 
@@ -39,5 +40,7 @@
 \algdef{SE}[CASE]{Case}{EndCase}[1]{\algorithmiccase\ #1}{\algorithmicend\ \algorithmiccase}
 \algtext*{EndSwitch}
 \algtext*{EndCase}
+
+\usetikzlibrary{shapes.geometric, arrows, matrix}
 
 \IfFileExists{macros.tex}{\input{macros}}{}
