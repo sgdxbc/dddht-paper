@@ -87,7 +87,9 @@ The gossip protocol is best-effort and only provides weak guarantees: If a node 
 
 \sys uses a publicly-known fountain code to encode each stored object into an infinite stream of encoding fragments.
 As introduced in \autoref{sec:background:fc}, any $k + \epsilon$ distinct encoding fragments can be used to reconstruct the original object with overwhelmingly high probability.
-To guarantee data durability, \sys enforces the following \textit{invariant}: at any time $t$ after a \store is completed, at least $k + \epsilon$ encoding fragments of the object are present in the system.
+To guarantee data durability, \sys enforces the following \textit{invariant}: at any time $t$ after a \store is completed,
+\sgd{and before it expires}
+at least $k + \epsilon$ encoding fragments of the object are present in the system.
 
 Storage device failures and nodes leaving the system \sgd{IPFS paper call this "churn"} can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
 To avoid relying on a centralized trusted service to detect fragment losses, each node periodically broadcasts \textit{persistence proof} of its stored fragments through the gossip protocol.
