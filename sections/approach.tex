@@ -1,7 +1,23 @@
+Why is it hard to guarantee data durability in a decentralized storage system?
+In this section, we analyze key challenges faced by existing systems to prevent data losses in an open, permissionless setting.
+We then present our approach of using fountain code and verifiable randomness to tackle the durability challenge.
+
+\subsection{The Durability Challenge in Decentralized Storage}
+
+Highly dynamic Byzantine behaviors.
+
+\subsection{The Case for Using Fountain Code}
+
+Infinite, ordered fragments. Given order $i$, the $i$-th fragment can be generated in time linear to data object size.
+
+Similar arguments have been made in Liquid~\cite{liquid} and OceanStore~\cite{oceanstore}
+
+\subsection{Verifiable Randomness For Adversary Tolerance}
+
 \textbf{Problem with replication/small code.} Fixed set of peers to be responsible, vulnerable to targeted attack.
 Replication: high redundancy rate. Short repair interval, have to do eager repair.
 
-\textbf{Problem with static large code.} Can only tolerance limited number of extra faulty nodes. 
+\textbf{Problem with static large code.} Can only tolerance limited number of extra faulty nodes.
 It's not practical to tolerance targeted attack only with erasure code (i.e. let $r > B$): either $k$ too large or too much redundancy.
 
 \textbf{Problem with replication with rotation.} Predictable rotation is still vulnerable. Periodical downtime.
