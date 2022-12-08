@@ -1,16 +1,49 @@
 Why is it hard to guarantee data durability in a decentralized storage system?
-In this section, we analyze key challenges faced by existing systems to prevent data losses in an open, permissionless setting.
-We then present our approach of using fountain code and verifiable randomness to tackle the durability challenge.
+In this section, we analyze key challenges faced by existing systems to prevent data losses in an open, permissionless environment.
+We then present our approach of using rateless fountain code and verifiable randomness to tackle the durability challenge.
 
 \subsection{The Durability Challenge in Decentralized Storage}
 
-Highly dynamic Byzantine behaviors.
+How to maintain data durability in the presence of server and device failures?
+The de facto standard approach is data replication and erasure code.
+It is well-studied how \textit{redundancy} can mask failures -- including Byzantine ones -- of individual components and ensure data availability.
+The approach is particularly effective in centralized settings, in which system participants and failure distributions are managed by a single entity.
+For instance, the central administrator can control node/device selection such that out of the $n$ nodes storing a data object, at most $n-r$, where $r$ is the level of redundancy, of them can fail.
+
+The formula changes completely in an open, decentralized system.
+Nodes are free to join and leave the system at any time.
+There is no centralized control over who are the participants and their trustworthiness.
+In these systems, adversarial behaviors are the \textit{common case}, not the exception.
+Adversaries have strong attack power.
+They can partition regions of the network using BGP poisoning or distributed denial-of-service (DDoS);
+they can collude with each other and compromise non-faulty nodes;
+they can create and change identities in a highly dynamic fashion.
+
+A direct implication of a decentralized environment is that failure assumptions made by prior systems no longer hold.
+Adversaries can launch Sybil attacks such that they control more than $n-r$ copies or erasure code symbols of an object;
+once they locate more than $n-r$ nodes responsible for an object, they can also launch targeted attacks to partition their network or compromise their systems.
+Data durability is immediately violated under these attack scenarios.
+
+Existing blockchain systems face similar attack vectors.
+However, decentralized storage systems are particularly vulnerable, given their scale and redundancy constraints.
+In large scale deployments, the size of the system, which can reach beyond 100K nodes~\cite{ipfs}, easily overwhelms the replication factor of each storage object, which is typically below 20 \lijl{citation?}.
+In fact, reducing redundancy is a key metric to improve the overall storage efficiency.
+This is in contrast to a blockchain, in which chain data is replicated on every participant.
+With such a small redundancy, effectiveness of adversarial attacks grows exponentially, even when the adversaries account for a small percentage of the entire system.
+
+Another challenge faced by open, decentralized systems is that consensus and coordination are \textit{costly}.
+To safely confirm a transaction, the Bitcoin network requires a confirmation latency of around one hour;
+even the faster Ethereum network incurs a finality latency of over 12 seconds.
+Besides latency, both networks also suffers low consensus throughput -- 7 transaction per second (TPS) for Bitcoin and 20 TPS for Ethereum -- as well as high transaction fees.
+Storage mechanisms that rely on frequent consensus are impractical in such settings.
 
 \subsection{The Case for Using Fountain Code}
 
 Infinite, ordered fragments. Given order $i$, the $i$-th fragment can be generated in time linear to data object size.
 
-Similar arguments have been made in Liquid~\cite{liquid} and OceanStore~\cite{oceanstore}
+Similar arguments have been made in the liquid system~\cite{liquid} and OceanStore~\cite{oceanstore}
+
+Large code:
 
 \subsection{Verifiable Randomness For Adversary Tolerance}
 
