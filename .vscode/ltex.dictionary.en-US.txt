@@ -8,3 +8,7 @@ Algorand
 VRFs
 rateless
 IPFS
+Ceph
+xFS
+Farsite
+OceanStore
