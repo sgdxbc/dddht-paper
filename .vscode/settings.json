@@ -6,6 +6,7 @@
         "\\del": "dummy",
         "\\Procedure{}{}": "dummy",
         "\\XXX": "dummy",
+        "\\footnote{}": "dummy",
     },
     "ltex.bibtex.fields": {
         "title": false,
