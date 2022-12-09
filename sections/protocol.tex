@@ -152,6 +152,7 @@ Also check out repair booster in details section. An even better approach may be
             \State $\var{pnd} \gets \langle \var{hash}, \set{} \rangle$
             \State $\fn{Gossip}(\msg{frag}{\var{hash}, 0, \bot, \bot, \bot, \bot, \var{pk}})$
             \State wait until $|\var{pnd.frags}| \ge k + \epsilon$
+            \sgd{Maybe adjust threshold to a dedicated $k_{put}$, because what we actually want is to reach $k + \epsilon$ honest node.}
             \State \Return $hash$
         \EndProcedure
         \Procedure{\query}{$id$}
@@ -181,7 +182,8 @@ Also check out repair booster in details section. An even better approach may be
             \EndIf
             \lijl{If already in or passed epoch e + 1, can skip. Can probably also cache this result.}
             \State $\langle \tau, \pi, c \rangle \gets \fn{Kleroterion}(\var{oh}, m.e + 1)$
-            \If{$c$}
+            \If{$c$} \sgd{Now we have trouble with this more advanced staking model: if $c$ is actually $c > 0$, we should use a loop to store $c$ times for real.
+            Should either describe that with sentences, or simplify the whole algorithm to a version just apply to single stake unit, and a peer holding multiple stakes should drive the algorithm individually for each stake.}
                 \State $\var{next[oh].\tau} \gets \tau$
                 \State $\var{next[oh].\pi} \gets \pi$
                 \State $\var{next[oh].e} \gets \var{m.e + 1}$
@@ -196,14 +198,14 @@ Also check out repair booster in details section. An even better approach may be
             \State \Return $\langle \var{hash}, \pi, c \rangle$
         \EndProcedure
         \Procedure{VerifyFrag}{$\var{oh}, e, \tau, \pi, \var{fh}, \var{idx}$}
-            \If{$\neg \fn{VerifyVRF}_{pk}(\tau, \pi, \var{oh} \parallel e)$}
+            \If{$\neg \fn{VerifyVRF}_{pk}(\tau, \pi, \var{oh} \parallel e)$} \sgd{tau is not needed for verify}
                 \Return false
             \EndIf
             \State $c \gets$ \lijl{insert right formula here}
             \If{$\neg c$}
                 \Return false
             \EndIf
-            \If{$\var{idx \neq \tau \bmod N}$}
+            \If{$\var{idx \neq \tau \bmod N}$} \sgd{$N$ is too used as total number of peers elsewhere}
                 \Return false
             \EndIf
             \If{$\var{fh} \neq \fn{FragHash}(oh, e, idx)$}
@@ -213,8 +215,8 @@ Also check out repair booster in details section. An even better approach may be
         \EndProcedure
         \Procedure{ConstrFrag}{$obj, \var{oh}, \tau, \pi, e$}
             \State $\var{idx} \gets \tau \bmod N$
-            \State $\var{frag} \gets \fn{Encode}(obj, e, idx)$
-            \State $\var{fh} \gets \fn{Hash}(\var{frag})$
+            \State $\var{frag} \gets \fn{Encode}(obj, e, idx)$ \sgd{epoch number is not used for encoding}
+            \State $\var{fh} \gets \fn{Hash}(\var{frag})$ \sgd{not necessary to store frag hash, it can be calculated on the fly}
             \State $\var{store} \gets \var{store} \cup \set{\langle \var{oh}, \var{fh}, \var{e}, \tau, \pi, \var{idx}, \var{frag} \rangle}$
             \State $\fn{DHT-Put}(\var{oh}, \langle \var{fh}, \var{addr} \rangle)$
         \EndProcedure
@@ -223,12 +225,13 @@ Also check out repair booster in details section. An even better approach may be
                 \State $\fn{Gossip}(\msg{frag}{\var{oh}, \var{e}, \var{fh}, \var{idx}, \var{\tau}, \var{\pi}, \var{pk}})$
             \EndFor
             \ForAll{$\langle \var{oh}, \var{live}, \var{frags}, \tau, \pi, e \rangle \in \var{next}$}
+                \sgd{what about clear alive set on timer, and re-insert when receiving gossip?}
                 \ForAll{$f \in \var{live}$}
                     \If{$\neg$ received $f$ in $T$}
                         \State $\var{live} \gets \var{live} \setminus \set{f}$
                     \EndIf
                 \EndFor
-                \If{$|\var{live}| < k + \epsilon$}
+                \If{$|\var{live}| < k + \epsilon$} \sgd{wrong threshold, should be $k_{repair}$}
                     \State $\var{obj} \gets \fn{Decode}(\var{frags})$ \lijl{may not have enough fragments.}
                     \State $\fn{ConstrFrag}(\var{oh}, \tau, \pi, e)$
                 \EndIf
