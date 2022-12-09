@@ -264,3 +264,31 @@ At that point, the peer is safe to stop monitor the object and discard the store
 \subsection{Optimizations}
 
 \subsection{Correctness}
+
+Typically, the durability of a storage system is analyzed by continuous-time Markov chain (CTMC) model.
+In a CTMC model system states are enumerated that include all possible numbers of persistent fragments.
+The system starts from the state with expected replication factor, and an enter-only \textit{dead} state indicates data lost where no sufficient fragments left for recovering.
+Random processes are defined to transition among states, i.e., it takes a random amount of time to transition from one state to another, distributed exponentially.
+And finally, the model is used to solve the probability $\textbf{Pr}_{f}(t)$ which is the probability of reaching the \textit{dead} state after $t$ of time.
+And important metrics such as MTTDL can be derived from it.
+
+However, for \sys such analysis can be simplified by the inductive observation of the essential epoch change strategy.
+\sys loses data if any epoch change fails, i.e., the invariant of at least $k + \epsilon$ fragments persist breaks after that epoch change.
+The sets of responsible peers of different epochs are disjoint \footnotemark{}, so the failure of one epoch change is independent to any other epoch change.
+Also, every epoch change has the same failure probability, because the number of Byzantine faulty peers of one epoch has no effect on the number of Byzantine faulty peers of the next epoch.
+Given the fact that in every epoch the number of Byzantine faulty peers follows the same random distribution, so as the failure rate of random failure of honest peers, the failure rate of every epoch change must be the same with all identical inputs.
+Thus, we can simply calculate the failure probability $p_f$ of single epoch change, and $1 - (1 - p_f)^E$ will be an upper bound of the probability for data lost where $E$ is the maximum epoch number before data goes expired.
+It is feasible to construct a Markov chain for a single epoch change, but in this sketch of proof, simpler method is enough for inferring a satisfied estimation.
+
+\footnotetext{Because the system contains limited number of peers, given enough number of epochs, one peer will eventually be responsible for multiple epochs.
+However, since only a small portion of peers are responsible in each epoch, we can safely assume that with reasonable AFR all peers leave the system before they get selected twice.}
+
+An epoch change will take at most $2T_g + T_r$ time, where $T_g$ is gossip interval and $T_r$ is the upper bound of time to repair.
+\sgd{Should we define all these symbol all in once somewhere?}
+At the beginning of this interval, there are at least $k_0 - b$ fragments persist, or the epoch change will start even earlier.
+The epoch change cannot fail as long as both (a) at least $k + \epsilon$ peers of previous epoch are still alive,
+and (b) at least $k_0$ out of the total $k_r$ peers that are selected to be responsible in the following epoch are still alive, at the end of this interval.
+(The (b) requirement can be further relaxed if we don't care about overlapping epoch change.)
+Given AFR of honest peers, the assertion above can give us the upper bound of epoch change failure rate \XXX.
+
+\sgd{Maybe it is also worth to explain how well Bernoulli sampling works (the more total stakes, the more accurate how many stakes are actually selected).}
