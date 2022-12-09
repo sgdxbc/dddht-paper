@@ -12,3 +12,8 @@ Ceph
 xFS
 Farsite
 OceanStore
+asynchrony
+unreachabilities
+aynchronous
+bursty
+Rateless
