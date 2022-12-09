@@ -3,12 +3,14 @@ In this section, we analyze key challenges faced by existing systems to prevent 
 We then present our approach of using rateless fountain code and verifiable randomness to tackle the durability challenge.
 
 \subsection{The Durability Challenge in Decentralized Storage}
+\label{sec:approach:challenge}
 
 How to maintain data durability in the presence of server and device failures?
 The de facto standard approach is data replication and erasure code.
 It is well-studied how \textit{redundancy} can mask failures -- including Byzantine ones -- of individual components and ensure data availability.
 The approach is particularly effective in centralized settings, in which system participants and failure distributions are managed by a single entity.
 For instance, the central administrator can control node/device selection such that out of the $n$ nodes storing a data object, at most $n-r$, where $r$ is the level of redundancy, of them can fail.
+\lijl{Can add placement group discussion here.}
 
 The formula changes completely in an open, decentralized system.
 Nodes are free to join and leave the system at any time.
@@ -39,13 +41,35 @@ Storage mechanisms that rely on frequent consensus are impractical in such setti
 
 \subsection{The Case for Using Fountain Code}
 
-Infinite, ordered fragments. Given order $i$, the $i$-th fragment can be generated in time linear to data object size.
+Fountain codes are a family of erasure codes that have two special properties.
+Firstly, fountain codes are rateless: They generate a potentially \textit{infinite sequence} of encoding symbols from $k$ source blocks.
+Any $k+\epsilon$ encoding symbols can be used to reconstruct the original source data.
+This is different from traditional maximum distance separable (MDS) codes, such as Reed-Solomon codes, which produces $n$ fixed encoding symbols from the $k$ source blocks.
+Second, fountain codes work well with large values of $n$, $k$, and $r$ --- real deployment of $(1200, 1000, 200)$ fountain code has been shown to be efficient~\cite{liquid}.
+Such numbers are two orders of magnitude larger than practical MDS codes used in storage systems.
 
-Similar arguments have been made in the liquid system~\cite{liquid} and OceanStore~\cite{oceanstore}
+Why do these properties matter in a decentralized storage system?
+Using traditional erasure codes with a small value of $r$, the storage system needs to quickly regenerate encoding symbols when just a few stored symbols are lost due to failures.
+If the repair process is not done in a timely manner, the system risks losing the source data permanently.
+However, decentralized systems, unlike centrally managed clusters, exhibit high degree of asynchrony: Network conditions vary both spatially and temporally; there exists large deviation in processing speed across nodes; transient unreachabilities are prevalent.
+Strict timing requirement for detection and recovery of encoding symbols is therefore impractical in a decentralized environment.
+On the other hand, large values of $r$ in fountain codes can tolerate bursty encoding failures without losing the data, and permits the system to recover at a steady average rate.
+Such property is more favorable in a highly aynchronous environment.
+Note that the increase in $r$ in fountain codes does not lead to higher redundancy: a \XXX and a \XXX code have the exact same redundancy, \XXX.
 
-Large code:
+The rateless property of fountain code is also beneficial.
+As discussed in \autoref{sec:approach:challenge}, coordination and consensus are costly in decentralized systems.
+MDS codes with small values of $(n, k, r)$ necessitate participants to coordinate to agree on the assignment of symbols.
+Uncoordinated symbol generation may lead to insufficient \textit{unique} symbols to recover the original data, an issue analogous to the coupon collector's problem \lijl{citation}.
+Rateless codes eschew this issue completely.
+The availability of an infinite stream of encoding symbols enables participants to \textit{independently} generate symbols with a negligible probability of collision.
+\lijl{May need to rephrase this sentence.}
 
-\subsection{Verifiable Randomness For Adversary Tolerance}
+
+%Infinite, ordered fragments. Given order $i$, the $i$-th fragment can be generated in time linear to data object size.
+%Similar arguments have been made in the liquid system~\cite{liquid} and OceanStore~\cite{oceanstore}
+
+\subsection{Verifiable Randomness for Adversary Tolerance}
 
 \textbf{Problem with replication/small code.} Fixed set of peers to be responsible, vulnerable to targeted attack.
 Replication: high redundancy rate. Short repair interval, have to do eager repair.
