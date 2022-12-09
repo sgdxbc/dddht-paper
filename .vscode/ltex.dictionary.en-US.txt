@@ -17,3 +17,10 @@ unreachabilities
 aynchronous
 bursty
 Rateless
+PoS
+kleroterion
+Kleroterion
+prover
+verifiability
+checkable
+unforgeable
