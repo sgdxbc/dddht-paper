@@ -76,7 +76,10 @@ Simply increasing the redundancy to tolerate adversarial behaviors limits the ov
 At the fault tolerance level we are targeting ($1/3$ Byzantine participants), the capacity would not scale beyond a few times of an individual node under such naive approach.
 
 In \sys, we leverage \textit{randomness} to tolerate adversarial behaviors.
-Under the assumption that less than $1/3$ of the participants are Byzantine at any time, by randomly selecting nodes to store the generated or the repaired encoding symbols, \sys only needs to pay an approximately $0.33$ redundancy penalty compared to the base fountain code.
+Under the assumption 
+\sgd{I prefer to say this as an "assertion" instead of "assumption". Assumption sounds like it may be violated some time. However we rely on it to be hold for all time in order to ensure safety.}
+that less than $1/3$ of the participants are Byzantine at any time, by randomly selecting nodes to store the generated or the repaired encoding symbols, \sys only needs to pay an approximately $0.33$ redundancy penalty compared to the base fountain code.
+\sgd{Should be 0.5: (1 + 0.5) * (1 - 1/3) = 1}
 Note that the assumption doesn't rule out strong adversaries generating new identities --- proof of stake (PoS) or proof of work (PoW) can be used to defend against arbitrary Sybil attacks.
 
 We, however, avoid relying on a centralized, trusted entity to provide this random selection service.
