@@ -24,11 +24,25 @@ Honest nodes follow the system protocol exactly, while adversarial nodes can dev
 Adversaries may also actively collude and attack the system.
 
 \paragraph{Prior distributed storage systems.}
-Ceph~\cite{ceph}, GFS~\cite{gfs}.
+There is a long line of work on centrally managed distributed storage systems~\cite{ceph,gfs,bigtable,dynamo,liquid}.
+These systems commonly divide objects into equal-sized chunks, and deploy a large pool of nodes to store those chunks.
+A potentially dedicated set of nodes are responsible for maintaining and processing storage metadata.
+It is also common to use a centralized consensus services such as Chubby~\cite{chubby} to manage configurations and other critical system states.
+
+At the deployment scale of these storage systems, failures of storage devices, servers, racks, clusters, and even entire data centers are frequent events.
+To guarantee data durability and availability, replication techniques such as primary-backup~\cite{pb} and state machine replication~\cite{smr} are commonly deployed.
+However, replication introduces large redundancy, impacting the storage efficiency of the entire system.
+To reduce the storage redundancy without compromising data reliability, modern distributed storage systems are increasingly applying erasure coding~\cite{google_storage,was,hitchhiker,xor}.
+In particular, maximum distance separable (MDS) codes, e.g., Reed-Solomon code~\cite{reed-solomon}, are a common choice.
+Being centrally managed, the system administrator defines \emph{placement groups}.
+Each erasure code strip (including special case, replicas of an object) is mapped to one placement group.
+To reduce the risk of data losses, placement groups are chosen to minimize correlated failures.
+Factors such as failure domains and annual failure rate (AFR) of the storage devices~\cite{pacemaker,tiger} are usually considered.
+
+These systems, however, only consider crash failures of individual components.
+All participants of the system are under a single, protected administrative domain, so the system does not need to tolerate Byzantine failures~\cite{bft}.
 
 \paragraph{State of the art decentralized storage.}
 Peer-to-peer: xFS~\cite{xfs}, Farsite~\cite{farsite}, OceanStore~\cite{oceanstore}
 
 Renewed interest: IPFS~\cite{ipfs}, Arweave~\cite{ar}
-
-\paragraph{BFT Protocols.}
