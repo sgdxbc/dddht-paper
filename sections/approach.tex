@@ -39,6 +39,18 @@ even the faster Ethereum network incurs a finality latency of over 12 seconds.
 Besides latency, both networks also suffers low consensus throughput -- 7 transaction per second (TPS) for Bitcoin and 20 TPS for Ethereum -- as well as high transaction fees.
 Storage mechanisms that rely on frequent consensus are impractical in such settings.
 
+\sgd{Maybe go into related work, or omitted.} \textbf{Purely incentive-based approaches.} Filecoin and Arweave.
+More flexible systems, basically no guidance for peers. Each peer individually decides their behaviors.
+Economical model rules them all.
+Problems: \begin{itemize}
+    \item Hard to formally analyze durability of such system. 
+    Even every peer wants to extend object lifetime as much as possible, they may fail to do so in corner cases.
+    \item Weak cooperation. Very few information exchange, many behaviors base on heuristic.
+    May fail to ensure safety and/or results in poor resource efficiency. For example over-replicated is by-design in Arweave.
+    \item Sybil i.e. cooperative peers group takes advantage and may be harmful to the system. All issue of economic market is inherited.
+    \item Unexpected breach of the rules already happen, e.g. most data on Filecoin is garbage \sgd{really?}.
+\end{itemize}
+
 \subsection{The Case for Using Fountain Code}
 
 Fountain codes are a family of erasure codes that have two special properties.
