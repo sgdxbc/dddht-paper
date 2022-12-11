@@ -18,7 +18,7 @@ There is no centralized control over who are the participants and their trustwor
 In these systems, adversarial behaviors are the \textit{common case}, not the exception.
 Adversaries have strong attack power.
 They can partition regions of the network using BGP poisoning or distributed denial-of-service (DDoS);
-they can collude with each other and compromise non-faulty nodes;
+they can collude with each other and compromise honest nodes;
 they can create and change identities in a highly dynamic fashion.
 
 A direct implication of a decentralized environment is that failure assumptions made by prior systems no longer hold.
@@ -43,7 +43,7 @@ Storage mechanisms that rely on frequent consensus are impractical in such setti
 More flexible systems, basically no guidance for peers. Each peer individually decides their behaviors.
 Economical model rules them all.
 Problems: \begin{itemize}
-    \item Hard to formally analyze durability of such system. 
+    \item Hard to formally analyze durability of such system.
     Even every peer wants to extend object lifetime as much as possible, they may fail to do so in corner cases.
     \item Weak cooperation. Very few information exchange, many behaviors base on heuristic.
     May fail to ensure safety and/or results in poor resource efficiency. For example over-replicated is by-design in Arweave.
@@ -88,7 +88,7 @@ Simply increasing the redundancy to tolerate adversarial behaviors limits the ov
 At the fault tolerance level we are targeting ($1/3$ Byzantine participants), the capacity would not scale beyond a few times of an individual node under such naive approach.
 
 In \sys, we leverage \textit{randomness} to tolerate adversarial behaviors.
-Under the assumption 
+Under the assumption
 \sgd{I prefer to say this as an "assertion" instead of "assumption". Assumption sounds like it may be violated some time. However we rely on it to be hold for all time in order to ensure safety.}
 that less than $1/3$ of the participants are Byzantine at any time, by randomly selecting nodes to store the generated or the repaired encoding symbols, \sys only needs to pay an approximately $0.33$ redundancy penalty compared to the base fountain code.
 \sgd{Should be 0.5: (1 + 0.5) * (1 - 1/3) = 1}
