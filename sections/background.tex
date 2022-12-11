@@ -1,8 +1,34 @@
-\subsection{Distributed Storage}
-Ceph~\cite{ceph}, S3~\cite{s3}, GFS~\cite{gfs}.
+In this paper, we consider the problem of designing a \emph{durable} object storage system in a fully \emph{decentralized} environment.
+The system provides a simple whole object store and retrieval interface to end users.
+Each object is uniquely identified by an object ID, and its content is an arbitrarily sized blob of binary data.
+The system provides \emph{durability}: Once an object is successfully stored, users is guaranteed to retrieve the object with its original content until it is explicitly deleted.
+Objects are \emph{immutable}, i.e., users cannot modify the content of an object after it is stored.
+The system presents a \emph{flat view} of all objects; it does not offer explicit object hierarchies such as those in a file system.
+Objects are searched by their ID, equivalent to a primary key.
+The system does not support secondary keys or other types of complex relational queries.
+It serves as a base persistent storage layer where higher-level functionalities, such as files and relational databases, can be built atop.
 
-\subsection{Decentralized Storage}
+Performance is not a key design metric of the system.
+We target the \emph{cold storage} layer of the storage stack which emphasizes on \emph{data durability}, \emph{storage capacity}, and \emph{cost}, as opposed to the warm~\cite{f4} or the hot storage~\cite{haystack} layers.
+Amazon Glacier~\cite{amazon_glacier,amazon_s3} and Google Coldline~\cite{google_coldline}/Archive~\cite{google_archive} storage are popular production-level systems in this category.
 
-xFS~\cite{xfs}, Farsite~\cite{farsite}, OceanStore~\cite{oceanstore}
+Our target deployment environment is a fully \emph{decentralized} and \emph{open} network.
+The deployment model mirrors existing permissionless blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
+There is no central entity to manage or administer the system.
+The network is \emph{permissionless}, i.e., anyone can join the network without any authorization required.
+Each participating node has some local storage for storing data, as well as network access to the wide area network.
+There is, however, no requirement on the type, speed, or quality of their physical storage and network devices.
+The participating nodes follow a decentralized protocol to collectively implement the durable storage interface.
+Participants can be either \emph{honest} or \emph{adversarial}.
+Honest nodes follow the system protocol exactly, while adversarial nodes can deviate arbitrarily from the protocol.
+Adversaries may also actively collude and attack the system.
 
-\subsection{BFT State Machine Replication}
+\paragraph{Prior distributed storage systems.}
+Ceph~\cite{ceph}, GFS~\cite{gfs}.
+
+\paragraph{State of the art decentralized storage.}
+Peer-to-peer: xFS~\cite{xfs}, Farsite~\cite{farsite}, OceanStore~\cite{oceanstore}
+
+Renewed interest: IPFS~\cite{ipfs}, Arweave~\cite{ar}
+
+\paragraph{BFT Protocols.}
