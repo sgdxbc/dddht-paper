@@ -31,18 +31,37 @@ It is also common to use a centralized consensus services such as Chubby~\cite{c
 
 At the deployment scale of these storage systems, failures of storage devices, servers, racks, clusters, and even entire data centers are frequent events.
 To guarantee data durability and availability, replication techniques such as primary-backup~\cite{pb} and state machine replication~\cite{smr} are commonly deployed.
-However, replication introduces large redundancy, impacting the storage efficiency of the entire system.
-To reduce the storage redundancy without compromising data reliability, modern distributed storage systems are increasingly applying erasure coding~\cite{google_storage,was,hitchhiker,xor}.
+However, replication introduces large redundancy, negatively impacting the overall storage efficiency.
+To reduce storage redundancy without compromising data reliability, modern distributed storage systems are increasingly applying erasure coding~\cite{google_storage,was,hitchhiker,xor}.
 In particular, maximum distance separable (MDS) codes, e.g., Reed-Solomon code~\cite{reed-solomon}, are a common choice.
 Being centrally managed, the system administrator defines \emph{placement groups}.
-Each erasure code strip (including special case, replicas of an object) is mapped to one placement group.
-To reduce the risk of data losses, placement groups are chosen to minimize correlated failures.
-Factors such as failure domains and annual failure rate (AFR) of the storage devices~\cite{pacemaker,tiger} are usually considered.
+Each erasure code strip (including the special case --- replicas of an object) is mapped to one placement group.
+To reduce the risk of data losses, placement groups are chosen to minimize correlated failures, where factors such as failure domains and annual failure rate (AFR) of the storage devices~\cite{pacemaker,tiger} are usually considered.
 
 These systems, however, only consider crash failures of individual components.
 All participants of the system are under a single, protected administrative domain, so the system does not need to tolerate Byzantine failures~\cite{bft}.
 
 \paragraph{State of the art decentralized storage.}
-Peer-to-peer: xFS~\cite{xfs}, Farsite~\cite{farsite}, OceanStore~\cite{oceanstore}
+With the popularization of peer-to-peer file sharing network in the late 90s, designing storage and file systems from a network of decentralized, untrusted computers was an active research topic at the time.
+Representative work during this period of time include xFS~\cite{xfs}, Farsite~\cite{farsite}, and OceanStore~\cite{oceanstore}.
+Departing from a centralized design, handling unreliable and malicious participants is a key design goal of these systems.
+To provide data availability and consistency in the presence of Byzantine failures, they apply BFT replicated state machine protocols~\cite{pbft} to replicate file data and metadata to groups of servers.
+BFT protocols, however, require less than $1/3$ of the nodes in a replication group to be Byzantine faulty.
+These solutions often sidestep the issue and sometimes rely on centralized, trusted certification authorities~\cite{farsite}, equivalent to a permissioned setting.
 
-Renewed interest: IPFS~\cite{ipfs}, Arweave~\cite{ar}
+Recently, there has been renewed interest in decentralized storage, following the success of blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
+One recent successful example is IPFS~\cite{ipfs}, a widely deployed decentralized storage network that consists of more than 400 thousand peers globally.
+IPFS divides user files into uniquely identified chunks.
+File metadata is represented as a Merkle Directed Acyclic Graph (DAG)~\cite{merkle_dag} constructed from the constituent file chunks.
+IPFS uses content addressing through Kademlia~\cite{kademlia}, a distributed hash table (DHT)~\cite{chash,chord}.
+Peers storing a file chunk announces a publisher record which maps the chunk to the peer identifier, by writing to the DHT.
+The DHT replicates the publisher record to peers in proximity in the hash space and handles peer failures through gossip.
+Retrieving a file involves querying the DHT for the publisher records and the address of the publishers for each file chunk.
+IPFS, however, does not offer any file durability guarantee.
+Filecoin~\cite{filecoin} addresses this issue using an incentive-based approach called Proof-of-Storage~\cite{fc_pos}.
+To store a file chunk, peers deposit tokens to the network.
+During the lifetime of the chunk, other peers in the network issue cryptographic challenges to the node prove its storage of the chunk content.
+The challenge can only be solved if the chunk is stored for the time duration.
+Unsuccessful proofs result in slashing of the token deposit, disincentivizing nodes to lose stored data.
+
+%Arweave~\cite{ar}
