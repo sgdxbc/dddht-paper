@@ -1,3 +1,6 @@
+By default k = 64, repair threshold = 1.2 (i.e. repair when less than $1.2k$ gossip is received), select rate = 2
+(i.e. select $2k$ peers on average per epoch). PUT operation returns when there are $1.6k$ peers start to gossip.
+\sgd{Consider conclude these parameters with one "how much faulty we are tolerance" parameter and statically derive all these from it.}
 
 \subsection{Simulations}
 
@@ -12,3 +15,19 @@
 Every peer is limited to single thread because of limited number of machines.
 This results in sequentially generation of all fragments.
 In practice, it could be parallelized and improve PUT performance.
+
+Deploy on AWS, in 5 zones (us-west, ap-southeast, eu-central, sa-east, af-south).
+c5a.24xlarge machines with 96 vCPU and 192GiB memory, 25GBps bandwidth.
+
+Deployed code implemented with libp2p-rust. Kademlia using Kademlia protocol and a custom file exchange RPC.
+\sys using Gossipsub protocol and the same file exchange RPC.
+All configuration as default. Noticeably, Kademlia replicate record 20 times, Gossipsub pick 10 mesh peers on average.
+
+Performance evaluation. For every run, a fresh operating peer is spawned. After it connects into network stably, it PUT a randomly generated object and get its id.
+Then another fresh peer is spawned to use the id to GET the object back. It performs sanity check to make sure the object is identical.
+
+Kademlia implementation. Kademlia does not include object-hosting. So we make a minimal extension to Kademlia, by pushing object to a random peer in the network.
+The peer then claims to be provider of the object through DHT. After the claim is done, it responds operating peer with id.
+Notice that erasure coding cannot be easily adapted into Kademlia, which causes the implementation quite limited.
+
+Future work. Monitor cpu usage and network bandwidth usage.
