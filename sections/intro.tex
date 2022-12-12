@@ -1,1 +1,40 @@
-Introduction.
+We are witnessing a technological paradigm shift to move away from service centralization, a hallmark of the cloud computing and web services industries in the past two decades.
+This \emph{decentralization} movement is catalyzed by the growing concern over content censorship~\cite{twitter_censorship}, data misuse~\cite{fb_misuse}, monopolistic practices~\cite{google_antitrust}, and single point of organization failure~\cite{ftx_debacle}.
+Following the wild success of the Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum} blockchains, a burgeoning of decentralized services are being deployed, including exchanges~\cite{uniswap}, content delivery network~\cite{meson}, domain name service~\cite{handshake}, messaging~\cite{matrix}, and computation~\cite{dfinity}.
+
+An attractive avenue for decentralization is data storage~\cite{ipfs, filecoin, ar, storj}.
+Compared to their centralized counterparts~\cite{amazon_s3,google_cloudstore,dynamo}, decentralized storage is better positioned to address the issues of data breaches, censorship, content availability, and high storage cost.
+We have already seen successful large deployment of decentralized storage systems:
+The InterPlanetary File System (IPFS)~\cite{ipfs} has over 300 thousand active participating peers globally, collectively storing more than 1000 PB of data.
+
+A critical requirement for storage systems is \emph{data durability}.
+To handle frequent server and device failures in large distributed deployments, replication~\cite{smr,pb,pbft} and erasure coding~\cite{reed-solomon} techniques have become an integral part of these systems.
+Both techniques use \emph{redundancy} to tolerate failures of individual components, an effective approach when enough copies or encoding symbols survive.
+They therefore work well in a centralized deployment, where central operators have full control over the infrastructure, failure domains, and placement groups with minimum correlated failures.
+
+A decentralized deployment model presents fundamental challenges to the durability guarantees of a storage system.
+There is no central authority to manage the behavior and trustworthiness of the participants;
+nodes join and leave the system at high churn rate;
+there exists high variance in node performance, reliability, and network conditions;
+adversarial behaviors are prevalent.
+In such open and asynchronous environment, traditional replication, erasure coding, and repair schemes lose their effectiveness in preventing data losses.
+In a recent incident, more than 1600 TiB of data on the Filecoin~\cite{filecoin} network lost all replica copies simultaneously~\cite{filecoin_loss}.
+
+In this work, we propose a new decentralized object storage system, \sys, to address this durability challenge.
+\sys uses \emph{rateless erasure code} to generate a potentially \emph{infinite} stream of encoding fragments for each data object.
+Compared to conventional maximum distance separable code (MDS), our rateless encoding scheme offers better fault tolerance properties in the highly asynchronous network of a decentralized environment.
+The scheme supports efficient \emph{large code} encoding but with redundancy comparable to MDS codes.
+The large number of fragments improves statistical reliability of the object.
+More importantly, it eschews the need for time-sensitive encoding repair --- an impractical requirement for a decentralized network --- and permits repair at a steady average-rate.
+The rateless property of the scheme also facilitates nodes to perform encoding regeneration \emph{independently}, avoiding frequent costly coordination.
+
+To provide fault tolerate against strong adversaries, \sys applies \emph{verifiable randomness} to implement Kleroterion, a decentralized node selection service.
+Kleroterion uses verifiable random function~\cite{vrf} to determine eligibility of participants to store encoding fragments of an object at a virtual time.
+Selection results are unforgeable and publicly verifiable.
+Randomness and verifiability of the selection outcome ensures that sufficient encoding fragments are stored on honest nodes, even in the presence of active adversarial attacks.
+\lijl{Maybe add homomorphic hashing and other optimizations here, if there is space and time.}
+
+
+\sys is a practical design.
+We implement \sys in \XXX and deploy \sys in more than \XXX nodes across \XXX continents.
+\lijl{Describe implementation and evaluation results.}
