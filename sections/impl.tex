@@ -14,6 +14,13 @@ Then it fetches for more fragments and try to recover again later.
 
 \textbf{Peer bootstrap.} Set up gossip mesh.
 
+\textbf{Batching gossip messages.}
+We can always leverage more advanced gossip implementation. Besides of that, a general optimization is to batch gossip messages.
+Persistence proof are usually tiny messages, more or less 100 bytes.
+A peer stores tons of fragments can postpone a little and send a batch of gossip messages in single message, reduce workload and bandwidth requirement of gossip significantly.
+Thanks to lazy repairing, health checking has large interval, normally several hours or up to once per day, so a reasonable delay on gossip will not cause false positive repairing.
+Notice that gossip of epoch 1 never be batched, to prevent to hurt tail latency performance of PUT operation.
+
 \textbf{Repair booster to reduce repair traffic.} One problem with \sys is that it can suffer from amplified network traffic caused by repairing.
 Each responsible peer has to individually fetch $k + \epsilon$ fragments before storing, and it only stores one generated fragment.
 This issue can be addressed by a set of repair booster peers, who fetch fragments, decode objects and generate fragments on behalf of responsible peers.
