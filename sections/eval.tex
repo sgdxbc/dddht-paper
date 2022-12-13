@@ -4,7 +4,7 @@ By default k = 64, repair threshold = 1.2 (i.e. repair when less than $1.2k$ gos
 
 \subsection{Simulations}
 
-Perform discrete event simulation. Passion distributed peer failure according to peers' average AFR.
+Perform discrete event simulation on a network with 10K peers. Passion distributed peer failure according to peers' average AFR.
 In simulation each peer periodically gossip until it is selected to fail. Then after gossip timeout, next responsible peers will notice and start to repair.
 We record the repair traffic with data object size as basic unit.
 We also record the overall raw capacity occupied. Notice redundancy reduction is not simulated, so the redundancy is more than result from deployed environment.
@@ -21,12 +21,21 @@ This is similar to datacenter-level distributed storage. We use it to check how 
 \end{figure}
 
 \textbf{Repair traffic.} We record the total number of repairing in the first year. 
-Figure \autoref{figure:repair-object} shows repair traffic linearly increase according to the data object number.
+Figure \autoref{fig:repair-object} shows repair traffic linearly increase according to the data object number.
 When booster peers caching data object perfectly, every repairing only transfer $1/k$ unit of data object, and the overall traffic is comparable to replicated system.
 However when cache hit rate decrease, the traffic increases hugely because each cache missing cause almost one whole extra object size to be transffered.
 Certain incentive should be provided to booster peers to encourage them to cache for a longer time and reduce repair traffic.
 
-Figure \XXX shows repair traffic with various AFR.
+\begin{figure}
+    \addgraph{repair-afr}
+    \caption{Repair traffic over AFR.}
+    \label{fig:repair-afr}
+\end{figure}
+
+Figure \autoref{fig:repair-afr} shows repair traffic with various AFR in the first year.
+Repair traffic also grow linearly according to AFR both in \sys and replicated system.
+This shows \sys has good responsiveness to the change of system's average AFR.
+And it also scales well respect to the increase of AFR, i.e., the overhead per peer failure keep constant.
 
 \begin{figure}
     \addgraph{time-store}
