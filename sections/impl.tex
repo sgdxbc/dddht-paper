@@ -54,13 +54,13 @@ Finally, the $k$ should be selected so that
 In practice, we found that \XXX selection of parameters can work well when $B$ is no more than \XXX and AFR is no more than \XXX, which is expected in our deployment.
 
 \textbf{Program implementation.} 
-Base on libp2p-rust. Use TCP transport with Noise protocol framework for authentication and Mplex protocol for stream-muiltplexing.
+Base on libp2p-rust. Use TCP transport with Noise protocol framework \cite{noise} for authentication and libp2p's Mplex protocol for stream-muiltplexing.
 The implementation mainly consists of two parts: gossip protocol and fragment exchange protocol.
 Gossip protocol is built with libp2p's Gossipsub protocol, using 3 topic STORE, QUERY and SHOW for two operations and persistence proof.
 Gossipsub will randomly send the message to a set of mesh peers, i.e. 10 random peers in the network.
 This outbound congestion control makes sure a popular peer's CPU and bandwidth is not overwhelmed by gossip.
 The custom fragment exchange protocol is simple one-shot RPC to allow peers to push and pull fragments from another peer.
-The rateless erasure coding implementation uses wirehair, which provided tiny $\epsilon$ like RaptorQ while also highly optimized to push encoding/decoding threshold to extreme.
-homomorphic hashing is not implemented yet, instead peers do optimistic verification on the final recovered object.
+The rateless erasure coding implementation uses wirehair \cite{wirehair}, which provided tiny $\epsilon$ like RaptorQ while also highly optimized to push encoding/decoding threshold to extreme.
+Homomorphic hashing is not implemented yet, instead peers do optimistic verification on the final recovered object.
 Each peer is equipped with an Ed25519 key pair. The key is used both for signing messages and generating random hash in VRF.
 The system is set up with standard peer discovery mechanism without any centralized service.
