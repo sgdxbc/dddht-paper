@@ -81,12 +81,15 @@ Compared to the default parameter, object repairs happen more frequently, but st
     \label{fig:faulty}
 \end{figure}
 
-\textbf{Fault tolerance.} \autoref{fig:faulty} shows a one-year tracing of 1000 data objects in a faulty system.
-In this system, faulty peers normally gossip, but not actually holding fragments.
-The data object is consider as lost immediately when remaining fragments cannot recover it (for \sys) or no copy left (for replicated system).
-From the graph, it is clearly that replicated system does not tolerance any faulty peer: it immediately starts to lose data as long as single faulty peer exists.
-On the other hand, \sys can tolerance a significant portion of faulty peers, depends on the selection of parameters.
-The default parameter can tolerance roughly targeted 33\% faulty peers, while a more conservative variant can tolerance even more with the cost of redundancy.
+\textbf{Fault tolerance.}
+To evaluate how well \sys tolerates adversaries, we simulate a network with Byzantine faulty nodes.
+Byzantine faulty peers participate in gossip protocols; however, they do not store any encoding fragment.
+A data object is consider permanently lost when the survived fragments drop below $k+\epsilon$ (for \sys) or no replicas are left (for the replicated system).
+\autoref{fig:faulty} shows the number of lost objects in a one-year trace with a total of 1000 data objects.
+This simulation verifies that a replicated system does not tolerance strong adversaries: the system starts to lose data as soon as a single faulty node appears.
+On the other hand, \sys can tolerate a significant fraction of faulty nodes without losing data.
+The degree of tolerance depends on the parameters.
+Using the default parameter, \sys can tolerate around the targeted 33\% faulty nodes, while a more conservative configuration can improve tolerance further at the expense of increased redundancy.
 
 \subsection{World-wide deployment}
 
