@@ -9,6 +9,36 @@ By default k = 64, repair threshold = 1.2 (i.e. repair when less than $1.2k$ gos
     \caption{Example graph}
 \end{figure}
 
+Perform discrete event simulation. Passion distributed peer failure according to peers' average AFR.
+In simulation each peer periodically gossip until it is selected to fail. Then after gossip timeout, next responsible peers will notice and start to repair.
+We record the repair traffic with data object size as basic unit.
+We also record the overall raw capacity occupied. Notice redundancy reduction is not simulated, so the redundancy is more than result from deployed environment.
+Every simulation runs 10 times with different seeds and takes the average.
+
+Beside of \sys we also simulate a Ceph-like replicated storage. 
+The replicated system replicate every object on 3 random selected peers, and perform repair as soon as possible when one of the peer fails.
+This is similar to datacenter-level distributed storage. We use it to check how much overhead we paid for decentralization.
+
+\textbf{Repair traffic.} We record the total number of repairing in the first year. 
+Figure \XXX shows repair traffic linearly increase according to the data object number.
+When booster peers caching data object perfectly, every repairing only transfer $1/k$ unit of data object, and the overall traffic is comparable to replicated system.
+However when cache hit rate decrease, the traffic increases hugely because each cache missing cause almost one whole extra object size to be transffered.
+Certain incentive should be provided to booster peers to encourage them to cache for a longer time and reduce repair traffic.
+
+Figure \XXX shows repair traffic with various AFR.
+
+\textbf{Repairing and redundancy over time.} We trace one data object for 10 years.
+Figure \XXX we can observe how much raw capacity is taken by a single data object in the whole system.
+As reference replicated system take 3 times data object size contantly.
+\sys has less redundancy in most of the time, and the only short intervals with large redundancy can be further shorten by aggressively redundancy reducing.
+Although \sys deploy lazy repairing, comparing to 10 year simulation time, the repairing delay is still short enough that looks straight up.
+Figure \XXX shows accumulated repair traffic in 10 years.
+The number of steps for \sys is less than replicated, which is a strong evidence that \sys do repair more lazy than replicated and require less synchronous network.
+As a comparison, a \sys with alternative parameter $k_{repair} = 1.6k$, which can tolerance 25\% more faulty peers, is also shown in the graph.
+The repairing is slightly more frequent compare to default parameter, but still lazier than a replicated system.
+
+\textbf{Fault tolerance.}
+
 \subsection{World-wide deployment}
 
 \sgd{Add this explanation to somewhere if necessary.}
@@ -19,9 +49,9 @@ In practice, it could be parallelized and improve PUT performance.
 Deploy on AWS, in 5 zones (us-west, ap-southeast, eu-central, sa-east, af-south).
 c5a.24xlarge machines with 96 vCPU and 192GiB memory, 25GBps bandwidth.
 
-Deployed code implemented with libp2p-rust. Kademlia using Kademlia protocol and a custom file exchange RPC.
-\sys using Gossipsub protocol and the same file exchange RPC.
-All configuration as default. Noticeably, Kademlia replicate record 20 times, Gossipsub pick 10 mesh peers on average.
+Besides implementation of our \sys protocol, we also implemented a Kademlia p2p network which perform typical DHT operations on PUT and GET.
+We use that to compare \sys's operation overhead with exist decentralized storage system.
+We also deployed a Ceph cluster with one replicated pool and one erasure coding pool, all with stocking configuration, to compare with a typical distributed storage system.
 
 Performance evaluation. For every run, a fresh operating peer is spawned. After it connects into network stably, it PUT a randomly generated object and get its id.
 Then another fresh peer is spawned to use the id to GET the object back. It performs sanity check to make sure the object is identical.
@@ -29,5 +59,14 @@ Then another fresh peer is spawned to use the id to GET the object back. It perf
 Kademlia implementation. Kademlia does not include object-hosting. So we make a minimal extension to Kademlia, by pushing object to a random peer in the network.
 The peer then claims to be provider of the object through DHT. After the claim is done, it responds operating peer with id.
 Notice that erasure coding cannot be easily adapted into Kademlia, which causes the implementation quite limited.
+
+Figure \XXX and \XXX show average latency of PUT and GET operations. With 64MiB data objects, \sys outperform both the other systems a lot.
+\sys is significantly more stable in terms of latency distribution compare to Kademlia, because fragments are uniformly distributed across all peers,
+while in Kademlia the object is sequentially transmitted to one remote peer, and the latency is highly affected by the link between the two peers.
+
+As a result, we are able to increase data object size to 1GiB while latency is only doubled.
+At the same time Kademlia may take ~120s to finish one operation because of sequentially transmission.
+We also measure a variant with slightly reduced $k_{put} = 1.2k$ which tolerance less faulty peers on PUT operations.
+The result is quite close to Kademlia, while Kademlia is limited with 64MiB data objects.
 
 Future work. Monitor cpu usage and network bandwidth usage.

@@ -36,6 +36,11 @@ So we can extend the protocol as follows: \begin{itemize}
 \end{itemize}
 Notice that a faulty booster peer has no effect on object durability, but only can increase network usage.
 
+\textbf{Reduce redundancy by bursty repairing.}
+Because every peer individually monitor objects without explicit coordination, when repair threshold reach, several peers' repairing timeout may be triggered almost simultaneously.
+To address this, when a peer check for object health, if not only there are enough number of gossip messages, but also all those fargments have larger hash value of local one,
+then the peer can safely discard its stored fragment and stop gossip.
+
 \textbf{Select parameters.} A fixed $B$ is given such that at most $BN$ nodes are faulty where $N$ is the total number of nodes.
 A proper repair threshold $k_0$ 
 \sgd{$k_0$ is analog to $n$ in typical $(n, k, r)$ code. Should we use symbol $n$ instead?}
@@ -56,4 +61,6 @@ Gossipsub will randomly send the message to a set of mesh peers, i.e. 10 random 
 This outbound congestion control makes sure a popular peer's CPU and bandwidth is not overwhelmed by gossip.
 The custom fragment exchange protocol is simple one-shot RPC to allow peers to push and pull fragments from another peer.
 The rateless erasure coding implementation uses wirehair, which provided tiny $\epsilon$ like RaptorQ while also highly optimized to push encoding/decoding threshold to extreme.
-Each peer is equipped with an Ed25519 key pair. The system is set up with standard peer discovery mechanism without any centralized service.
+homomorphic hashing is not implemented yet, instead peers do optimistic verification on the final recovered object.
+Each peer is equipped with an Ed25519 key pair. The key is used both for signing messages and generating random hash in VRF.
+The system is set up with standard peer discovery mechanism without any centralized service.
