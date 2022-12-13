@@ -1,22 +1,25 @@
+This section gives a detailed description of the \sys protocol we overviewed in \autoref{sec:approach}.
+We provide implementation details of the protocol in the following section.
+
 \subsection{System Model and Assumptions}
 We consider a decentralized system in which nodes can freely join and leave.
 Each node maintains finite local storage, and the entire set of participants collectively implements a storage system.
-\sys exposes a \textit{synchronous} object storage interface with three API calls: \query, \store, and \del.
-\store takes an object, and returns an ID when the object is successfully stored.
-\del takes an object ID and removes the object from the system.
+\sys exposes a \textit{synchronous} object storage interface with two API calls: \query and \store.
+\store takes an object and an expiration time, and returns an ID when the object is successfully stored;
 \query takes an object ID and returns the object if it exists in the system.
-\lijl{Should we clarify that object ID is the hash of the object here?}
-\sgd{If we do clarify, we can also mention verifiable result by comparing hashes.}
-\sys does not provide an explicit interface to update an existing object.
-Update can be done by issuing a \del followed by a \store to overwrite the entire object.
-Note that in this case, the \store will return a different object ID for the updated object.
-Consistently mapping client objects to \sys issued IDs is out of the scope of the paper.
+%\lijl{Should we clarify that object ID is the hash of the object here?}
+%\sgd{If we do clarify, we can also mention verifiable result by comparing hashes.}
+Objects are immutable --- \sys does not provide an explicit interface to update existing objects.
+Similar to IPFS, \sys uses content addressing, i.e., an object ID uniquely identifies the content of the object stored.
+Issuing a new \store with different object content, therefore, is equivalent to an object update.
+Consistently mapping client objects to \sys issued IDs, however, is out of the scope of the paper.
+%Update can be done by issuing a \del followed by a \store to overwrite the entire object.
+%Note that in this case, the \store will return a different object ID for the updated object.
 
 \sys guarantees \textit{data durability}.
-Once a \store successfully returns, all subsequent \query{}s for the generated ID return the original object.
-\del is best-effort in \sys: After a completed \del, a \query may still return the object.
-Combined with the fact that \sys does not support explicit object update, data durability also implies linearizability~\cite{linearizability} of client \query{}s and \store{}s.
-\lijl{Need to be more careful with this claim}
+Once a \store successfully returns, all subsequent \query{}s for the generated ID return the original object until is object is expired.
+%\del is best-effort in \sys: After a completed \del, a \query may still return the object.
+Combined with the fact that \sys does not support explicit object update, our data durability definition also implies linearizability~\cite{linearizability} of client \query{}s and \store{}s.
 
 We assume two types of failures that relate to data losses -- storage device failures and Byzantine failures.
 Storage device failures lead to unrecoverable data loss of the entire or part of a device.
@@ -25,15 +28,13 @@ A node exhibiting Byzantine failure can deviate arbitrarily from the protocol, i
 For other types of node failures that are recoverable such as crashes or power failures, we treat them as transient faults.
 Permanent node failures are equivalent to nodes leaving the system.
 
-We consider a strong Byzantine fault model in which Byzantine participants can collude with each other and generate arbitrary identities.
-We, however, assume a stake-based system, and that the Byzantine participants do not possess more than half of the system stakes in aggregate.
-\sgd{Fixing B to 50\%?}
+We consider a strong Byzantine fault model in which Byzantine participants can collude with each other and generate arbitrary node identities.
+We, however, assume a stake-based system, and that the Byzantine participants do not possess more than $1/3$ of the system stakes in aggregate, a standard assumption made in proof-of-stake protocols.
 Note that using stake is not an inherent part of the protocol.
-\sys only leverages stake to defend against Sybil attacks; other approaches such as proof-of-work or permissioned settings can also be applied.
+\sys only leverages stake to defend against strong Sybil attacks; other approaches such as proof-of-work or permissioned settings can also be applied.
 \sgd{Candidate statement of threat model: no honest node can get compromised after they start to store fragments.}
 
 We also make standard cryptography assumptions, i.e., the probability of subverting cryptographic hash functions or public-key cryptography algorithms we used in the protocol is negligible.
-
 
 \subsection{Design Overview}
 
@@ -42,24 +43,37 @@ We also make standard cryptography assumptions, i.e., the probability of subvert
         \textbf{\sys node:}
         \begin{itemize}
             \setlength\itemsep{0em}
-            \item \textit{N}: total number of nodes
             \item \textit{sk}: secret key of the node
-            \item \textit{VRF}: verifiable random function to predicate the set of objects to take care of
-            \item \textit{store}: local storage of data fragments, indexed by object ID
-            \item \textit{eligible\_objects}: objects' health situation indexed by object ID, for future recovery when the object is about to lose
-            \item \sgd{mesh peers for gossip, or alternatively treat gossip protocol as blackbox}
+            \item \textit{addr}: node address
+            \item \textit{S}: total stake of the system
+            \item \textit{s}: stake of the node
+            \item \textit{K}: total number of encoding fragments for an object in each epoch
+            \item \textit{store}: local storage for encoding fragments, indexed by object ID
+            \item \textit{next}: objects which the node is chosen in the next epoch, indexed by object ID. Each entry contains a list of live fragments the node is aware of from the gossip protocol.
         \end{itemize}
     \end{mdframed}
-    \caption{Local state of \sys nodes.}
+    \caption{Local state and global constants stored on each \sys node.}
     \label{fig:node-state}
 \end{figure}
 
+\sys nodes communicate through both point-to-point channels and a gossip protocol.
+Point-to-point channels are \textit{reliable}.
+They can be implemented using protocols such as TCP and Reliable User Datagram Protocol (RUDP).
+The gossip protocol is best-effort and only provides weak guarantees: If a node sends a message through the protocol indefinitely, eventually all non-faulty nodes receive the message.
+%\sgd{We probably want a (although very lossy) synchronous guarantee on gossip, i.e., message should be received before sender crashes.}
+
+\sys uses a publicly-known rateless erasure code to encode each stored object into an infinite stream of fragments.
+As introduced in \autoref{sec:background:code}, any $k + \epsilon$ distinct encoding fragments can be used to reconstruct the original object with overwhelmingly high probability.
+To guarantee data durability, \sys enforces the following \textit{invariant}: at any time $t$ after a \store is completed,
+%\sgd{and before it expires}
+at least $k + \epsilon$ encoding fragments of the object are present on non-faulty nodes.
+
 \autoref{fig:node-state} shows the local state maintained by each \sys node.
 Each node generates a (\textit{sk}, \textit{pk}) key pair, and stores the secret key \textit{sk} locally.
-\sgd{According to Algorand there are certain limitations on generating secret keys or the randomization may be vulnerable. Mention we are aware of this somewhere if necessary.}
+%\sgd{According to Algorand there are certain limitations on generating secret keys or the randomization may be vulnerable. Mention we are aware of this somewhere if necessary.}
 Public keys are assumed to be known by all nodes in the system.
-Each node locally stores a set of data fragments generated from fountain code encoding.
-They also maintain indices to lookup data fragments from object IDs.
+Each node locally stores a set of fragments generated from our rateless erasure encoding.
+Once a node learns that it is chosen to store fragments for an object in the next epoch, it starts monitoring live fragments for that object through the gossip protocol.
 
 \begin{figure}
    \begin{tikzpicture}
@@ -79,95 +93,86 @@ They also maintain indices to lookup data fragments from object IDs.
     \label{fig:node-state-machine}
 \end{figure}
 
-\sys nodes communicate through both point-to-point channels and a gossip protocol.
-Point-to-point channels are \textit{reliable}.
-They can be implemented using protocols such as TCP and Reliable User Datagram Protocol (RUDP).
-The gossip protocol is best-effort and only provides weak guarantees: If a node sends a message through the protocol indefinitely, eventually all non-faulty nodes receive the message.
-\sgd{We probably want a (although very lossy) synchronous guarantee on gossip, i.e., message should be received before sender crashes.}
-
-\sys uses a publicly-known fountain code to encode each stored object into an infinite stream of encoding fragments.
-As introduced in \autoref{sec:background:fc}, any $k + \epsilon$ distinct encoding fragments can be used to reconstruct the original object with overwhelmingly high probability.
-To guarantee data durability, \sys enforces the following \textit{invariant}: at any time $t$ after a \store is completed,
-\sgd{and before it expires}
-at least $k + \epsilon$ encoding fragments of the object are present in the system.
-
-Storage device failures and nodes leaving the system \sgd{IPFS paper call this "churn"} can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
+Storage device failures and node churns can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
 To avoid relying on a centralized trusted service to detect fragment losses, each node periodically broadcasts \textit{persistence proof} of its stored fragments through the gossip protocol.
-\lijl{Need to properly define persistence proof. Do we care if a node lie about persistence? Or only rely on collective behavior? Trade-off?}
-\sgd{Even if we care there's no way (at least very hard/expensive) to verify persistence proof.}
-By monitoring the persistence proofs, \sys nodes can independently generate and store new encoding fragments when the number of remaining fragments is below a threshold.
+By monitoring the persistence proofs, \sys nodes can independently generate and store new encoding fragments when the number of alive fragments is below a threshold.
 
 Naively implementing the above scheme has two issues.
 Firstly, tracking and maintaining all persistence proofs on each node scales poorly.
 Second, Byzantine nodes can collude and claim persistence of enough fragments for an object, such that less than $k + \epsilon$ fragments are stored on honest nodes.
 Once those Byzantine nodes discard their local fragments, the object is permanently lost.
 
-\sys uses verifiable random functions (VRFs) to address both issues.
-\sys partitions the lifetime of an object into \textit{epochs}.
-\sgd{Candidate additional detail: epochs are supposed to be overlapping because it is hard to select exact number of peers to be
-responsible, just a weak partial ordering. "Partition the lifetime into epochs" sounds like there is only one epoch at a time,
-let reader suspect whether we are assuming a strong synchronous network (which we actually do not).}
-In each epoch, a randomly selected set of nodes using VRF are responsible for storing the encoding fragments of an object.
+\sys implements a decentralized node selection protocol, Kleroterion, to address both issues.
+Kleroterion partitions the lifetime of an object into virtual \textit{epochs}.
+%\sgd{Candidate additional detail: epochs are supposed to be overlapping because it is hard to select exact number of peers to be responsible, just a weak partial ordering. "Partition the lifetime into epochs" sounds like there is only one epoch at a time, let reader suspect whether we are assuming a strong synchronous network (which we actually do not).}
+In each epoch, Kleroterion uses a verifiable random function (VRF) to select a random set of nodes for storing encoding fragments for an object.
 VRF ensures that each node can independently generate a selection proof, the selection probability of a node is proportional to the fraction of stakes it owns, and that the selection proof is publicly verifiable.
-By properly setting the desired storage redundancy in an epoch, \sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
-Moreover, a node only needs to actively monitor persistence proofs for objects that the node is responsible for in the next epoch,
-which is a small constant proportional to its stake.
-\sgd{What do you mean by "a small constant proportional to its stake"? If "stake" here refers to raw capacity, it's not constant since raw capacity is unknown and varies on different peers.
-If "stake" here refers to number of stored fragments, it's not constant because e.g. a newly-joined peer has no stored fragment but need to keep track of several objects.
-By the way we don't really define how peers suppose to hold more than one stake currently.}
+The selection proof is attached to each persistence proof.
+By properly setting the desired storage redundancy in an epoch (value of $F$), \sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
+Moreover, a node only needs to actively monitor persistence proofs for objects that it is responsible for in the next epoch, which is a tiny fraction of the object space.
+%\sgd{What do you mean by "a small constant proportional to its stake"? If "stake" here refers to raw capacity, it's not constant since raw capacity is unknown and varies on different peers.  If "stake" here refers to number of stored fragments, it's not constant because e.g. a newly-joined peer has no stored fragment but need to keep track of several objects.  By the way we don't really define how peers suppose to hold more than one stake currently.}
 
-Placing encoding fragments at randomly selected nodes complicates object lookup.
-\sys solves this challenge with another level of indirection.
-When a node constructs and stores a new fragment for an object, it registers a \textit{fragment pointer} at a peer node responsible for the object in the Distributed Hash Table (DHT).
+Placing encoding fragments at dynamically set of randomly selected nodes complicates object lookup.
+\sys leverages efficient gossip protocols~\cite{kadcast} to disseminate \query requests, which ensures sufficient ($k + \epsilon$) encoding fragments can be located.
+This naive approach, however, leads to additional gossip traffic and degraded \query latency.
+\sys addresses this issue with another level of indirection using distributed hash table (DHT).
+When a node stores a new fragment for an object, it registers a \textit{fragment pointer} in the DHT.
 To handle a \query, the requesting node queries the DHT to retrieve $k + \epsilon$ distinct fragment pointers, fetches the respective encoding fragments, and reconstructs the original object.
 Fragment pointer registration, however, is best-effort.
-To handle the case where less than $k + \epsilon$ pointers are found in the DHT, \sys nodes store a maximum of $log(k)$ \textit{fragment links} alongside each locally stored fragment.
+To handle the case where less than $k + \epsilon$ pointers are found in the DHT, \sys nodes also store a maximum of $log(k)$ \textit{fragment links} alongside each locally stored fragment.
 A fragment link points to another node that stores a fragment for the same object in the same epoch.
-A traversal of fragment links significantly increases the probability to recover all $k + \epsilon$ fragments.
-\lijl{We should calculate the likelihood. Likely close to 1.}
-In the worst case, a global query using the gossip protocol can be used to locate all the fragments.
-\sgd{Not sure about this approach. Firstly a persistence-proof-like gossip initiated by client is not very complicated.
-Just depends on how we optimize gossip protocol for traffic-efficiency, latency behavior could be poor.
-If in such case a speedup DHT is leveraged, then the value associated with key (i.e. data object id) should be a set of peers who currently keeps track of health of data object, instead of the peers who currently store the fragments.
-This is because the peers who are keeping track of objects (1) is more likely to still be alive (2) know at least $k$ other peers who recently store fragments.
-Thus, only contacting one peer from DHT is enough to recover the object. It is more reasonable approach since we are not focusing on a secure DHT at all.
-The only problem is that this exposes following responsible peers earlier. But anyway this supposes to be the direction.
-Also check out repair booster in details section. An even better approach may be contacting booster first.}
+A traversal of fragment links increases the probability to recover all $k + \epsilon$ fragments.
+%\lijl{We should calculate the likelihood. Likely close to 1.}
+%\sgd{Not sure about this approach. Firstly a persistence-proof-like gossip initiated by client is not very complicated.  Just depends on how we optimize gossip protocol for traffic-efficiency, latency behavior could be poor.  If in such case a speedup DHT is leveraged, then the value associated with key (i.e. data object id) should be a set of peers who currently keeps track of health of data object, instead of the peers who currently store the fragments.  This is because the peers who are keeping track of objects (1) is more likely to still be alive (2) know at least $k$ other peers who recently store fragments.  Thus, only contacting one peer from DHT is enough to recover the object. It is more reasonable approach since we are not focusing on a secure DHT at all.  The only problem is that this exposes following responsible peers earlier. But anyway this supposes to be the direction.  Also check out repair booster in details section. An even better approach may be contacting booster first.}
 
 \subsection{Protocol Details}
 
 \begin{algorithm}
     \begin{algorithmic}[1]
-        \State $\var{sk} \gets$ node secret key
-        \State $\var{pk} \gets$ node public key
-        \State $\var{addr} \gets$ node address
-        \State $S \gets$ total stake in the system
-        \State $s \gets$ stake of the node
-        \State $N \gets$ number of encoding fragments in each epoch
-        \State $\var{store} \gets \set{}$ \Comment{locally stored fragments}
-        \State $\var{next} \gets \set{}$  \Comment{objects which the node is chosen in the next epoch \lijl{map from obj ID to set of fragments}}
         \State $\var{pnd} \gets \langle \bot, \set{}\rangle$ \Comment{pending op. hash and fragments}
-        \Procedure{\store}{$obj$}
-            \State $\var{hash} \gets \fn{Hash}(obj)$
+        \Procedure{\store}{$\var{obj}$}
+            \State $\var{hash} \gets \fn{Hash}(\var{obj})$
             \State $\var{pnd} \gets \langle \var{hash}, \set{} \rangle$
-            \State $\fn{Gossip}(\msg{frag}{\var{hash}, 0, \bot, \bot, \bot, \bot, \var{pk}})$
-            \State wait until $|\var{pnd.frags}| \ge k + \epsilon$
-            \sgd{Maybe adjust threshold to a dedicated $k_{put}$, because what we actually want is to reach $k + \epsilon$ honest node.}
+            \State $\fn{Gossip}(\msg{obj}{\var{hash}, \var{pk}})$
+            \State wait until $|\var{pnd.frags}| \ge k_p$
             \State \Return $hash$
         \EndProcedure
-        \Procedure{\query}{$id$}
-            \State do something
-        \EndProcedure
-        \Procedure{\del}{$id$}
-            \State do something
-            \sgd{Replace this with expiration.}
+        \Procedure{\query}{$\var{id}$}
+            \State $\var{fp} \gets \fn{DHT-Get}(\var{id})$
+            \If{$|\var{fp}| > 0$}
+                \State $\var{frags} \gets$ retrieve fragments from $\var{fp}$
+                \While{$|\var{frags}| < k + \epsilon$}
+                    \State $\var{frags} \gets \var{frags} \cup$ traverse links in $\var{frags}$
+                    \State // if timeout, goto the else branch
+                \EndWhile
+            \Else
+                \State $\var{pnd} \gets \langle \var{hash}, \set{} \rangle$
+                \State wait until $|\var{pnd.frags}| \ge k + \epsilon$
+                \State $\var{frags} \gets$ retrieve fragments from $\var{pnd.frags}$
+            \EndIf
+            \State \Return \fn{Decode}($\var{frags}$)
         \EndProcedure
     \end{algorithmic}
-    \caption{\sys client protocol
-        \sgd{I don't like the symbol <- in constants declaration and initialization, and the line number.
-        Can we extend node state figure and refer names from there?}
-    }
+    \caption{\sys client protocol}
+    \label{alg:client}
 \end{algorithm}
+
+\subsubsection{\sys Client Protocols}
+\autoref{alg:client} lists the client side protocol of \sys.
+Being a decentralized peer-to-peer system, client operations are issued on participating nodes, though they can also serve as proxies for light-weight clients.
+We use \textit{client} to denote the peer node that issues a client operation.
+
+To store an object, the client calculates the hash of the object and writes the hash into a local request pending list.
+As we explain in subsequent protocols, when a node receives fragment persistence proofs through gossip, it adds verified proofs to the pending list if it matches the object.
+The node waits until it collects more than $k_p$ proofs.
+$k_p$ is calculated as $k + \epsilon + b$ where b is the expected number of Byzantine nodes selected by Kleroterion in an epoch.
+Given our system model, $b$ is $\frac{K}{3}$, where $K$ is the total number of fragments in an epoch.
+
+To retrieve an object, the requesting client first queries the DHT using the object ID.
+If the DHT contains fragment pointers of the object, the client fetches $k + \epsilon$ fragments through the pointers, traversing fragment links if necessary.
+If no pointers are found or the procedure times out, the client registers the object in the local pending list, similar to the \store protocol.
+It then waits until $k + \epsilon$ proofs are collected, and fetches fragments from the corresponding nodes.
+In either case, the client uses the rateless code decoding function to reconstruct the original object from the fragments.
 
 \begin{algorithm}
     \begin{algorithmic}[1]
@@ -241,13 +246,7 @@ Also check out repair booster in details section. An even better approach may be
     \caption{\sys protocol on each node}
 \end{algorithm}
 
-\subsubsection{Storing Client Objects}
-
-\subsubsection{Encoding Fragment Regeneration}
-
-\subsubsection{Object Retrieval}
-
-\subsubsection{Object Deletion}
+\subsubsection{Storing and Regenerating Encoding Fragments}
 
 \textbf{Randomized placement group.} \sys selects a random set of peers to monitor and store a data object.
 The set of peers changes from time to time. We call the set of peer are \textit{eligible} for taking care of the object.
@@ -265,6 +264,10 @@ At that point, the peer is safe to stop monitor the object and discard the store
 \textbf{Event-driven peer behavior.}
 
 \subsection{Optimizations}
+
+Booster node to reduce recovery traffic.
+
+Double indirection: write nodes monitoring fragments in the DHT.
 
 \subsection{Correctness}
 
