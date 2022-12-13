@@ -14,8 +14,14 @@ Beside of \sys we also simulate a Ceph-like replicated storage.
 The replicated system replicate every object on 3 random selected peers, and perform repair as soon as possible when one of the peer fails.
 This is similar to datacenter-level distributed storage. We use it to check how much overhead we paid for decentralization.
 
+\begin{figure}
+    \addgraph{repair-object}
+    \caption{Repair traffic over object number.}
+    \label{fig:repair-object}
+\end{figure}
+
 \textbf{Repair traffic.} We record the total number of repairing in the first year. 
-Figure \XXX shows repair traffic linearly increase according to the data object number.
+Figure \autoref{figure:repair-object} shows repair traffic linearly increase according to the data object number.
 When booster peers caching data object perfectly, every repairing only transfer $1/k$ unit of data object, and the overall traffic is comparable to replicated system.
 However when cache hit rate decrease, the traffic increases hugely because each cache missing cause almost one whole extra object size to be transffered.
 Certain incentive should be provided to booster peers to encourage them to cache for a longer time and reduce repair traffic.
