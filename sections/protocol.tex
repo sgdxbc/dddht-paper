@@ -343,6 +343,8 @@ It then stores the new fragment locally, together with the persistence proof, an
 \subsection{Optimizations}
 \label{sec:protocol:optimization}
 
+\sgd{Remove this section?}
+
 Booster node to reduce recovery traffic.
 
 Double indirection: write nodes monitoring fragments in the DHT.
@@ -367,12 +369,14 @@ It is feasible to construct a Markov chain for a single epoch change, but in thi
 \footnotetext{Because the system contains limited number of peers, given enough number of epochs, one peer will eventually be responsible for multiple epochs.
 However, since only a small portion of peers are responsible in each epoch, we can safely assume that with reasonable AFR all peers leave the system before they get selected twice.}
 
-An epoch change will take at most $2T_g + T_r$ time, where $T_g$ is gossip interval and $T_r$ is the upper bound of time to repair.
+An epoch change will take at most $T_e = 2T_g + T_r$ time, where $T_g$ is gossip interval and $T_r$ is the upper bound of time to repair.
 \sgd{Should we define all these symbol all in once somewhere?}
-At the beginning of this interval, there are at least $k_0 - b$ fragments persist, or the epoch change will start even earlier.
-The epoch change cannot fail as long as both (a) at least $k + \epsilon$ peers of previous epoch are still alive,
-and (b) at least $k_0$ out of the total $k_r$ peers that are selected to be responsible in the following epoch are still alive, at the end of this interval.
-(The (b) requirement can be further relaxed if we don't care about overlapping epoch change.)
-Given AFR of honest peers, the assertion above can give us the upper bound of epoch change failure rate \XXX.
+% At the beginning of this interval, there are at least $k + \epsilon = k_p - b = k_p - K/3$ fragments persist, or the epoch change will start even earlier.
+The epoch change cannot fail as long as both 
+(a) the peers of next epoch can successfully recover the object, i.e. collect $k + \epsilon$ fragments, which is always the case because of
+(b) by the end of the epoch change, at least $k_p = k + \epsilon + b$ peers of this epoch is still alive, so there are enough honest nodes from this epoch to support nodes of next epoch to recover the object.
+This means that at most $K - k_p$ peers die in the $T_e$ interval.
+Given AFR of honest peers, we can derive the probability of over this number of peers dead and cause epoch change fails.
+Then in turn derive data lost rate during \store and expiration.
 
 \sgd{Maybe it is also worth to explain how well Bernoulli sampling works (the more total stakes, the more accurate how many stakes are actually selected).}
