@@ -130,20 +130,49 @@ A traversal of fragment links increases the probability to recover all $k + \eps
 \begin{algorithm}
     \begin{algorithmic}[1]
         \State $\var{pnd} \gets \langle \bot, \set{}\rangle$ \Comment{pending op. hash and fragments}
-        \Procedure{\store}{$obj$}
-            \State $\var{hash} \gets \fn{Hash}(obj)$
+        \Procedure{\store}{$\var{obj}$}
+            \State $\var{hash} \gets \fn{Hash}(\var{obj})$
             \State $\var{pnd} \gets \langle \var{hash}, \set{} \rangle$
-            \State $\fn{Gossip}(\msg{frag}{\var{hash}, 0, \bot, \bot, \bot, \bot, \var{pk}})$
-            \State wait until $|\var{pnd.frags}| \ge k + \epsilon$
-            \sgd{Maybe adjust threshold to a dedicated $k_{put}$, because what we actually want is to reach $k + \epsilon$ honest node.}
+            \State $\fn{Gossip}(\msg{obj}{\var{hash}, \var{pk}})$
+            \State wait until $|\var{pnd.frags}| \ge k_p$
             \State \Return $hash$
         \EndProcedure
-        \Procedure{\query}{$id$}
-            \State do something
+        \Procedure{\query}{$\var{id}$}
+            \State $\var{fp} \gets \fn{DHT-Get}(\var{id})$
+            \If{$|\var{fp}| > 0$}
+                \State $\var{frags} \gets$ retrieve fragments from $\var{fp}$
+                \While{$|\var{frags}| < k + \epsilon$}
+                    \State $\var{frags} \gets \var{frags} \cup$ traverse links in $\var{frags}$
+                    \State // if timeout, goto the else branch
+                \EndWhile
+            \Else
+                \State $\var{pnd} \gets \langle \var{hash}, \set{} \rangle$
+                \State wait until $|\var{pnd.frags}| \ge k + \epsilon$
+                \State $\var{frags} \gets$ retrieve fragments from $\var{pnd.frags}$
+            \EndIf
+            \State \Return \fn{Decode}($\var{frags}$)
         \EndProcedure
     \end{algorithmic}
     \caption{\sys client protocol}
+    \label{alg:client}
 \end{algorithm}
+
+\subsubsection{\sys Client Protocols}
+\autoref{alg:client} lists the client side protocol of \sys.
+Being a decentralized peer-to-peer system, client operations are issued on participating nodes, though they can also serve as proxies for light-weight clients.
+We use \textit{client} to denote the peer node that issues a client operation.
+
+To store an object, the client calculates the hash of the object and writes the hash into a local request pending list.
+As we explain in subsequent protocols, when a node receives fragment persistence proofs through gossip, it adds verified proofs to the pending list if it matches the object.
+The node waits until it collects more than $k_p$ proofs.
+$k_p$ is calculated as $k + \epsilon + b$ where b is the expected number of Byzantine nodes selected by Kleroterion in an epoch.
+Given our system model, $b$ is $\frac{K}{3}$, where $K$ is the total number of fragments in an epoch.
+
+To retrieve an object, the requesting client first queries the DHT using the object ID.
+If the DHT contains fragment pointers of the object, the client fetches $k + \epsilon$ fragments through the pointers, traversing fragment links if necessary.
+If no pointers are found or the procedure times out, the client registers the object in the local pending list, similar to the \store protocol.
+It then waits until $k + \epsilon$ proofs are collected, and fetches fragments from the corresponding nodes.
+In either case, the client uses the rateless code decoding function to reconstruct the original object from the fragments.
 
 \begin{algorithm}
     \begin{algorithmic}[1]
@@ -217,9 +246,7 @@ A traversal of fragment links increases the probability to recover all $k + \eps
     \caption{\sys protocol on each node}
 \end{algorithm}
 
-\subsubsection{Client Protocols}
-
-\subsubsection{Encoding Fragment Store and Regeneration}
+\subsubsection{Storing and Regenerating Encoding Fragments}
 
 \textbf{Randomized placement group.} \sys selects a random set of peers to monitor and store a data object.
 The set of peers changes from time to time. We call the set of peer are \textit{eligible} for taking care of the object.
