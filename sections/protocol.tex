@@ -76,6 +76,28 @@ Public keys are assumed to be known by all nodes in the system.
 Each node locally stores a set of fragments generated from our rateless erasure encoding.
 Once a node learns that it is chosen to store fragments for an object in the next epoch, it starts monitoring live fragments for that object through the gossip protocol.
 
+Storage device failures and node churns can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
+To avoid relying on a centralized trusted service to detect fragment losses, each node periodically broadcasts \textit{persistence proof} of its stored fragments through the gossip protocol.
+By monitoring the persistence proofs, \sys nodes can independently generate and store new encoding fragments when the number of alive fragments is below a threshold.
+
+Naively implementing the above scheme has two issues.
+Firstly, tracking and maintaining all persistence proofs on each node scales poorly.
+Second, Byzantine nodes can collude and claim persistence of enough fragments for an object, such that less than $k + \epsilon$ fragments are stored on honest nodes.
+Once those Byzantine nodes discard their local fragments, the object is permanently lost.
+
+\sys implements a decentralized node selection protocol, Kleroterion, to address both issues.
+Kleroterion partitions the lifetime of an object into virtual \textit{epochs}.
+%\sgd{Candidate additional detail: epochs are supposed to be overlapping because it is hard to select exact number of peers to be responsible, just a weak partial ordering. "Partition the lifetime into epochs" sounds like there is only one epoch at a time, let reader suspect whether we are assuming a strong synchronous network (which we actually do not).}
+In each epoch, Kleroterion uses a verifiable random function (VRF) to select a random set of nodes for storing encoding fragments for an object.
+VRF ensures that each node can independently generate a selection proof, the selection probability of a node is proportional to the fraction of stakes it owns, and that the selection proof is publicly verifiable.
+The selection proof is attached to each persistence proof.
+By properly setting the desired storage redundancy in an epoch (value of $F$), 
+\sgd{What is $F$?}
+\sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
+Moreover, a node only needs to actively monitor persistence proofs for objects that it is responsible for in the next epoch, which is a tiny fraction of the object space.
+%\sgd{What do you mean by "a small constant proportional to its stake"? If "stake" here refers to raw capacity, it's not constant since raw capacity is unknown and varies on different peers.  If "stake" here refers to number of stored fragments, it's not constant because e.g. a newly-joined peer has no stored fragment but need to keep track of several objects.  By the way we don't really define how peers suppose to hold more than one stake currently.}
+\lijl{Describe state transition figure here.}
+
 \begin{figure}
    \begin{tikzpicture}
         \tikzstyle{state} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
@@ -93,26 +115,6 @@ Once a node learns that it is chosen to store fragments for an object in the nex
     \caption{State transition of \sys nodes for every object. An unheard object starts with Listening state by default.}
     \label{fig:node-state-machine}
 \end{figure}
-
-Storage device failures and node churns can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
-To avoid relying on a centralized trusted service to detect fragment losses, each node periodically broadcasts \textit{persistence proof} of its stored fragments through the gossip protocol.
-By monitoring the persistence proofs, \sys nodes can independently generate and store new encoding fragments when the number of alive fragments is below a threshold.
-
-Naively implementing the above scheme has two issues.
-Firstly, tracking and maintaining all persistence proofs on each node scales poorly.
-Second, Byzantine nodes can collude and claim persistence of enough fragments for an object, such that less than $k + \epsilon$ fragments are stored on honest nodes.
-Once those Byzantine nodes discard their local fragments, the object is permanently lost.
-
-\sys implements a decentralized node selection protocol, Kleroterion, to address both issues.
-Kleroterion partitions the lifetime of an object into virtual \textit{epochs}.
-%\sgd{Candidate additional detail: epochs are supposed to be overlapping because it is hard to select exact number of peers to be responsible, just a weak partial ordering. "Partition the lifetime into epochs" sounds like there is only one epoch at a time, let reader suspect whether we are assuming a strong synchronous network (which we actually do not).}
-In each epoch, Kleroterion uses a verifiable random function (VRF) to select a random set of nodes for storing encoding fragments for an object.
-VRF ensures that each node can independently generate a selection proof, the selection probability of a node is proportional to the fraction of stakes it owns, and that the selection proof is publicly verifiable.
-The selection proof is attached to each persistence proof.
-By properly setting the desired storage redundancy in an epoch (value of $F$), \sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
-Moreover, a node only needs to actively monitor persistence proofs for objects that it is responsible for in the next epoch, which is a tiny fraction of the object space.
-%\sgd{What do you mean by "a small constant proportional to its stake"? If "stake" here refers to raw capacity, it's not constant since raw capacity is unknown and varies on different peers.  If "stake" here refers to number of stored fragments, it's not constant because e.g. a newly-joined peer has no stored fragment but need to keep track of several objects.  By the way we don't really define how peers suppose to hold more than one stake currently.}
-\lijl{Describe state transition figure here.}
 
 Placing encoding fragments at dynamically set of randomly selected nodes complicates object lookup.
 \sys leverages efficient gossip protocols~\cite{kadcast} to disseminate \query requests, which ensures sufficient ($k + \epsilon$) encoding fragments can be located.
@@ -168,8 +170,12 @@ We use \textit{client} to denote the peer node that issues a client operation.
 To store an object, the client calculates the hash of the object and writes the hash into a local request pending list.
 As we explain in subsequent protocols, when a node receives fragment persistence proofs through gossip, it adds verified proofs to the pending list if it matches the object.
 The node waits until it collects more than $k_p$ proofs.
-$k_p$ is calculated as $k + \epsilon + b$ where b is the expected number of Byzantine nodes selected by Kleroterion in an epoch.
-Given our system model, $b$ is $\frac{K}{3}$, where $K$ is the total number of fragments in an epoch.
+$k_p$ is calculated as $k + \epsilon + b$ where b is the expected number 
+\sgd{upper bound with high probability}
+of Byzantine nodes selected by Kleroterion in an epoch.
+Given our system model, $b$ is
+\sgd{$\sim$}
+$\frac{K}{3}$, where $K$ is the total number of fragments in an epoch.
 
 To retrieve an object, the requesting client first queries the DHT using the object ID.
 If the DHT contains fragment pointers of the object, the client fetches $k + \epsilon$ fragments through the pointers, traversing fragment links if necessary.
@@ -286,7 +292,9 @@ If the node is responsible, it fetches and stores the fragment from the source, 
                 \If{$\fn{RequireRepair}(\var{alive})$}
                     \State $\var{obj} \gets \fn{Decode}(\var{frags})$
                     \State $\fn{ConstrFrag}(\var{obj}, \var{oh}, \var{proof.h}, \var{proof.\pi},$ $\var{proof.idx}, \var{proof.e})$
+                    \State \sgd{Remove object record from next set}
                 \EndIf
+                \sgd{else}
                 \State $\var{alive} \gets \set{}$
             \EndFor
         \EndProcedure
