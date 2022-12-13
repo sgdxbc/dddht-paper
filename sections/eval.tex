@@ -1,6 +1,7 @@
-By default k = 64, repair threshold = 1.2 (i.e. repair when less than $1.2k$ gossip is received), select rate = 2
-(i.e. select $2k$ peers on average per epoch). \store operation returns when there are $1.6k$ peers start to gossip.
-\sgd{Consider conclude these parameters with one "how much faulty we are tolerance" parameter and statically derive all these from it.}
+By default k = 64, persistence parameter $k_p = 1.2k$, select rate $K = 2k$
+\sgd{This description assumes single-stack nodes.}
+In practical we decide to make \store operation returns only when there are $1.6k$ peers start to gossip.
+This improves system stability without too much overhead.
 
 \subsection{Simulations}
 
