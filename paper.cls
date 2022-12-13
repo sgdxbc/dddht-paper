@@ -33,6 +33,7 @@
 \def\thmautorefname{Theorem}
 \def\lemautorefname{Lemma}
 \def\defnautorefname{Definition}
+\def\algorithmautorefname{Algorithm}
 
 \algnewcommand\algorithmicswitch{\textbf{switch}}
 \algnewcommand\algorithmiccase{\textbf{case}}
