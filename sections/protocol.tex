@@ -91,7 +91,7 @@ Kleroterion partitions the lifetime of an object into virtual \textit{epochs}.
 In each epoch, Kleroterion uses a verifiable random function (VRF) to select a random set of nodes for storing encoding fragments for an object.
 VRF ensures that each node can independently generate a selection proof, the selection probability of a node is proportional to the fraction of stakes it owns, and that the selection proof is publicly verifiable.
 The selection proof is attached to each persistence proof.
-By properly setting the desired storage redundancy in an epoch (value of $F$), 
+By properly setting the desired storage redundancy in an epoch (value of $F$),
 \sgd{What is $F$?}
 \sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
 Moreover, a node only needs to actively monitor persistence proofs for objects that it is responsible for in the next epoch, which is a tiny fraction of the object space.
@@ -175,7 +175,7 @@ We use \textit{client} to denote the peer node that issues a client operation.
 To store an object, the client calculates the hash of the object and writes the hash into a local request pending list.
 As we explain in subsequent protocols, when a node receives fragment persistence proofs through gossip, it adds verified proofs to the pending list if it matches the object.
 The node waits until it collects more than $k_p$ proofs.
-$k_p$ is calculated as $k + \epsilon + b$ where b is the expected number 
+$k_p$ is calculated as $k + \epsilon + b$ where b is the expected number
 \sgd{upper bound with high probability}
 of Byzantine nodes selected by Kleroterion in an epoch.
 Given our system model, $b$ is
@@ -341,6 +341,7 @@ It then stores the new fragment locally, together with the persistence proof, an
 %\textbf{Event-driven peer behavior.}
 
 \subsection{Optimizations}
+\label{sec:protocol:optimization}
 
 Booster node to reduce recovery traffic.
 

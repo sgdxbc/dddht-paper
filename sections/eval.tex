@@ -14,17 +14,21 @@ Second, we also evaluate against the Ceph~\cite{ceph} distributed storage system
 
 \subsection{Simulations}
 
-We first use discrete event simulation to evaluate the overhead and fault tolerance guarantees of \sys.
-The simulation is developed in-house.
-Poisson distributed peer failure according to peers' average AFR.
-In simulation each peer periodically gossip until it is selected to fail. Then after gossip timeout, next responsible peers will notice and may choose to start to repair.
-We record the repair traffic with data object size as basic unit.
-We also record the overall raw capacity occupied. Notice redundancy reduction is not simulated, so the redundancy is more than result from deployed environment.
-Every simulation runs 10 times with different seeds and takes the average.
+We first use discrete event simulation to evaluate the repair overhead and fault tolerance guarantees of \sys.
+We simulate a network of 10K nodes.
+For simplicity, we parametrize one annualized failure rate (AFR) for all nodes.
+Node failures follow a Poisson distribution according to the AFR.
+Each node periodically gossips until it fails.
+%Then after gossip timeout, next responsible peers will notice and may choose to start to repair.
+We use data object size as the basic unit for repair traffic.
+The overall storage capacity which \sys occupied is also recorded.
+%Notice redundancy reduction is not simulated, so the redundancy is more than result from deployed environment.
+We run each simulation 10 times with different seed values and take the average.
 
-Beside of \sys we also simulate a Ceph-like replicated storage.
-The replicated system replicate every object on 3 random selected peers, and perform repair as soon as possible when one of the peer fails.
-This is similar to datacenter-level distributed storage. We use it to check how much overhead we paid for decentralization.
+Besides \sys, we also simulate a Ceph-like replicated storage.
+This system replicates each object on 3 randomly selected peers, and performs repair immediately after one of the replicas fails.
+%This is similar to datacenter-level distributed storage.
+Such replication scheme is commonly employed in data center settings, and we use it as a baseline to compare to our decentralized scheme.
 
 \begin{figure}
     \addgraph{repair}
@@ -32,19 +36,24 @@ This is similar to datacenter-level distributed storage. We use it to check how 
     \label{fig:repair}
 \end{figure}
 
-\textbf{Repair traffic.} We record the total number of repairing in the first year.
-\autoref{fig:repair} shows repair traffic linearly increase according to the data object number.
-When booster peers caching data object perfectly, every repairing only transfer $1/k$ unit of data object, and the overall traffic is comparable to replicated system.
-However when cache hit rate decrease, the traffic increases hugely because each cache missing cause almost one whole extra object size to be transffered.
-As shown in the graph, repair traffic increases mostly when cache hit rate dropping from 100\% to 75\%, which is a 16.6x increasing.
-After that, repair traffic only get doubled for 75\% to 50\%, and roughly doubled again with 0\% cache hit.
-Certain incentive should be provided to booster peers to encourage them to cache for a longer time and reduce repair traffic.
-Luckily as shown later, most repairing happens in a relatively short interval, so that booster peers do not need to cache long and may still achieve good overall cache hit rate.
+\textbf{Repair traffic.}
+We first simulate how much encoding repair traffic \sys generates, and compare it to the baseline replication approach.
+We record the total number of repairing in the first year.
+\autoref{fig:repair} shows the total repair traffic (in units of data object sizes) in the first year.
+The different lines of \sys indicate the percentage of nodes that regenerate encoding fragment using the booster optimization (\autoref{sec:protocol:optimization}).
+Repair traffic for \sys increases linearly with the total number of data objects.
+When booster peers cache object perfectly, every repair only transfers $1/k$ of data object size, so the overall repair traffic is comparable to the replicated system.
+However, when booster hit rate decreases, there is a sudden jump in the repair traffic due to the high ``cache miss'' penalty.
+Concretely, repair traffic increases by 16.6x hit rate drops from 100\% to 75\%.
+Beyond that, repair traffic only doubled from 75\% hit rate to 50\%, and doubled again when the booster optimization is turned off.
+This demonstrates that our booster optimization is effective.
+As such, incentives should be provided to encourage booster nodes to cache for a longer time to reduce repair traffic.
+Fortunately, as shown later, most repairs finish quickly, so a short caching period can lead to good overall cache hit rate.
 
-\autoref{fig:repair} shows repair traffic with various AFR in the first year.
-Repair traffic also grow linearly according to AFR both in \sys and replicated system.
-This shows \sys has good responsiveness to the change of system's average AFR.
-And it also scales well respect to the increase of AFR, i.e., the overhead per peer failure keep constant.
+\autoref{fig:repair} shows total repair traffic in the first year with increasing AFR.
+In both \sys and the replicated system, repair traffic grows linearly with AFR.
+This demonstrates that \sys responds well to the change of the system's average AFR.
+Another implication is that \sys scales well with an increase in AFT, i.e., the overhead per node failure remains constant.
 
 \begin{figure}
     \addgraph{time}

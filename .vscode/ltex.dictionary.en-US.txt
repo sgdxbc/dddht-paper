@@ -37,3 +37,4 @@ subprotocols
 inflight
 geo-distributed
 IPFS-like
+Ceph-like
