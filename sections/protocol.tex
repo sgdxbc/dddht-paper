@@ -49,7 +49,7 @@ We also make standard cryptography assumptions, i.e., the probability of subvert
             \item \textit{s}: stake of the node
             \item \textit{K}: total number of encoding fragments for an object in each epoch
             \item \textit{D}: width of the encoding space
-            \item \textit{store}: local storage for encoding fragments, indexed by object ID
+            \item \textit{store}: local storage for encoding fragments and their persistence proof, indexed by object ID
             \item \textit{next}: objects which the node is chosen in the next epoch, indexed by object ID. Each entry contains a list of live fragments the node is aware of from the gossip protocol.
         \end{itemize}
     \end{mdframed}
@@ -233,7 +233,7 @@ We apply the same homomorphic hashing scheme designed in \cite{homo_hash}.
             \State $\langle h, \pi, c, idx \rangle \gets \fn{Kleroterion}(\var{hash}, 0)$
             \If{$c$}
                 \State $\var{obj} \gets$ retrieve object from source
-                \State $\fn{ConstrFrag}(\var{hash}, h, \pi, \var{idx}, 0)$
+                \State $\fn{ConstrFrag}(\var{obj}, \var{hash}, h, \pi, \var{idx}, 0)$
             \EndIf
         \EndProcedure
         \Procedure{RecvMsgFrag}{$\var{oh}, e, h, \pi, \var{fh}, \var{pk}$}
@@ -245,9 +245,10 @@ We apply the same homomorphic hashing scheme designed in \cite{homo_hash}.
             \EndIf
             \State $\langle h, \pi, c, idx \rangle \gets \fn{Kleroterion}(\var{oh}, e + 1)$
             \If{$c$}
-                \State $\var{next[oh].proof} \gets \langle e + 1, h, \pi \rangle$
+                \State $\var{next[oh].proof} \gets \langle e + 1, h, \pi, \var{idx}\rangle$
+                \State $\var{next[oh].alive} \gets \var{next[oh].alive} \cup \set{\var{fh}}$
                 \State $\var{frag} \gets$ fetch fragment from source node
-                \State $\var{next[oh].alive} \gets \var{next[oh].alive} \cup \set{\var{\langle fh, frag \rangle}}$
+                \State $\var{next[oh].frags} \gets \var{next[oh].frags} \cup \set{\var{frag}}$
             \EndIf
         \EndProcedure
     \end{algorithmic}
@@ -270,6 +271,47 @@ If the node is responsible, it fetches and stores the fragment from the source, 
 
 \paragraph{Object persistence monitoring.}
 
+\begin{algorithm}
+    \begin{algorithmic}[1]
+        \Procedure{PeriodicTimer}{}
+            \ForAll{$\langle \var{oh}, e, h, \pi, \var{fh} \rangle \in \var{store}$}
+                \State $\fn{Gossip}(\msg{frag}{\var{oh}, e, h, \var{\pi}, \var{fh}, \var{pk}})$
+            \EndFor
+            \ForAll{$\langle \var{oh}, \var{proof}, \var{alive}, \var{frags} \rangle \in \var{next}$}
+                %\ForAll{$f \in \var{live}$}
+                %    \If{$\neg$ received $f$ in $T$}
+                %        \State $\var{live} \gets \var{live} \setminus \set{f}$
+                %    \EndIf
+                %\EndFor
+                \If{$\fn{RequireRepair}(\var{alive})$}
+                    \State $\var{obj} \gets \fn{Decode}(\var{frags})$
+                    \State $\fn{ConstrFrag}(\var{obj}, \var{oh}, \var{proof.h}, \var{proof.\pi},$ $\var{proof.idx}, \var{proof.e})$
+                \EndIf
+                \State $\var{alive} \gets \set{}$
+            \EndFor
+        \EndProcedure
+        \Procedure{ConstrFrag}{$obj, \var{oh}, h, \pi, \var{idx}, e$}
+            \State $\var{frag} \gets \fn{Encode}(\var{obj}, \var{idx})$
+            \State $\var{fh} \gets \fn{Hash}(\var{frag})$
+            %\sgd{not necessary to store frag hash, it can be calculated on the fly}
+            \State $\var{store} \gets \var{store} \cup \set{\langle \var{oh}, \var{e}, h, \pi, \var{fh}, \var{frag} \rangle}$
+            \State $\fn{DHT-Put}(\var{oh}, \langle \var{fh}, \var{addr} \rangle)$
+        \EndProcedure
+    \end{algorithmic}
+    \caption{Protocol to monitor object persistence}
+    \label{alg:monitor}
+\end{algorithm}
+
+Periodically, \sys nodes broadcast persistence proofs of its store fragments, and check if they need to generate new encoding fragments.
+The procedure is shown in \autoref{alg:monitor}.
+In a periodic timer handler, for each fragment $f$ currently stored in its local storage, the node disseminates a persistence proof for $f$ through the gossip protocol.
+Then for each object which the node is chosen by Kleroterion for the subsequent epoch, the node invokes \fn{RequireRepair} on the current alive fragments to determine if it needs to generate new encoding fragment.
+The procedure checks if the node is aware of $k_p$ alive fragments in the \emph{same epoch}.
+We add the epoch constraint to defend against Byzantine nodes generating persistent proofs in advance.
+If regeneration is required, the node invokes \fn{ConstrFrag}.
+\fn{ConstrFrag} uses the rateless erasure code to produce the corresponding encoding.
+It then stores the new fragment locally, together with the persistence proof, and subsequently update the DHT for subsequent \query operations.
+
 %\textbf{Randomized placement group.} \sys selects a random set of peers to monitor and store a data object.
 %The set of peers changes from time to time. We call the set of peer are \textit{eligible} for taking care of the object.
 %Given long enough time, every node will be in the set for at least once.
@@ -284,36 +326,6 @@ If the node is responsible, it fetches and stores the fragment from the source, 
 %\textbf{Retrieve data object from system.} Gossip + back pointer optimization.
 %
 %\textbf{Event-driven peer behavior.}
-
-\begin{algorithm}
-    \begin{algorithmic}[1]
-        \Procedure{PeriodicTimer}{}
-            \ForAll{$\langle \var{oh}, \var{fh}, \var{e}, \tau, \pi, \var{idx} \rangle \in \var{store}$}
-                \State $\fn{Gossip}(\msg{frag}{\var{oh}, \var{e}, \var{fh}, \var{idx}, \var{\tau}, \var{\pi}, \var{pk}})$
-            \EndFor
-            \ForAll{$\langle \var{oh}, \var{live}, \var{frags}, \tau, \pi, e \rangle \in \var{next}$}
-                \sgd{what about clear alive set on timer, and re-insert when receiving gossip?}
-                \ForAll{$f \in \var{live}$}
-                    \If{$\neg$ received $f$ in $T$}
-                        \State $\var{live} \gets \var{live} \setminus \set{f}$
-                    \EndIf
-                \EndFor
-                \If{$|\var{live}| < k + \epsilon$} \sgd{wrong threshold, should be $k_{repair}$}
-                    \State $\var{obj} \gets \fn{Decode}(\var{frags})$ \lijl{may not have enough fragments.}
-                    \State $\fn{ConstrFrag}(\var{oh}, \tau, \pi, e)$
-                \EndIf
-            \EndFor
-        \EndProcedure
-        \Procedure{ConstrFrag}{$obj, \var{oh}, \tau, \pi, e$}
-            \State $\var{idx} \gets \tau \bmod N$
-            \State $\var{frag} \gets \fn{Encode}(obj, e, idx)$ \sgd{epoch number is not used for encoding}
-            \State $\var{fh} \gets \fn{Hash}(\var{frag})$ \sgd{not necessary to store frag hash, it can be calculated on the fly}
-            \State $\var{store} \gets \var{store} \cup \set{\langle \var{oh}, \var{fh}, \var{e}, \tau, \pi, \var{idx}, \var{frag} \rangle}$
-            \State $\fn{DHT-Put}(\var{oh}, \langle \var{fh}, \var{addr} \rangle)$
-        \EndProcedure
-    \end{algorithmic}
-    \caption{\sys protocol on each node}
-\end{algorithm}
 
 \subsection{Optimizations}
 
