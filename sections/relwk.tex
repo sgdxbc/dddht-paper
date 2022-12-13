@@ -9,3 +9,12 @@ Kadcast selects mesh from Kademlia buckets.
 \textbf{Application built upon reliable decentralized storage.}
 
 \textbf{Distributed algorithm for locating data objects.} CRUSH by Ceph.
+
+\sgd{Include this if we have discussion part.} \textbf{Aggressive attacking.}
+In this work we mainly discuss on how to achieve long-term unpredictable; 
+however, in short term attacker may predict the next responsible peers by observing peers pulling fragment (which involves exchanging Kleroterion proof which attacker can also verify).
+If the attacker can compromise the peer before it become responsible and send out first gossip, the safety invariant breaks.
+Notice that the lazy fetching optimization previously described in \XXX can effectively shorten attacking time window.
+With active redundancy reduction (\autoref{sec:implementation}), the attacking is also mitigated.
+There could be more than enough number of nodes fetching fragments, where many of them silently discard the fragment later and make the attacking meaningless.
+This will increase the cost of a successful attacking significantly.
