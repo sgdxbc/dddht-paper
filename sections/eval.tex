@@ -54,7 +54,18 @@ The number of steps for \sys is less than replicated, which is a strong evidence
 As a comparison, a \sys with alternative parameter $k_{repair} = 1.6k$, which can tolerance 25\% more faulty peers, is also shown in the graph.
 The repairing is slightly more frequent compare to default parameter, but still lazier than a replicated system.
 
-\textbf{Fault tolerance.}
+\begin{figure}
+    \addgraph{faulty-lost}
+    \caption{Number of lost objects (out of 1000) in the presence of faulty peers.}
+    \label{fig:faulty}
+\end{figure}
+
+\textbf{Fault tolerance.} \autoref{fig:faulty} shows a one-year tracing of 1000 data objects in a faulty system.
+In this system, faulty peers normally gossip, but not actually holding fragments.
+The data object is consider as lost immediately when remaining fragments cannot recover it (for \sys) or no copy left (for replicated system).
+From the graph, it is clearly that replicated system does not tolerance any faulty peer: it immediately starts to lose data as long as single faulty peer exists.
+On the other hand, \sys can tolerance a significant portion of faulty peers, depends on the selection of parameters.
+The default parameter can tolerance roughly targeted 33\% faulty peers, while a more conservative variant can tolerance even more with the cost of redundancy.
 
 \subsection{World-wide deployment}
 
