@@ -102,8 +102,11 @@ We also measure a variant with slightly reduced $k_{put} = 1.2k$ which tolerance
 The result is quite close to Kademlia, while Kademlia is limited with 64MiB data objects.
 
 \textbf{Latency breakdown.} Compare to Kademlia, \sys perform less sequential steps of peer communication, but has an extra encoding/decoding workload.
-However thanks to highly-optimized fountain code library, the erasure coding's latency overhead is surprisingly small: for 1GiB object, it takes only \XXX to encoding all $k_p$ fragments on operation peer.
-The fragment decoding latency is negligible, and after peer collects enough fragments to recover, the object recovery only takes \XXX.
+However thanks to highly-optimized fountain code library, the erasure coding's latency overhead is surprisingly small: for 1GiB object, it takes only 4.2s from receiving the pull request from first responsible peer to send out all $k_p$ encoded fragments.
+More than half of the interval is waiting on gossip spreading rather than generating fragment.
+The fragment decoding latency is negligible, and after peer collects enough fragments to recover, the object recovery only takes 1.2s.
+As a comparison, computing SHA256 hash for the 1GiB object takes 4.7s.
+Actually, computing SHA256 hash is the major increasing overhead when switching from 64MiB objects to 1GiB.
 The good support provided by the library not only make operations blazing fast, but also makes it feasible to regularly recover tons of whole objects among the peers without worrying about performance overhead.
 
 Future work. Monitor cpu usage and network bandwidth usage.
