@@ -97,6 +97,11 @@ By properly setting the desired storage redundancy in an epoch (value of $F$),
 Moreover, a node only needs to actively monitor persistence proofs for objects that it is responsible for in the next epoch, which is a tiny fraction of the object space.
 %\sgd{What do you mean by "a small constant proportional to its stake"? If "stake" here refers to raw capacity, it's not constant since raw capacity is unknown and varies on different peers.  If "stake" here refers to number of stored fragments, it's not constant because e.g. a newly-joined peer has no stored fragment but need to keep track of several objects.  By the way we don't really define how peers suppose to hold more than one stake currently.}
 \lijl{Describe state transition figure here.}
+\sgd{
+\autoref{fig:node-state-machine} describe the state transition related to a single object on a peer.
+By default node stays at listening state for almost every learned object, which consumes zero resource on node.
+A node only switch to monitoring and responsible on demand, and both of the state may go back to listening state through redundancy reduction (introduced in \autoref{sec:implementation}).
+}
 
 \begin{figure}
    \begin{tikzpicture}
@@ -105,12 +110,12 @@ Moreover, a node only needs to actively monitor persistence proofs for objects t
 
         \matrix[row sep = 1.5cm, column sep = -0.5cm] {
             & \node (listen) [state, fill = gray!10] {Listening}; \\
-            \node (act) [state] {Activated}; & & \node (resp) [state] {Responsible}; \\
+            \node (act) [state] {Monitoring}; & & \node (resp) [state] {Responsible}; \\
         };
-        \draw [arrow] (listen.west) to [out = 180] node[anchor = east, text width = 1.5cm]{kleroterion in next epoch} (act.north);
-        \draw [arrow] (act.east) to [out = 330, in = 210] node[anchor = south]{not healthy} (resp.west);
-        \draw [arrow] (resp.north) to [out = 90, in = 0] node[anchor = west, text width = 1.5cm]{too redundant} (listen.east);
-        \draw [arrow] (act.north) to [out = 90, in = 220] node[anchor = west]{too redundant} (listen.south);
+        \draw [arrow] (listen.west) to [out = 180] node[anchor = east, text width = 1.5cm]{Selected by Kleroterion} (act.north);
+        \draw [arrow] (act.east) to [out = 330, in = 210] node[anchor = south]{Require repair} (resp.west);
+        \draw [arrow] (resp.north) to [out = 90, in = 0] node[anchor = west, text width = 1.5cm]{Redundancy reduction} (listen.east);
+        \draw [arrow] (act.north) to [out = 90, in = 220] node[anchor = west, text width = 1.5cm]{Redundancy reduction} (listen.south);
     \end{tikzpicture}
     \caption{State transition of \sys nodes for every object. An unheard object starts with Listening state by default.}
     \label{fig:node-state-machine}

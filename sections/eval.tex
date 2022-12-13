@@ -17,7 +17,7 @@ This is similar to datacenter-level distributed storage. We use it to check how 
 
 \begin{figure}
     \addgraph{repair}
-    \caption{Repair traffic.}
+    \caption{Repair traffic over different number of objects and AFR. The number behind entropy indicate how many repair hits booster peers' cache.}
     \label{fig:repair}
 \end{figure}
 
@@ -37,7 +37,7 @@ And it also scales well respect to the increase of AFR, i.e., the overhead per p
 
 \begin{figure}
     \addgraph{time}
-    \caption{Raw capacity and repairing traffic over time.}
+    \caption{Raw capacity and repairing traffic over time. EntropyF is a variant of entropy with $K = 2.2k$ and $k_p = 1.6k$ to show the overhead of tolerating more faulty nodes.}
     \label{fig:time}
 \end{figure}
 
@@ -87,7 +87,8 @@ Notice that erasure coding cannot be easily adapted into Kademlia, which causes 
 
 \begin{figure}
     \addgraph{latency}
-    \caption{Latency of \store and \query operation}
+    \caption{Latency of \store and \query operation in a world-wide deployment. Entropy and Kademlia operate with 64MiB data objects while Entropy-1GB operate with 1GiB data objects.
+    EntropyL-1GiB is a variant that finalize \store when received $k_p$ gossip messages.}
     \label{fig:latency}
 \end{figure}
 
