@@ -36,7 +36,7 @@ Such replication scheme is commonly employed in data center settings, and we use
     \label{fig:repair}
 \end{figure}
 
-\textbf{Repair traffic.}
+\paragraph{Repair traffic.}
 We first simulate how much encoding repair traffic \sys generates, and compare it to the baseline replication approach.
 We record the total number of repairing in the first year.
 \autoref{fig:repair} shows the total repair traffic (in units of data object sizes) in the first year.
@@ -61,7 +61,7 @@ Another implication is that \sys scales well with an increase in AFT, i.e., the 
     \label{fig:time}
 \end{figure}
 
-\textbf{Repair and redundancy over time.}
+\paragraph{Repair and redundancy over time.}
 In the next simulation, we trace one data object for a duration of 10 years.
 \autoref{fig:time} plots the raw capacity, i.e., the aggregated encoding size, a single data object occupies in the whole system.
 As a reference point, capacity of a 3-way replication system is kept constant at 3.
@@ -81,7 +81,7 @@ Compared to the default parameter, object repairs happen more frequently, but st
     \label{fig:faulty}
 \end{figure}
 
-\textbf{Fault tolerance.}
+\paragraph{Fault tolerance.}
 To evaluate how well \sys tolerates adversaries, we simulate a network with Byzantine faulty nodes.
 Byzantine faulty peers participate in gossip protocols; however, they do not store any encoding fragment.
 A data object is consider permanently lost when the survived fragments drop below $k+\epsilon$ (for \sys) or no replicas are left (for the replicated system).
@@ -91,26 +91,34 @@ On the other hand, \sys can tolerate a significant fraction of faulty nodes with
 The degree of tolerance depends on the parameters.
 Using the default parameter, \sys can tolerate around the targeted 33\% faulty nodes, while a more conservative configuration can improve tolerance further at the expense of increased redundancy.
 
-\subsection{World-wide deployment}
+\subsection{Global Deployment}
 
-\sgd{Add this explanation to somewhere if necessary.}
-Every peer is limited to single thread because of limited number of machines.
-This results in sequentially generation of all fragments.
-In practice, it could be parallelized and improve \store performance.
+%\sgd{Add this explanation to somewhere if necessary.}
+%Every peer is limited to single thread because of limited number of machines.
+%This results in sequentially generation of all fragments.
+%In practice, it could be parallelized and improve \store performance.
 
-Deploy on AWS, in 5 zones (us-west, ap-southeast, eu-central, sa-east, af-south).
-c5a.24xlarge machines with 96 vCPU and 192GiB memory, 25GBps bandwidth.
+Next, we evaluate \sys using our real implementation.
+We deploy 1000 -- 5000 \sys nodes on Amazon EC2 in 5 AWS zones (us-west, ap-southeast, eu-central, sa-east, af-south) across 5 continents.
+All nodes run on c5a.24xlarge instances with 96 vCPU, 192GiB of memory, and a network bandwidth of 25GBps.
 
-Besides implementation of our \sys protocol, we also implemented a Kademlia p2p network which perform typical DHT operations on \store and \query.
-We use that to compare \sys's operation overhead with exist decentralized storage system.
-We also deployed a Ceph cluster with one replicated pool and one erasure coding pool, all with stocking configuration, to compare with a typical distributed storage system.
+As mentioned earlier, we implemented a IPFS-like decentralized storage system using Kademlia DHT as a comparison system.
+This Kademlia-based system serves as a state-of-the-art decentralized storage system.
+Kademlia by default does not store data object, only metadata.
+We therefore make a minimal extension to Kademlia to make the comparison fair.
+When issuing \store, the client node pushes the object to a random peer in the network.
+The peer then claims as the provider of the object by updating the publisher record in DHT.
+Note that erasure coding, unfortunately, cannot be easily adapted into Kademlia.
+We also deployed a Ceph cluster with one replication pool and one erasure coding pool, all with the stock configuration.
+The cluster contains 5 servers, on in each region.
+The Ceph cluster serves as a reference distributed storage system design.
 
-Performance evaluation. For every run, a fresh operating peer is spawned. After it connects into network stably, it \store a randomly generated object and get its id.
-Then another fresh peer is spawned to use the id to \query the object back. It performs sanity check to make sure the object is identical.
+In every run of the evaluation, to remove any caching effect, we spawn a fresh node as client.
+Once the node successfully connects to the network, it issues a \store with a randomly generated object.
+After the \store returns an object ID, another fresh node is spawned to issue a \query with the returned ID to retrieve the object.
+The node performs sanity check to make sure the object is properly retrieved.
 
-Kademlia implementation. Kademlia does not include object-hosting. So we make a minimal extension to Kademlia, by pushing object to a random peer in the network.
-The peer then claims to be provider of the object through DHT. After the claim is done, it responds operating peer with id.
-Notice that erasure coding cannot be easily adapted into Kademlia, which causes the implementation quite limited.
+\paragraph{Latency Results.}
 
 \begin{figure}
     \addgraph{latency}
@@ -120,21 +128,28 @@ Notice that erasure coding cannot be easily adapted into Kademlia, which causes 
     \label{fig:latency}
 \end{figure}
 
-\autoref{fig:latency} show average latency of \store and \query operations. With 64MiB data objects, \sys outperform both the other systems a lot.
-\sys is significantly more stable in terms of latency distribution compare to Kademlia, because fragments are uniformly distributed across all peers,
-while in Kademlia the object is sequentially transmitted to one remote peer, and the latency is highly affected by the link between the two peers.
+We measure end-to-end latency of \store and \query operations for each system, and show the results in \autoref{fig:latency}.
+For the default object size of 64 MiB, \sys outperforms both Kademlia and Ceph by a wide margin in latency.
+Moreover, \sys also enjoys a much lower latency variance compared to Kademlia.
+The better performance of \sys comes from its large code design.
+In \sys, encoding fragments are uniformly distributed across many peers.
+Fragment transfers thus can be done in parallel, utilizing the network bandwidth more efficiently.
+Kademlia, in the contrary, requires the object to be sequentially transmitted to the remote peer.
+The latency is therefore highly limited by bottleneck link bandwidth between the two peers.
 
-As a result, we are able to increase data object size to 1GiB while latency is only doubled.
-At the same time Kademlia may take ~120s to finish one operation because of sequentially transmission.
-We also measure a variant with slightly reduced $k_{put} = 1.2k$ which tolerance less faulty peers on \store operations.
-The result is quite close to Kademlia, while Kademlia is limited with 64MiB data objects.
+The benefit of \sys's design is even more obvious with larger objects.
+When we increase data object size by 16 times to 1 GiB, the latency is only doubled.
+Kademlia, on the other hand, takes more than 120s to finish one operation due to sequential transmission.
+We also measure a \sys variant with slightly reduced $k_p = 1.2k$ which tolerance less faulty peers on \store operations.
+Its latency when storing 1 GiB objects is even close to Kademlia but with 64 MiB object size.
 
-\textbf{Latency breakdown.} Compare to Kademlia, \sys perform less sequential steps of peer communication, but has an extra encoding/decoding workload.
-However thanks to highly-optimized fountain code library, the erasure coding's latency overhead is surprisingly small: for 1GiB object, it takes only 4.2s from receiving the pull request from first responsible peer to send out all $k_p$ encoded fragments.
-More than half of the interval is waiting on gossip spreading rather than generating fragment.
-The fragment decoding latency is negligible, and after peer collects enough fragments to recover, the object recovery only takes 1.2s.
-As a comparison, computing SHA256 hash for the 1GiB object takes 4.7s.
-Actually, computing SHA256 hash is the major increasing overhead when switching from 64MiB objects to 1GiB.
-The good support provided by the library not only make operations blazing fast, but also makes it feasible to regularly recover tons of whole objects among the peers without worrying about performance overhead.
+\paragraph{Latency breakdown.}
+Compared to Kademlia, \sys requires less sequential peer communication, but performs extra encoding/decoding for an object.
+Thanks to highly-optimized fountain code library, the coding latency overhead is surprisingly small: for 1GiB object, it takes only 4.2s from receiving the pull request from the first responsible peer, to send out all $k_p$ encoding fragments.
+More than half of the duration is waiting for gossip dissemination, rather than generating fragment.
+Fragment decoding latency is negligible, and after the node collects enough fragments to recover, actual object recovery only takes 1.2s.
+For a comparison, computing SHA256 hash for a 1 GiB object takes 4.7s.
+Actually, SHA256 hash computation is the major source of the additional lantency when switching from 64 MiB to 1 GiB objects.
+%The good support provided by the library not only make operations blazing fast, but also makes it feasible to regularly recover tons of whole objects among the peers without worrying about performance overhead.
 
 %Future work. Monitor cpu usage and network bandwidth usage.
