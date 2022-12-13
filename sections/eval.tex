@@ -5,8 +5,8 @@ This improves system stability without too much overhead.
 
 \subsection{Simulations}
 
-Perform discrete event simulation on a network with 10K peers. Passion distributed peer failure according to peers' average AFR.
-In simulation each peer periodically gossip until it is selected to fail. Then after gossip timeout, next responsible peers will notice and start to repair.
+Perform discrete event simulation on a network with 10K peers. Poisson distributed peer failure according to peers' average AFR.
+In simulation each peer periodically gossip until it is selected to fail. Then after gossip timeout, next responsible peers will notice and may choose to start to repair.
 We record the repair traffic with data object size as basic unit.
 We also record the overall raw capacity occupied. Notice redundancy reduction is not simulated, so the redundancy is more than result from deployed environment.
 Every simulation runs 10 times with different seeds and takes the average.
