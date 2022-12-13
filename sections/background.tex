@@ -36,7 +36,7 @@ To reduce storage redundancy without compromising data reliability, modern distr
 In particular, maximum distance separable (MDS) codes, e.g., Reed-Solomon code~\cite{reed-solomon}, are a common choice.
 Being centrally managed, the system administrator defines \emph{placement groups}.
 Each erasure code strip (including the special case --- replicas of an object) is mapped to one placement group.
-To reduce the risk of data losses, placement groups are chosen to minimize correlated failures, where factors such as failure domains and annual failure rate (AFR) of the storage devices~\cite{pacemaker,tiger} are usually considered.
+To reduce the risk of data losses, placement groups are chosen to minimize correlated failures, where factors such as failure domains and annualized failure rate (AFR) of the storage devices~\cite{pacemaker,tiger} are usually considered.
 
 These systems, however, only consider crash failures of individual components.
 All participants of the system are under a single, protected administrative domain, so the system does not need to tolerate Byzantine failures~\cite{bft}.
