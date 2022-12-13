@@ -61,15 +61,19 @@ Another implication is that \sys scales well with an increase in AFT, i.e., the 
     \label{fig:time}
 \end{figure}
 
-\textbf{Repairing and redundancy over time.} We trace one data object for 10 years.
-\autoref{fig:time} we can observe how much raw capacity is taken by a single data object in the whole system.
-As reference replicated system take 3 times data object size constantly.
-\sys has less redundancy in most of the time, and the only short intervals with large redundancy can be further shorten by aggressively redundancy reducing introduced in \autoref{sec:implementation}.
-Although \sys deploy lazy repairing, comparing to 10 year simulation time, the repairing delay is still short enough that looks straight up.
-\autoref{fig:time} shows accumulated repair traffic in 10 years.
-The number of steps for \sys is less than replicated, which is a strong evidence that \sys do repair more lazy than replicated and require less synchronous network.
-As a comparison, a \sys with alternative parameter $k_{repair} = 1.6k$, which can tolerance 25\% more faulty peers, is also shown in the graph.
-The repairing is slightly more frequent compare to default parameter, but still lazier than a replicated system.
+\textbf{Repair and redundancy over time.}
+In the next simulation, we trace one data object for a duration of 10 years.
+\autoref{fig:time} plots the raw capacity, i.e., the aggregated encoding size, a single data object occupies in the whole system.
+As a reference point, capacity of a 3-way replication system is kept constant at 3.
+\sys incurs less redundancy most of the time.
+The short interval in which \sys incurs larger redundancy can be further reduced by aggressive redundancy reducing introduced in \autoref{sec:implementation}.
+Note that although \sys deploys lazy repairing, comparing to the overall simulation time (10 years), the repair delay is still appears instantaneous.
+
+The lower subplot of \autoref{fig:time} shows the accumulated repair traffic over 10 years.
+The number of step increases taken by \sys is less than the replicated system.
+This serves as a strong evidence that \sys performs repair more lazily than a replication system, and thus relies less on synchrony in the system.
+As a comparison, \sys using an alternative parameter $k_{repair} = 1.6k$, thus tolerating 25\% more faulty peers, is also plotted in the graph.
+Compared to the default parameter, object repairs happen more frequently, but still less than that of a replicated system.
 
 \begin{figure}
     \addgraph{faulty-lost}
@@ -77,12 +81,15 @@ The repairing is slightly more frequent compare to default parameter, but still 
     \label{fig:faulty}
 \end{figure}
 
-\textbf{Fault tolerance.} \autoref{fig:faulty} shows a one-year tracing of 1000 data objects in a faulty system.
-In this system, faulty peers normally gossip, but not actually holding fragments.
-The data object is consider as lost immediately when remaining fragments cannot recover it (for \sys) or no copy left (for replicated system).
-From the graph, it is clearly that replicated system does not tolerance any faulty peer: it immediately starts to lose data as long as single faulty peer exists.
-On the other hand, \sys can tolerance a significant portion of faulty peers, depends on the selection of parameters.
-The default parameter can tolerance roughly targeted 33\% faulty peers, while a more conservative variant can tolerance even more with the cost of redundancy.
+\textbf{Fault tolerance.}
+To evaluate how well \sys tolerates adversaries, we simulate a network with Byzantine faulty nodes.
+Byzantine faulty peers participate in gossip protocols; however, they do not store any encoding fragment.
+A data object is consider permanently lost when the survived fragments drop below $k+\epsilon$ (for \sys) or no replicas are left (for the replicated system).
+\autoref{fig:faulty} shows the number of lost objects in a one-year trace with a total of 1000 data objects.
+This simulation verifies that a replicated system does not tolerance strong adversaries: the system starts to lose data as soon as a single faulty node appears.
+On the other hand, \sys can tolerate a significant fraction of faulty nodes without losing data.
+The degree of tolerance depends on the parameters.
+Using the default parameter, \sys can tolerate around the targeted 33\% faulty nodes, while a more conservative configuration can improve tolerance further at the expense of increased redundancy.
 
 \subsection{World-wide deployment}
 
@@ -130,4 +137,4 @@ As a comparison, computing SHA256 hash for the 1GiB object takes 4.7s.
 Actually, computing SHA256 hash is the major increasing overhead when switching from 64MiB objects to 1GiB.
 The good support provided by the library not only make operations blazing fast, but also makes it feasible to regularly recover tons of whole objects among the peers without worrying about performance overhead.
 
-Future work. Monitor cpu usage and network bandwidth usage.
+%Future work. Monitor cpu usage and network bandwidth usage.
