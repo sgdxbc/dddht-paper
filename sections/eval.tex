@@ -149,7 +149,7 @@ Thanks to highly-optimized fountain code library, the coding latency overhead is
 More than half of the duration is waiting for gossip dissemination, rather than generating fragment.
 Fragment decoding latency is negligible, and after the node collects enough fragments to recover, actual object recovery only takes 1.2s.
 For a comparison, computing SHA256 hash for a 1 GiB object takes 4.7s.
-Actually, SHA256 hash computation is the major source of the additional lantency when switching from 64 MiB to 1 GiB objects.
+Actually, SHA256 hash computation is the major source of the additional latency when switching from 64 MiB to 1 GiB objects.
 %The good support provided by the library not only make operations blazing fast, but also makes it feasible to regularly recover tons of whole objects among the peers without worrying about performance overhead.
 
 %Future work. Monitor cpu usage and network bandwidth usage.
