@@ -19,7 +19,7 @@ We can always leverage more advanced gossip implementation. Besides of that, a g
 Persistence proof are usually tiny messages, more or less 100 bytes.
 A peer stores tons of fragments can postpone a little and send a batch of gossip messages in single message, reduce workload and bandwidth requirement of gossip significantly.
 Thanks to lazy repairing, health checking has large interval, normally several hours or up to once per day, so a reasonable delay on gossip will not cause false positive repairing.
-Notice that gossip of epoch 1 never be batched, to prevent to hurt tail latency performance of PUT operation.
+Notice that gossip of epoch 1 never be batched, to prevent to hurt tail latency performance of \store operation.
 
 \textbf{Repair booster to reduce repair traffic.} One problem with \sys is that it can suffer from amplified network traffic caused by repairing.
 Each responsible peer has to individually fetch $k + \epsilon$ fragments before storing, and it only stores one generated fragment.
@@ -56,7 +56,7 @@ In practice, we found that \XXX selection of parameters can work well when $B$ i
 \textbf{Program implementation.} 
 Base on libp2p-rust. Use TCP transport with Noise protocol framework for authentication and Mplex protocol for stream-muiltplexing.
 The implementation mainly consists of two parts: gossip protocol and fragment exchange protocol.
-Gossip protocol is built with libp2p's Gossipsub protocol, using 3 topic PUT, GET and SHOW for two operations and persistence proof.
+Gossip protocol is built with libp2p's Gossipsub protocol, using 3 topic STORE, QUERY and SHOW for two operations and persistence proof.
 Gossipsub will randomly send the message to a set of mesh peers, i.e. 10 random peers in the network.
 This outbound congestion control makes sure a popular peer's CPU and bandwidth is not overwhelmed by gossip.
 The custom fragment exchange protocol is simple one-shot RPC to allow peers to push and pull fragments from another peer.
