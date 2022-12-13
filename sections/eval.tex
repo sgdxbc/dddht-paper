@@ -15,31 +15,24 @@ The replicated system replicate every object on 3 random selected peers, and per
 This is similar to datacenter-level distributed storage. We use it to check how much overhead we paid for decentralization.
 
 \begin{figure}
-    \addgraph{repair-object}
-    \caption{Repair traffic over object number.}
-    \label{fig:repair-object}
+    \addgraph{repair}
+    \caption{Repair traffic.}
+    \label{fig:repair}
 \end{figure}
 
 \textbf{Repair traffic.} We record the total number of repairing in the first year. 
-Figure \autoref{fig:repair-object} shows repair traffic linearly increase according to the data object number.
+Figure \autoref{fig:repair} shows repair traffic linearly increase according to the data object number.
 When booster peers caching data object perfectly, every repairing only transfer $1/k$ unit of data object, and the overall traffic is comparable to replicated system.
 However when cache hit rate decrease, the traffic increases hugely because each cache missing cause almost one whole extra object size to be transffered.
 Certain incentive should be provided to booster peers to encourage them to cache for a longer time and reduce repair traffic.
 
-\begin{figure}
-    \addgraph{repair-afr}
-    \caption{Repair traffic over AFR.}
-    \label{fig:repair-afr}
-\end{figure}
-
-Figure \autoref{fig:repair-afr} shows repair traffic with various AFR in the first year.
+Figure \autoref{fig:repair} shows repair traffic with various AFR in the first year.
 Repair traffic also grow linearly according to AFR both in \sys and replicated system.
 This shows \sys has good responsiveness to the change of system's average AFR.
 And it also scales well respect to the increase of AFR, i.e., the overhead per peer failure keep constant.
 
 \begin{figure}
-    \addgraph{time-store}
-    \addgraph{time-repair}
+    \addgraph{time}
     \caption{Raw capacity and repairing traffic over time.}
     \label{fig:time}
 \end{figure}
@@ -89,8 +82,7 @@ The peer then claims to be provider of the object through DHT. After the claim i
 Notice that erasure coding cannot be easily adapted into Kademlia, which causes the implementation quite limited.
 
 \begin{figure}
-    \addgraph{latency-put}
-    \addgraph{latency-get}
+    \addgraph{latency}
     \caption{Latency of \store and \query operation}
     \label{fig:latency}
 \end{figure}
