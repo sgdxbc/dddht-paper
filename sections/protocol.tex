@@ -247,13 +247,26 @@ We apply the same homomorphic hashing scheme designed in \cite{homo_hash}.
             \If{$c$}
                 \State $\var{next[oh].proof} \gets \langle e + 1, h, \pi \rangle$
                 \State $\var{frag} \gets$ fetch fragment from source node
-                \State $\var{next[oh].live} \gets \var{next[oh].live} \cup \set{\var{\langle fh, frag \rangle}}$
+                \State $\var{next[oh].alive} \gets \var{next[oh].alive} \cup \set{\var{\langle fh, frag \rangle}}$
             \EndIf
         \EndProcedure
     \end{algorithmic}
     \caption{Procedures to handle gossip messages}
     \label{alg:gossip-handler}
 \end{algorithm}
+
+An \sys node receives two type of gossip messages, \mtype{obj} and \mtype{frag}.
+A client sends \mtype{obj} when storing an object, while \mtype{frag} is a fragment persistence proof sent by nodes periodically.
+
+As shown in \autoref{alg:gossip-handler}, when a node receives a \mtype{obj}, it invokes Kleroterion to determine if it is chosen to store a fragment for the object in the initial epoch.
+Chosen nodes fetch the object from the requesting client, and then invoke \fn{ConstrFrag} to construct and store their responsible fragments.
+Details of \fn{ConstrFrag} will be introduced later.
+
+When a \mtype{frag} is received, the node first verifies the correctness of the persistence proof by invoking \fn{VerifyFrag}.
+Invalid fragments are immediately rejected.
+If the fragment matches the inflight client request, the node adds the fragment hash to the pending list.
+It then invokes Kleroterion, similar to the \mtype{obj} handler, to determine its eligibility for storing the object in the subsequent epoch.
+If the node is responsible, it fetches and stores the fragment from the source, and starts monitoring persistence proofs of the object.
 
 \paragraph{Object persistence monitoring.}
 
