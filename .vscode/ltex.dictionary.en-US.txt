@@ -35,3 +35,5 @@ addr
 goto
 subprotocols
 inflight
+geo-distributed
+IPFS-like
