@@ -127,6 +127,8 @@ A traversal of fragment links increases the probability to recover all $k + \eps
 
 \subsection{Protocol Details}
 
+\subsubsection{\sys Client Protocols}
+
 \begin{algorithm}
     \begin{algorithmic}[1]
         \State $\var{pnd} \gets \langle \bot, \set{}\rangle$ \Comment{pending op. hash and fragments}
@@ -157,7 +159,6 @@ A traversal of fragment links increases the probability to recover all $k + \eps
     \label{alg:client}
 \end{algorithm}
 
-\subsubsection{\sys Client Protocols}
 \autoref{alg:client} lists the client side protocol of \sys.
 Being a decentralized peer-to-peer system, client operations are issued on participating nodes, though they can also serve as proxies for light-weight clients.
 We use \textit{client} to denote the peer node that issues a client operation.
@@ -173,6 +174,66 @@ If the DHT contains fragment pointers of the object, the client fetches $k + \ep
 If no pointers are found or the procedure times out, the client registers the object in the local pending list, similar to the \store protocol.
 It then waits until $k + \epsilon$ proofs are collected, and fetches fragments from the corresponding nodes.
 In either case, the client uses the rateless code decoding function to reconstruct the original object from the fragments.
+
+\subsubsection{Storing and Generating Encoding Fragments}
+
+The core of \sys centers around participating nodes storing and generating encoding fragments throughout the lifetime of data objects.
+It involves subprotocols to randomly choose nodes responsible for encoding fragments, to verify fragment persistence proofs, to handle gossip messages, and to monitor persistence of data objects.
+
+\paragraph{Kleroterion node selection protocol.}
+As shown in \autoref{alg:kleroterion}, to determine if a node is chosen to store an encoding fragment for an object in epoch $e$, the node feeds its secrete key $sk$ and the hash of the object, concatenated with $e$, into the VRF function.
+VRF generates a hash $h$ and a proof $\pi$.
+By dividing $h$ by the total hash space, Kleroterion interprets the VRF output as a random real number between 0 and 1.
+
+To simplify protocol exposition, we assume each node having exactly one unit of stake.
+If a user possesses $n$ units of stake, it creates $n$ virtual nodes, each with a single unit of stake.
+To randomly select $K$ nodes out of $S$ total nodes ($S$ is the aggregate units of stake in the system), we set a boolean value $c$ to true if the interpreted VRF output falls below $\frac{K}{N}$.
+Once a node is selected, Kleroterion uses the VRF output hash modulo $K$ to assign the index of the fragment ($\var{idx}$) within the epoch fragment stream.
+For large values of $K$, randomness of VRF ensures low collision rate across eligible nodes.
+
+
+\begin{algorithm}[t]
+    \begin{algorithmic}[1]
+        \Procedure{Kleroterion}{$\var{hash}, e$}
+            \State $\langle \var{h}, \pi \rangle \gets \fn{VRF}_{sk}(\var{hash} \parallel e)$
+            \State $c \gets \frac{h}{2^{hashlen}} < \frac{K}{S}$
+            \State $\var{idx} \gets h \bmod K$
+            \State \Return $\langle \var{h}, \pi, c, idx \rangle$
+        \EndProcedure
+        \Procedure{VerifyFrag}{$\var{oh}, e, h, \pi, \var{fh}, \var{pk}$}
+            \If{$\neg \fn{VerifyVRF}_{pk}(h, \pi, \var{oh} \parallel e)$}
+                \Return false
+            \EndIf
+            \State $c \gets \frac{h}{2^{hashlen}} < \frac{K}{S}$
+            \If{$\neg c$}
+                \Return false
+            \EndIf
+            \State $\var{idx} \gets h \bmod K$
+            \State \Return $\var{fh} = \fn{FragHash}(oh, e, idx)$
+        \EndProcedure
+    \end{algorithmic}
+    \caption{Kleroterion node selection protocol}
+    \label{alg:kleroterion}
+\end{algorithm}
+
+\paragraph{Handling gossip messages.}
+
+\paragraph{Object persistence monitoring.}
+
+%\textbf{Randomized placement group.} \sys selects a random set of peers to monitor and store a data object.
+%The set of peers changes from time to time. We call the set of peer are \textit{eligible} for taking care of the object.
+%Given long enough time, every node will be in the set for at least once.
+%The network is asynchronous. To avoid peers take charge of the object too early or too late, cause unnecessary redundant storage,
+%we construct a weak causal dependency among the needs.
+%We split peers into different ages. A peer of $age$ is eligible only after it has observed at least one peer of $age - 1$ being eligible, i.e., gossip health proof.
+%A peer becomes not eligible if it observes sufficient number of peers of higher ages are eligible.
+%At that point, the peer is safe to stop monitor the object and discard the stored fragment.
+%
+%\textbf{Put new data object into system.} Observe enough gossip.
+%
+%\textbf{Retrieve data object from system.} Gossip + back pointer optimization.
+%
+%\textbf{Event-driven peer behavior.}
 
 \begin{algorithm}
     \begin{algorithmic}[1]
@@ -196,27 +257,6 @@ In either case, the client uses the rateless code decoding function to reconstru
                 \State $\var{frag} \gets$ fetch fragment from source node \lijl{if fragment is not already available. For the first epoch, fetch the whole object from the requester.}
                 \State $\var{next[oh].frags} \gets \var{next[oh].frags} \cup \set{\var{frag}}$
             \EndIf
-        \EndProcedure
-        \Procedure{Kleroterion}{$\var{oh}, e$}
-            \State $\langle \var{hash}, \pi \rangle \gets \fn{VRF}_{sk}(\var{oh} \parallel e)$
-            \State $c \gets$ \lijl{insert right formula here}
-            \State \Return $\langle \var{hash}, \pi, c \rangle$
-        \EndProcedure
-        \Procedure{VerifyFrag}{$\var{oh}, e, \tau, \pi, \var{fh}, \var{idx}$}
-            \If{$\neg \fn{VerifyVRF}_{pk}(\tau, \pi, \var{oh} \parallel e)$} \sgd{tau is not needed for verify}
-                \Return false
-            \EndIf
-            \State $c \gets$ \lijl{insert right formula here}
-            \If{$\neg c$}
-                \Return false
-            \EndIf
-            \If{$\var{idx \neq \tau \bmod N}$} \sgd{$N$ is too used as total number of peers elsewhere}
-                \Return false
-            \EndIf
-            \If{$\var{fh} \neq \fn{FragHash}(oh, e, idx)$}
-                \Return false
-            \EndIf
-            \State \Return true
         \EndProcedure
         \Procedure{ConstrFrag}{$obj, \var{oh}, \tau, \pi, e$}
             \State $\var{idx} \gets \tau \bmod N$
@@ -245,23 +285,6 @@ In either case, the client uses the rateless code decoding function to reconstru
     \end{algorithmic}
     \caption{\sys protocol on each node}
 \end{algorithm}
-
-\subsubsection{Storing and Regenerating Encoding Fragments}
-
-\textbf{Randomized placement group.} \sys selects a random set of peers to monitor and store a data object.
-The set of peers changes from time to time. We call the set of peer are \textit{eligible} for taking care of the object.
-Given long enough time, every node will be in the set for at least once.
-The network is asynchronous. To avoid peers take charge of the object too early or too late, cause unnecessary redundant storage,
-we construct a weak causal dependency among the needs.
-We split peers into different ages. A peer of $age$ is eligible only after it has observed at least one peer of $age - 1$ being eligible, i.e., gossip health proof.
-A peer becomes not eligible if it observes sufficient number of peers of higher ages are eligible.
-At that point, the peer is safe to stop monitor the object and discard the stored fragment.
-
-\textbf{Put new data object into system.} Observe enough gossip.
-
-\textbf{Retrieve data object from system.} Gossip + back pointer optimization.
-
-\textbf{Event-driven peer behavior.}
 
 \subsection{Optimizations}
 
