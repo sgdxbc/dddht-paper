@@ -1,17 +1,28 @@
-By default k = 64, persistence parameter $k_p = 1.2k$, select rate $K = 2k$
-\sgd{This description assumes single-stack nodes.}
-In practical we decide to make \store operation returns only when there are $1.6k$ peers start to gossip.
-This improves system stability without too much overhead.
+We use two types of experiments to evaluate \sys: discrete event simulation and physical deployment on geo-distributed EC2 virtual machines.
+Unless otherwise specified, we use $k = 64$ for the rateless erasure code in \sys, and a persistence parameter $k_p$ of $1.2k$.
+The total number of nodes selected in each epoch, $K$, is set to $2k$.
+%By default k = 64, persistence parameter $k_p = 1.2k$, select rate $K = 2k$
+%\sgd{This description assumes single-stack nodes.}
+In our physical deployment, \store operations return only when $1.6k$ persistence proofs are received through gossip.
+This safeguard policy improves system stability without introducing significant overhead.
+
+When evaluating physical deployments, we compare \sys to two other systems.
+Firstly, an IPFS-like decentralized storage system that uses Kademlia DHT to store publisher record.
+We only slightly modified IPFS in the following way: When storing an object, we transfer the object to a random peer instead of storing locally.
+Note that IPFS (and our modified version) by default only stores a single copy of the object, therefore offering no durability guarantee.
+Second, we also evaluate against the Ceph~\cite{ceph} distributed storage system.
 
 \subsection{Simulations}
 
-Perform discrete event simulation on a network with 10K peers. Poisson distributed peer failure according to peers' average AFR.
+We first use discrete event simulation to evaluate the overhead and fault tolerance guarantees of \sys.
+The simulation is developed in-house.
+Poisson distributed peer failure according to peers' average AFR.
 In simulation each peer periodically gossip until it is selected to fail. Then after gossip timeout, next responsible peers will notice and may choose to start to repair.
 We record the repair traffic with data object size as basic unit.
 We also record the overall raw capacity occupied. Notice redundancy reduction is not simulated, so the redundancy is more than result from deployed environment.
 Every simulation runs 10 times with different seeds and takes the average.
 
-Beside of \sys we also simulate a Ceph-like replicated storage. 
+Beside of \sys we also simulate a Ceph-like replicated storage.
 The replicated system replicate every object on 3 random selected peers, and perform repair as soon as possible when one of the peer fails.
 This is similar to datacenter-level distributed storage. We use it to check how much overhead we paid for decentralization.
 
@@ -21,7 +32,7 @@ This is similar to datacenter-level distributed storage. We use it to check how 
     \label{fig:repair}
 \end{figure}
 
-\textbf{Repair traffic.} We record the total number of repairing in the first year. 
+\textbf{Repair traffic.} We record the total number of repairing in the first year.
 \autoref{fig:repair} shows repair traffic linearly increase according to the data object number.
 When booster peers caching data object perfectly, every repairing only transfer $1/k$ unit of data object, and the overall traffic is comparable to replicated system.
 However when cache hit rate decrease, the traffic increases hugely because each cache missing cause almost one whole extra object size to be transffered.
