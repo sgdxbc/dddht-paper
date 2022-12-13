@@ -110,7 +110,7 @@ When issuing \store, the client node pushes the object to a random peer in the n
 The peer then claims as the provider of the object by updating the publisher record in DHT.
 Note that erasure coding, unfortunately, cannot be easily adapted into Kademlia.
 We also deployed a Ceph cluster with one replication pool and one erasure coding pool, all with the stock configuration.
-The cluster contains 5 servers, on in each region.
+The cluster contains 5 servers, one in each region.
 The Ceph cluster serves as a reference distributed storage system design.
 
 In every run of the evaluation, to remove any caching effect, we spawn a fresh node as client.
