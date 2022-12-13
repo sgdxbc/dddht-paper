@@ -362,6 +362,16 @@ Any peer participating in \sys can behave as a booster node, but heuristically t
 %\end{itemize}
 Note that faulty booster nodes has no effect on object durability, but can only increase network usage.
 
+\paragraph{Batching gossip messages.}
+We can batch gossip messages to further reduce network traffic.
+Persistence proof are usually tiny messages, approximately 100 bytes.
+Nodes can delay and send a batch of messages in single gossip, reducing the bandwidth requirement of gossip significantly.
+Thanks to lazy repair, the timer interval is long, normally from several hours to up to once per day, so a small delay on gossip will not induce unnecessary repairs.
+
+\paragraph{Reduce redundancy caused by bursty repair.}
+Since every node individually monitors objects without explicit coordination, when repair threshold is reached, several nodes' may simultaneously regenerate encoding fragments.
+To ameliorate this issue, when a node checks for object persistence, it can filter out fragments with hash values lower than the local one.
+
 \subsection{Correctness}
 
 Typically, the durability of a storage system is analyzed by continuous-time Markov chain (CTMC) model.

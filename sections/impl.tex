@@ -1,15 +1,3 @@
-\textbf{Batching gossip messages.}
-We can always leverage more advanced gossip implementation. Besides of that, a general optimization is to batch gossip messages.
-Persistence proof are usually tiny messages, more or less 100 bytes.
-A peer stores tons of fragments can postpone a little and send a batch of gossip messages in single message, reduce workload and bandwidth requirement of gossip significantly.
-Thanks to lazy repairing, health checking has large interval, normally several hours or up to once per day, so a reasonable delay on gossip will not cause false positive repairing.
-Notice that gossip of epoch 1 never be batched, to prevent to hurt tail latency performance of \store operation.
-
-\textbf{Reduce redundancy that caused by bursty repairing.}
-Because every peer individually monitor objects without explicit coordination, when repair threshold reach, several peers' repairing timeout may be triggered almost simultaneously.
-To address this, when a peer check for object health, if not only there are enough number of gossip messages, but also all those fargments have larger hash value of local one,
-then the peer can safely discard its stored fragment and stop gossip.
-
 \textbf{Select parameters.} A fixed $B$ is given such that at most $BN$ nodes are faulty where $N$ is the total number of nodes.
 A proper repair threshold $k_0$
 \sgd{$k_0$ is analog to $n$ in typical $(n, k, r)$ code. Should we use symbol $n$ instead?}
