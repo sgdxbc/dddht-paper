@@ -1,11 +1,12 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{paper}
 
-\LoadClass[letterpaper,twocolumn,10pt]{article}
+% \LoadClass[letterpaper,twocolumn,10pt]{article}
+\LoadClass[sigconf, review, anonymous]{acmart}
 
 \frenchspacing
 
-\RequirePackage{usenix-2020-09}
+% \RequirePackage{usenix-2020-09}
 
 \bibliographystyle{abbrv}
 
