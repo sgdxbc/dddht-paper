@@ -32,20 +32,12 @@ To provide fault tolerate against strong adversaries, \sys applies \emph{verifia
 Kleroterion uses verifiable random function~\cite{vrf} to determine eligibility of participants to store encoding fragments of an object at a virtual time.
 Selection results are unforgeable and publicly verifiable.
 Randomness and verifiability of the selection outcome ensures that sufficient encoding fragments are stored on honest nodes, even in the presence of active adversarial attacks.
-\lijl{Maybe add homomorphic hashing and other optimizations here, if there is space and time.}
+%\lijl{Maybe add homomorphic hashing and other optimizations here, if there is space and time.}
 
 
 \sys is a practical design.
-We implement \sys in \XXX
-\sgd{Rust on top of libp2p} 
-and deploy \sys in more than \XXX 
-\sgd{5000}
-nodes across \XXX 
-\sgd{5}
-continents.
-\lijl{Describe implementation and evaluation results.}
-\sgd{\sys shows good performance in both simulation and deployment evaluations.
-It can achieve similar repair traffic overhead compared to a typical distributed replicated storage when sufficient caching is available.
-The repairing overhead per failure keep constant when failing get more frequent.
-\sys can also perform data operations with 1.6x-3.1x lower latency compare to exist decentralized storage, while achieve similar scalability over thousands of peers.
-}
+We implement \sys on top of libp2p and deploy \sys in more than 5000 nodes across 5 continents on AWS.
+\sys shows good performance in both simulation and deployment evaluations.
+It achieves similar repair traffic overhead compared to a distributed replicated storage when sufficient caching is available.
+Repair overhead per failure remains constant even when nodes fail more frequently.
+\sys performs data object \store and \query with 1.6x-3.1x lower latency compare to existing decentralized storage, while achieving similar scalability over thousands of peers.

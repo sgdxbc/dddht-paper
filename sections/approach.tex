@@ -10,7 +10,7 @@ The de facto standard approach is data replication and erasure code.
 It is well-studied how \textit{redundancy} can mask failures -- including Byzantine ones -- of individual components and ensure data availability.
 The approach is particularly effective in centralized settings, in which system participants and failure distributions are managed by a single entity.
 For instance, the central administrator can control node/device selection such that out of the $n$ nodes storing a data object, at most $n-r$, where $r$ is the level of redundancy, of them can fail.
-\lijl{Can add placement group discussion here.}
+%\lijl{Can add placement group discussion here.}
 
 The formula changes completely in an open, decentralized system.
 Nodes are free to join and leave the system at any time.
@@ -28,7 +28,8 @@ Data durability is immediately violated under these attack scenarios.
 
 Existing blockchain systems face similar attack vectors.
 However, decentralized storage systems are particularly vulnerable, given their scale and redundancy constraints.
-In large scale deployments, the size of the system, which can reach beyond 100K nodes~\cite{ipfs}, easily overwhelms the replication factor of each storage object, which is typically below 20 \lijl{citation?}.
+In large scale deployments, the size of the system, which can reach beyond 100K nodes~\cite{ipfs}, easily overwhelms the replication factor of each storage object, which is typically below 20.
+%\lijl{citation?}.
 In fact, reducing redundancy is a key metric to improve the overall storage efficiency.
 This is in contrast to a blockchain, in which chain data is replicated on every participant.
 With such a small redundancy, effectiveness of adversarial attacks grows exponentially, even when the adversaries account for a small percentage of the entire system.
@@ -39,17 +40,18 @@ even the faster Ethereum network incurs a finality latency of over 12 seconds.
 Besides latency, both networks also suffers low consensus throughput -- 7 transaction per second (TPS) for Bitcoin and 20 TPS for Ethereum -- as well as high transaction fees.
 Storage mechanisms that rely on frequent consensus are impractical in such settings.
 
-\sgd{Maybe go into related work, or omitted.} \textbf{Purely incentive-based approaches.} Filecoin and Arweave.
-More flexible systems, basically no guidance for peers. Each peer individually decides their behaviors.
-Economical model rules them all.
-Problems: \begin{itemize}
-    \item Hard to formally analyze durability of such system.
-    Even every peer wants to extend object lifetime as much as possible, they may fail to do so in corner cases.
-    \item Weak cooperation. Very few information exchange, many behaviors base on heuristic.
-    May fail to ensure safety and/or results in poor resource efficiency. For example over-replicated is by-design in Arweave.
-    \item Sybil i.e. cooperative peers group takes advantage and may be harmful to the system. All issue of economic market is inherited.
-    \item Unexpected breach of the rules already happen, e.g. most data on Filecoin is garbage \sgd{really?}.
-\end{itemize}
+%\sgd{Maybe go into related work, or omitted.}
+%\paragraph{Purely incentive-based approaches.} Filecoin and Arweave.
+%More flexible systems, basically no guidance for peers. Each peer individually decides their behaviors.
+%Economical model rules them all.
+%Problems: \begin{itemize}
+%    \item Hard to formally analyze durability of such system.
+%    Even every peer wants to extend object lifetime as much as possible, they may fail to do so in corner cases.
+%    \item Weak cooperation. Very few information exchange, many behaviors base on heuristic.
+%    May fail to ensure safety and/or results in poor resource efficiency. For example over-replicated is by-design in Arweave.
+%    \item Sybil i.e. cooperative peers group takes advantage and may be harmful to the system. All issue of economic market is inherited.
+%    \item Unexpected breach of the rules already happen, e.g. most data on Filecoin is garbage \sgd{really?}.
+%\end{itemize}
 
 \subsection{The Case for Using Fountain Code}
 \label{sec:background:code}
@@ -68,15 +70,15 @@ However, decentralized systems, unlike centrally managed clusters, exhibit high 
 Strict timing requirement for detection and recovery of encoding symbols is therefore impractical in a decentralized environment.
 On the other hand, large values of $r$ in fountain codes can tolerate bursty encoding failures without losing the data, and permit the system to recover at a steady average rate.
 Such property is more favorable in a highly aynchronous environment.
-Note that the increase in $r$ in fountain codes does not lead to higher redundancy: a \XXX and a \XXX code have the exact same redundancy, \XXX.
+%Note that the increase in $r$ in fountain codes does not lead to higher redundancy: a \XXX and a \XXX code have the exact same redundancy, \XXX.
 
 The rateless property of fountain code is also beneficial.
 As discussed in \autoref{sec:approach:challenge}, coordination and consensus are costly in decentralized systems.
 MDS codes with small values of $(n, k, r)$ necessitate participants to coordinate to agree on the assignment of symbols.
-Uncoordinated symbol generation may lead to insufficient \textit{unique} symbols to recover the original data, an issue analogous to the coupon collector's problem \lijl{citation} \cite{ccp}.
+Uncoordinated symbol generation may lead to insufficient \textit{unique} symbols to recover the original data, an issue analogous to the coupon collector's problem \cite{ccp}.
 Rateless codes eschew this issue completely.
 The availability of an infinite stream of encoding symbols enables participants to \textit{independently} generate symbols with a negligible probability of collision.
-\lijl{May need to rephrase this sentence.}
+%\lijl{May need to rephrase this sentence.}
 
 %Infinite, ordered fragments. Given order $i$, the $i$-th fragment can be generated in time linear to data object size.
 %Similar arguments have been made in the liquid system~\cite{liquid} and OceanStore~\cite{oceanstore}
@@ -90,17 +92,17 @@ At the fault tolerance level we are targeting ($1/3$ Byzantine participants), th
 
 In \sys, we leverage \textit{randomness} to tolerate adversarial behaviors.
 Under the assumption
-\sgd{I prefer to say this as an "assertion" instead of "assumption". Assumption sounds like it may be violated some time. However we rely on it to be hold for all time in order to ensure safety.}
+%\sgd{I prefer to say this as an "assertion" instead of "assumption". Assumption sounds like it may be violated some time. However we rely on it to be hold for all time in order to ensure safety.}
 that less than $1/3$ of the participants are Byzantine at any time, by randomly selecting nodes to store the generated or the repaired encoding symbols, \sys only needs to pay an approximately $0.33$ redundancy penalty compared to the base fountain code.
-\sgd{Should be 0.5: (1 + 0.5) * (1 - 1/3) = 1}
+%\sgd{Should be 0.5: (1 + 0.5) * (1 - 1/3) = 1}
 Note that the assumption doesn't rule out strong adversaries generating new identities --- proof of stake (PoS) or proof of work (PoW) can be used to defend against arbitrary Sybil attacks.
 
 We, however, avoid relying on a centralized, trusted entity to provide this random selection service.
 Instead, \sys performs node selection in a fully decentralized fashion, through a procedure termed Kleroterion~\footnote{Kleroterion was a randomization machine used in ancient Athens to select council members from citizens.}.
-The core of Kleroterion is the use of \textit{verifiable random functions} (VRF) \lijl{citation} \cite{vrf}.
+The core of Kleroterion is the use of \textit{verifiable random functions} (VRF) \cite{vrf}.
 A verifiable random function takes an input string and the private key of a prover, and it produces a deterministic random hash value plus a short proof.
 Using the proof and the public key of the prover, anyone can verify that the hash is correctly generated by the prover, and the prover only, from the input string.
-\lijl{Include proper mathematical definition?}
+%\lijl{Include proper mathematical definition?}
 This public verifiability enables storage nodes to independently generate checkable proofs that they are selected randomly by Kleroterion to store an encoding symbol for an object.
 Specifically, \sys nodes feed the hash of an object plus a virtual time to a VRF function.
 Kleroterion defines static and fair rules to determine eligibility from the output random hash values.
