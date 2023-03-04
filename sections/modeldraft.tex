@@ -39,13 +39,18 @@ To prove durability, we need to prove sufficient number of peers are responsible
 And we need to further prove that attackers cannot find out any non-faulty responsible identity.
 The original protocol cannot satisfy this requirement because responsible peers gossip data objects' hashes all the time.
 
-% The proving can be done in two steps.
+% The main design for data layout is a two-layer rateless erasure code, where the outer layer acts as a secret-sharing method.
+% We define \emph{encoded object} as the fragments of the outer code, and \emph{encoded fragment} (fragment for short when no ambiguity) as the fragments of the inner code.
+% One data object is converted into certain number of encoded objects upon storing, and each of the encoded object is converted into certain number of encoded fragments.
+% Finally, every encoded fragment is stored on different peers selected by VRF.
+
+% The proving of durability can be done in two steps.
 % First, attackers cannot find out the responsible peers of the first epoch.
 % To store the data object, client should transmit the full data object to one \emph{root} peer through private secure channel, which is assumed to be free from monitoring.
 % So attacker cannot learn about this root peer.
-% Then the root peer generates encoded fragments with random indexes, and gossips persistence proof for every fragment.
-% The persistence proof includes the fragment hash, the fragment index, the epoch, and the proof of being responsible (not required for root peer).
-% Notice that the persistence proof does not include original data object hash, so it does not reveal any information about the data object to public.
+% The root peer first generates encoded objects with random fragment indexes.
+% Then the root peer along with the system then simultaneously works on each encoded object in the same way of how the original protocol works on a data object.
+% The store operation is done when the storing is done for every encoded object.
 
 % We leave the solution for tolerating a faulty root peer as future work.
 % Currently, we assume IPFS gateway-like root peers, which are well known and concurrently serve many client requests.
