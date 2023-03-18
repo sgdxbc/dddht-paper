@@ -1,76 +1,32 @@
 \subsection{Threat Model}
 
-At most \XXX percent of identities are faulty, besides, attackers can partition \XXX identities for any duration.
-The goal is to build a system that is provable that, the best strategy for a faulty identity is to keep silence.
-And the best strategy for an external attacker is to randomly select victims.
-If attacker is able to partition more than $k + \epsilon$ victim peers, it could cause data lost if those peers happen to be responsible for the same data object in the same epoch.
-This is unavoidable, but the attacker cannot target a specific data object.
-We believe the economic inefficiency will prevent such attacking to be conducted.
+At any time, at most $f$ fraction of all nodes are \emph{under attack}.
+The nodes are either themselves faulty, or they are targeted by external attackers.
+The nodes under attack may behave arbitrarily.
+The adversarial attacker may choose victim nodes based on public channel messages, i.e., gossips.
+However, it cannot observe any point-to-point private channel, neither the content nor whether the channel exists.
 
-We don't rely on special networking mechanism, e.g., Tor, to hide peers' identities.
-They talk to each other directly.
+Notice that this threat model surpasses typical Byzantine model, where attacker cannot choose faulty identity.
+\sgd{And it is a little unnecessarily strong, e.g., it allows attacker to forge message sent by victims which may not be possible.}
 
-Data objects have public content.
-For example, the hash of original data object is always available to attackers.
+\subsection{Design}
 
-Transient failure, churn rate, message eventually delivered, etc.
-One consequence is that we cannot "unify" data objects by encryption.
-Because if we encrypt data object on one of the peers, then if the peer has left upon retrieval, the data object cannot be decrypted.
-If we encrypt data object before pushing it to any peer, then according to the previous rule, the encrypted object is available to attackers.
-That means, it is possible for attackers to capture the full content of the encrypted object, derive its hash, and identify responsible peers by looking for peers who send messages contain the hash.
+Informal description of defending several kinds of attacks.
 
-\subsection{Semantic}
+\emph{Outer coding.}
+Client applies certain large code to the stored data object, and store the generated fragments, which is called encoded objects, into the system.
+This coding ensures both that attacker cannot associate nodes' gossips with data objects, and that certain amount of encoded objects lost can be tolerant.
+The former property prevents attacker to target encoded objects of the same data object.
+In another word, no matter how attacker chooses the target encoded objects, it's highly unlikely that there are a sufficient number of encoded objects of one data object got attacked.
+And the latter property ensure safety when insufficient encoded objects got attacked.
 
-The system provides \emph{one-shot read} functionality.
-Every data object can only be read at most once after it is stored.
-The read can happen at any time before the data object expires, and the system guarantees that the read will be successful.
-If read after the expiration, or read more than once, the result is unspecified.
-The system assumes certain external mechanism to authenticate the read.
+\emph{Inner coding and random selection.}
+The system randomly assigns encoded objects to a set of responsible nodes with transferrable authentication.
+The selection prevents attacker to target encoded fragments of the same encoded object.
+In another word, attacker can only claim to be responsible for an insufficient number of encoded fragments of one encoded object.
+And the coding ensure safety when insufficient encoded fragments are claimed to be responsible by faulty nodes.
 
-The ration of allowing only one-time read is that, after the read, attacker can monitor all peers that participants the read operation and partition them long enough until none of them are still online.
-So it is impossible to keep object safe ever since it is read once.
-Anyway, client can store the object again after reading it out, effectively make the system supports multiple reads.
+The inner coding could be any large code, but rateless erasure coding along with VRF provides a convenient way to implement the selection.
 
-\subsection{Informal Description and Proof of Protocol}
-
-\emph{Could be wrong.}
-
-To prove durability, we need to prove sufficient number of peers are responsible (i.e. keep the encoded fragments) at any time, which is already done in this paper.
-And we need to further prove that attackers cannot find out any non-faulty responsible identity.
-The original protocol cannot satisfy this requirement because responsible peers gossip data objects' hashes all the time.
-
-% The proving can be done in two steps.
-% First, attackers cannot find out the responsible peers of the first epoch.
-% To store the data object, client should transmit the full data object to one \emph{root} peer through private secure channel, which is assumed to be free from monitoring.
-% So attacker cannot learn about this root peer.
-% Then the root peer generates encoded fragments with random indexes, and gossips persistence proof for every fragment.
-% The persistence proof includes the fragment hash, the fragment index, the epoch, and the proof of being responsible (not required for root peer).
-% Notice that the persistence proof does not include original data object hash, so it does not reveal any information about the data object to public.
-
-% We leave the solution for tolerating a faulty root peer as future work.
-% Currently, we assume IPFS gateway-like root peers, which are well known and concurrently serve many client requests.
-% It is impossible for attackers to associate root peers' outbound gossips with any public data object content.
-
-% This version of VRF takes the fragment hash and epoch number as input.
-% The probability of getting selected should be reduced accordingly to make sure expected number of peers get selected by at least one fragment hash from previous epoch.
-% (When the number of peers gets large we can treat the selection by fragments as independent events.)
-% The peers selected for the first epoch communicate with root peer through point-to-point secure channel, out of attacker vision.
-% The root peer verifies responsible proof, then transmit the encoded fragment and a vector of identities of responsible peers of the first epoch.
-% The responsible peers then start to gossip to public same as root peer, with the fragment hash, the fragment index, the epoch, and the proof of being responsible.
-% This gossip message cannot be associated with any data object.
-% When there are faulty responsible peers, they can know about all the other peers who are responsible for the same data object.
-% However, the faulty peers cannot find out which data object they are storing, and they cannot control the randomness of getting selected.
-% So even they attack some or all of the other responsible peers, they can only make data lost of random objects.
-% This concludes the first step.
-
-% The second step of proving is that, if attacker cannot find out the current responsible peers, they cannot find out the responsible peers of next epoch either.
-% The following responsible peers check their selection and contact upstream peer in the same way as the first epoch's peers.
-% Different from original protocol, in this version the following responsible peer can contact to only one upstream peer which gossips the fragment hash of VRF's input.
-% The VRF proof shows what we called direct responsibility.
-% The upstream peer verifies the proof and response with the fragment hash vector.
-% Then the following responsible peer contacts to other upstream peers when it receives gossip that matches one hash from the vector.
-% It sends the same selection proof to the other upstream peers.
-% These upstream peers then verify the proof is valid for one fragment hash from the vector, which is called indirect responsibility.
-% Finally, all the upstream peers transmit the fragment, along with the next fragment hash vector, to the following responsible peers.
-% The next fragment hash vector contains hashes of fragments that will be stored by responsible peers of the next epoch.
-% Each of the fragment hash is derived from 
+The proof of responsibility + redundancy can be replaced by other proof of persistent strategy, e.g., random sampling by Filecoin.
+Our approach is more computational efficient than the alternatives and completely decoupled with incentive.
