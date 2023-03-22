@@ -1,32 +1,53 @@
 \subsection{Threat Model}
 
-At any time, at most $f$ fraction of all nodes are \emph{under attack}.
-The nodes are either themselves faulty, or they are targeted by external attackers.
-The nodes under attack may behave arbitrarily.
-The adversarial attacker may choose victim nodes based on public channel messages, i.e., gossips.
-However, it cannot observe any point-to-point private channel, neither the content nor whether the channel exists.
+We define a hybrid thread model that assumes both attacks from internal and external sources.
+At any time, there could be at most $f$ proportion of nodes to behave faulty.
+These nodes hold legal and fixed identities (e.g. by staking), and it is economically impractical to create more than
+$f$ proportion of faulty nodes.
+At the same time, at most $f'$ proportion of nodes may suffer from degraded performance because of external attack, 
+e.g., denial of service, network partitioning, etc.
+Attackers may target any node and change the victims at any time, but there are at most $f'$ proportion of the nodes to 
+be targeted at once, and these nodes will not have Byzantine behavior (if they are not the $f$ proportion faulty nodes 
+from the beginning).
 
-Notice that this threat model surpasses typical Byzantine model, where attacker cannot choose faulty identity.
-\sgd{And it is a little unnecessarily strong, e.g., it allows attacker to forge message sent by victims which may not be possible.}
+Finally, we assume attacker can access to the clear text of stored data objects.
 
-\subsection{Design}
+\subsection{System Model}
+Assuming an external authorization service, providing interfaces 
+\begin{itemize}
+    \item AUTH(pk, ..) $\rightarrow$ tk to register certain guarantee of a unit of fresh storage (for now using staking 
+    as a placeholder) to be associated with a public key, return a token
+    \item VERIFY(tk) $\rightarrow$ pk to check for token's validity, return owner
+\end{itemize}
 
-Informal description of defending several kinds of attacks.
+Using DHT as a routing mechanism, providing interfaces
+\begin{itemize}
+    \item PUBLISH(tk, addr) to announce an authorized token joining the system with expiration. Only accept the 
+    publishing by token's owner
+    \item FIND(h) $\rightarrow$ addr to look for the publically dialable address of the token that is globally closest
+    to a hash, i.e., should be responsible for storing the corresponding fragment
+\end{itemize}
 
-\emph{Outer coding.}
-Client applies certain large code to the stored data object, and store the generated fragments, which is called encoded objects, into the system.
-This coding ensures both that attacker cannot associate nodes' gossips with data objects, and that certain amount of encoded objects lost can be tolerant.
-The former property prevents attacker to target encoded objects of the same data object.
-In another word, no matter how attacker chooses the target encoded objects, it's highly unlikely that there are a sufficient number of encoded objects of one data object got attacked.
-And the latter property ensure safety when insufficient encoded objects got attacked.
+Client starts putting new data object by encoding it into encoded objects with a $(n', k', r')$ code that ensures both
+$k'/n' > 1-(f'+f)$, and no connection can be built from the context of $n'$ encoded objects to the original data object.
+\sgd{incur both $f$ here because a data object can be attacked internally and externally at the same time}
+A suitable choice is to use rateless erasure coding with random fragment indexes.
+Another choice is to encrypt the data object with different secrets.
+The client then must persist the hashes of $n'$ encoded objects, in order to query the data object later.
 
-\emph{Inner coding and random selection.}
-The system randomly assigns encoded objects to a set of responsible nodes with transferrable authentication.
-The selection prevents attacker to target encoded fragments of the same encoded object.
-In another word, attacker can only claim to be responsible for an insufficient number of encoded fragments of one encoded object.
-And the coding ensure safety when insufficient encoded fragments are claimed to be responsible by faulty nodes.
+Then for each encoded object, client generates encoded fragments by splitting encoded object into $k$ parts and 
+generating the rateless erasure coding fragments with indexes from $1$ to $n$.
+Client then FIND hash of each encoded fragment, and forms the initial committee for the encoded object.
+Client sends STORE(encoded object hash, fragment, committee) messages to every node of the committee with corresponding 
+fragment, where message's committee field is a mapping from node addresses to fragment indexes.
+After sufficient number of nodes of the committee acknowledged the STORE message for every encoded object, client can
+conclude the putting.
 
-The inner coding could be any large code, but rateless erasure coding along with VRF provides a convenient way to implement the selection.
-
-The proof of responsibility + redundancy can be replaced by other proof of persistent strategy, e.g., random sampling by Filecoin.
-Our approach is more computational efficient than the alternatives and completely decoupled with incentive.
+Upon receiving a verified STORE message, node should store the fragment and periodically broadcast 
+HEARTBEAT(encoded object hash, high index) messages to other nodes in the committee.
+The high index field is initialed as $n$.
+If a node does not receive heartbeat from sufficient other nodes during a period, it will initiate the process to
+rotate the committee.
+When sufficient nodes want to rotate, they exchange encoded fragments with each other and recover the encoded object.
+Then they generate the $n$ encoded fragments starting from previous high index.
+Finally, they determine the following committee with FIND and send STORE to them in the same way as client.
