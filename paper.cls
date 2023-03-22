@@ -1,20 +1,39 @@
 \NeedsTeXFormat{LaTeX2e}
 \ProvidesClass{paper}
 
-% \LoadClass[letterpaper,twocolumn,10pt]{article}
-\LoadClass[sigconf, review, anonymous]{acmart}
+\newif\ifacm
+
+\DeclareOption{acm}{\acmtrue}
+\DeclareOption*{
+    \ifacm\PassOptionsToClass{\CurrentOption}{acmart}\else
+    \PassOptionsToClass{\CurrentOption}{article}
+    \fi
+}
+\ProcessOptions
+
+\ifacm
+\LoadClass[sigplan,10pt]{acmart}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\settopmatter{printfolios=true}
+\pagestyle{plain}
+\else
+\LoadClass[letterpaper,twocolumn,10pt]{article}
+\RequirePackage{usenix-2020-09}
+\fi
 
 \frenchspacing
 
-% \RequirePackage{usenix-2020-09}
-
 \bibliographystyle{abbrv}
+
+\ifacm
+\else
+\RequirePackage{authblk}
+\fi
 
 \RequirePackage{xspace}
 \RequirePackage{graphicx}
 \RequirePackage{subcaption}
 \RequirePackage{enumitem}
-\RequirePackage{authblk}
 \RequirePackage[framemethod=tikz]{mdframed}
 \mdfdefinestyle{protocol}{,,roundcorner=10pt,}
 \RequirePackage{algorithm}
