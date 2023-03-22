@@ -1,6 +1,15 @@
 \subsection{Threat Model}
 
-We define a hybrid thread model that assumes both attacks from internal and external sources.
+We follow a typical decentralized network model.
+We presume a churn rate of participant nodes, i.e., a known distribution of node exiting probability versus online time.
+We don't model transient failure (e.g. network partitioning) specially.
+Instead, we divide transient failure into two categories.
+If the failure duration is negligible compare to expected node online time, then it should also be negligible compare to
+system parameters (e.g. heartbeat interval) and is ignored.
+Otherwise, we consider the node as exiting the system at the beginning of the failure and contribute it into the churn
+rate.
+
+We define a hybrid threat model that assumes both attacks from internal and external sources.
 At any time, there could be at most $f$ proportion of nodes to behave faulty.
 These nodes hold legal and fixed identities (e.g. by staking), and it is economically impractical to create more than
 $f$ proportion of faulty nodes.
@@ -38,16 +47,27 @@ The client then must persist the hashes of $n'$ encoded objects, in order to que
 Then for each encoded object, client generates encoded fragments by splitting encoded object into $k$ parts and 
 generating the rateless erasure coding fragments with indexes from $1$ to $n$.
 Client then FIND hash of each encoded fragment, and forms the initial committee for the encoded object.
-Client sends STORE(encoded object hash, fragment, committee) messages to every node of the committee with corresponding 
-fragment, where message's committee field is a mapping from node addresses to fragment indexes.
+Client sends STORE(encoded object fingerprint, fragment, committee) messages to every node of the committee with 
+corresponding fragment. 
+The fingerprint includes encoded object's hash, create time and expected live time, signed with client's identity.
+The committee field is a mapping from node addresses to fragment indexes.
 After sufficient number of nodes of the committee acknowledged the STORE message for every encoded object, client can
 conclude the putting.
 
 Upon receiving a verified STORE message, node should store the fragment and periodically broadcast 
-HEARTBEAT(encoded object hash, high index) messages to other nodes in the committee.
-The high index field is initialed as $n$.
-If a node does not receive heartbeat from sufficient other nodes during a period, it will initiate the process to
-rotate the committee.
-When sufficient nodes want to rotate, they exchange encoded fragments with each other and recover the encoded object.
-Then they generate the $n$ encoded fragments starting from previous high index.
-Finally, they determine the following committee with FIND and send STORE to them in the same way as client.
+HEARTBEAT(encoded object fingerprint, high index) messages to other nodes in the committee.
+The high index field is initiated as self's fragment index, which is the highest index of fragment whose responsible 
+node has been attempted to contact from the node.
+Node keeps track of the encoded object's high index as the highest value that is less or equal to the high index of a
+majority of committee's heartbeats.
+It updates its local high index if that is less than object's one.
+The committee calculates a low watermark of acceptable fragment index which is proportional to the elapsed time since
+encoded object's create time.
+If the encoded object's expected live time has expired or local fragment index is below the low watermark the node can
+stop sending HEARTBEAT and drop the fragment.
+If a node does not receive heartbeat with fragment index between watermark and high index from sufficient other nodes 
+during a period, it will increase the high index. 
+It then derives the hash of the fragment with the new high index, either through homomorphic hashing (with encoded 
+object hash and index as input), or fetch fragments from committee, recover the object, then generate the fragment and
+get the hash.
+It then FIND the responsible node and send STORE same as the client above.
