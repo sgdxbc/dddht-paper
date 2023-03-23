@@ -2,6 +2,15 @@
 \ProvidesClass{paper}
 
 \newif\ifacm
+\newif\ifdraft
+
+\DeclareOption{draft}{
+    \drafttrue
+}
+
+\DeclareOption{final}{
+    \draftfalse
+}
 
 \DeclareOption{acm}{\acmtrue}
 \DeclareOption*{

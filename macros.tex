@@ -1,7 +1,12 @@
-\newcommand{\XXX}{{\color{red}{XXX}}\xspace}
-\newcommand{\xxx}[1]{{\color{red}{XXX} #1}\xspace}
-\newcommand{\lijl}[1]{{\color{orange}{lijl: #1}}\xspace}
-\newcommand{\sgd}[1]{{\color{cyan}{sgd: #1}}\xspace}
+\ifdraft
+\newcommand{\editorial}[2]{{\color{#1}{#2}}\xspace}
+\else
+\newcommand{\editorial}[2]{}
+\fi
+\newcommand{\XXX}{\editorial{red}{XXX}}
+\newcommand{\xxx}[1]{\editorial{red}{XXX #1}}
+\newcommand{\lijl}[1]{\editorial{orange}{lijl: #1}}
+\newcommand{\sgd}[1]{\editorial{cyan}{sgd: #1}}
 
 \newcommand{\sys}{E\textsc{ntropy}\xspace}
 
