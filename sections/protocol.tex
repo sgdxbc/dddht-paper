@@ -57,6 +57,7 @@ We also make standard cryptography assumptions, i.e., the probability of subvert
 \sys uses two layers of erasure coding to ensure durability of stored objects.
 It first applies a fixed-rate erasure code to encode each object into a set of \emph{encoded chunks}.
 \lijl{Does it matter if we use fixed-rate or rateless code for outer code?}
+\sgd{A fixed-rate code will generate finite enumerable fixed-content fragments, which could be used to trace data object by attackers.}
 For each chunk, \sys then uses a publicly-known rateless erasure code to generate an infinite stream of \emph{encoding fragments}.
 The encoding fragments for a chunk are stored on a dynamic set of \sys nodes, collectively termed a chunk group.
 As introduced in \autoref{sec:background:code}, an encoded chunk can be reconstructed from any $k + \epsilon$ distinct encoding fragments with overwhelmingly high probability, and any $k$ distinct encoded chunks can recover the original object.
