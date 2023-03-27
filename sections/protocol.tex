@@ -54,49 +54,46 @@ We also make standard cryptography assumptions, i.e., the probability of subvert
     \label{fig:node-state}
 \end{figure}
 
-\sys nodes communicate through both point-to-point channels and a gossip protocol.
-Point-to-point channels are \textit{reliable}.
-They can be implemented using protocols such as TCP and Reliable User Datagram Protocol (RUDP).
-The gossip protocol is best-effort and only provides weak guarantees: If a node sends a message through the protocol indefinitely, eventually all non-faulty nodes receive the message.
-%\sgd{We probably want a (although very lossy) synchronous guarantee on gossip, i.e., message should be received before sender crashes.}
+\sys uses two layers of erasure coding to ensure durability of stored objects.
+It first applies a fixed-rate erasure code to encode each object into a set of \emph{encoded chunks}.
+\lijl{Does it matter if we use fixed-rate or rateless code for outer code?}
+For each chunk, \sys then uses a publicly-known rateless erasure code to generate an infinite stream of \emph{encoding fragments}.
+The encoding fragments for a chunk are stored on a dynamic set of \sys nodes, collectively termed a chunk group.
+As introduced in \autoref{sec:background:code}, an encoded chunk can be reconstructed from any $k + \epsilon$ distinct encoding fragments with overwhelmingly high probability, and any $k$ distinct encoded chunks can recover the original object.
+To guarantee data durability, \sys enforces the following invariant: \lijl{should we use different k for each definition}
 
-\sys uses a publicly-known rateless erasure code to encode each stored object into an infinite stream of fragments.
-As introduced in \autoref{sec:background:code}, any $k + \epsilon$ distinct encoding fragments can be used to reconstruct the original object with overwhelmingly high probability.
-To guarantee data durability, \sys enforces the following \textit{invariant}: at any time $t$ after a \store is completed,
-%\sgd{and before it expires}
-at least $k + \epsilon$ encoding fragments of the object are present on non-faulty nodes.
-
-\autoref{fig:node-state} shows the local state maintained by each \sys node.
-Each node generates a (\textit{sk}, \textit{pk}) key pair, and stores the secret key \textit{sk} locally.
-%\sgd{According to Algorand there are certain limitations on generating secret keys or the randomization may be vulnerable. Mention we are aware of this somewhere if necessary.}
-Public keys are assumed to be known by all nodes in the system.
-Each node locally stores a set of fragments generated from our rateless erasure encoding.
-Once a node learns that it is chosen to store fragments for an object in the next epoch, it starts monitoring live fragments for that object through the gossip protocol.
+\begin{invariant}
+At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $k$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
+An encoded chunk is recoverable if at least $k + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
+\end{invariant}
 
 Storage device failures and node churns can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
-To avoid relying on a centralized trusted service to detect fragment losses, each node periodically broadcasts \textit{persistence proof} of its stored fragments through the gossip protocol.
-By monitoring the persistence proofs, \sys nodes can independently generate and store new encoding fragments when the number of alive fragments is below a threshold.
+Similar to prior storage systems, \sys performs \emph{repair} by regenerating new encoding fragments when the number of alive fragments for a chunk drops below a threshold.
+To avoid relying on a centralized trusted service, chunk repair in \sys is fully decentralized.
+Each node in a chunk group periodically sends \emph{persistence proof} of its stored fragments to other peers in the group.
+When repair condition is met, nodes in the chunk group selects new peers who generate and store new encoding fragments of the chunk.
 
-Naively implementing the above scheme has two issues.
-Firstly, tracking and maintaining all persistence proofs on each node scales poorly.
-Second, Byzantine nodes can collude and claim persistence of enough fragments for an object, such that less than $k + \epsilon$ fragments are stored on honest nodes.
-Once those Byzantine nodes discard their local fragments, the object is permanently lost.
+Peer selection is critical to the safety of \sys.
+If not done carefully, adversaries can collude and claim persistence of enough fragments for a chunk such that less than $k + \epsilon$ fragments are stored on honest nodes.
+Once those adversaries discard their local fragments, the chunk is permanently lost.
 
-\sys implements a decentralized node selection protocol, Kleroterion, to address both issues.
-Kleroterion partitions the lifetime of an object into virtual \textit{epochs}.
-%\sgd{Candidate additional detail: epochs are supposed to be overlapping because it is hard to select exact number of peers to be responsible, just a weak partial ordering. "Partition the lifetime into epochs" sounds like there is only one epoch at a time, let reader suspect whether we are assuming a strong synchronous network (which we actually do not).}
-In each epoch, Kleroterion uses a verifiable random function (VRF) to select a random set of nodes for storing encoding fragments for an object.
-VRF ensures that each node can independently generate a selection proof, the selection probability of a node is proportional to the fraction of stakes it owns, and that the selection proof is publicly verifiable.
-The selection proof is attached to each persistence proof.
-By properly setting the desired storage redundancy in an epoch (value of $F$),
-%\sgd{What is $F$?}
-\sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
-Moreover, a node only needs to actively monitor persistence proofs for objects that it is responsible for in the next epoch, which is a tiny fraction of the object space.
-%\sgd{What do you mean by "a small constant proportional to its stake"? If "stake" here refers to raw capacity, it's not constant since raw capacity is unknown and varies on different peers.  If "stake" here refers to number of stored fragments, it's not constant because e.g. a newly-joined peer has no stored fragment but need to keep track of several objects.  By the way we don't really define how peers suppose to hold more than one stake currently.}
-%\lijl{Describe state transition figure here.}
-\autoref{fig:node-state-machine} describe the state transition related to a single object on a peer.
-By default, node stays at listening state for almost every learned object, which consumes zero resource on node.
-A node only switch to monitoring and responsible on demand, and both of the state may go back to listening state through redundancy reduction (introduced in \autoref{sec:implementation}).
+\sys implements a decentralized peer selection protocol with verifiable randomness to address the issue.
+%The protocol leverages two sources of randomness: a cryptographic hash of the fragment and randomness from a verifiable random function (VRF).
+When selecting peers to store the next fragment, nodes in the group use a cryptographic hash of the fragment to locate candidates on a distributed hash table (DHT)~\cite{chash,chord,kademlia}.
+The \emph{candidate set} includes nodes whose IDs are close to the fragment hash on the DHT hash ring.
+\sys ensures randomness of the candidate sets through two mechanisms.
+First, nodes are randomly distributed on the hash ring by generating IDs using a cryptographic hash of their public key~\cite{kademlia}.
+Secondly, property of rateless coding implies that each fragment in the encoding sequence, and by extension its candidate set, is randomly distributed on the ring.
+Note that \sys does not require group peers to reach consensus on the candidate set.
+Each peer can independently derive the \emph{same} fragment hash and locate an approximation of the set.
+
+We impose two restrictions on peer selection from a candidate set: The selection process is fully decentralized, and the selection result is publicly verifiable.
+\sys applies verifiable random function (VRF) to address both challenges.
+Upon requested, a node in the candidate set independently runs a publicly known VRF to generate a selection proof.
+The selection probability is inversely proportional to its distance to the fragment on the hash ring.
+The selection proof is unforgeable and verifiable.
+This decentralized process may lead to selection of zero or more than one peers, both of which are trivially handled by our storage scheme.
+Randomness of both the candidate set and the peer selection process ensures that every node has equal probability of participating in a chunk group.
 
 \begin{figure}
    \begin{tikzpicture}
@@ -130,6 +127,12 @@ A traversal of fragment links increases the probability to recover all $k + \eps
 %\sgd{Not sure about this approach. Firstly a persistence-proof-like gossip initiated by client is not very complicated.  Just depends on how we optimize gossip protocol for traffic-efficiency, latency behavior could be poor.  If in such case a speedup DHT is leveraged, then the value associated with key (i.e. data object id) should be a set of peers who currently keeps track of health of data object, instead of the peers who currently store the fragments.  This is because the peers who are keeping track of objects (1) is more likely to still be alive (2) know at least $k$ other peers who recently store fragments.  Thus, only contacting one peer from DHT is enough to recover the object. It is more reasonable approach since we are not focusing on a secure DHT at all.  The only problem is that this exposes following responsible peers earlier. But anyway this supposes to be the direction.  Also check out repair booster in details section. An even better approach may be contacting booster first.}
 
 \subsection{Protocol Details}
+
+\autoref{fig:node-state} shows the local state maintained by each \sys node.
+Each node generates a (\textit{sk}, \textit{pk}) key pair, and stores the secret key \textit{sk} locally.
+Public keys are assumed to be known by all nodes in the system.
+Each node locally stores a set of fragments generated from our rateless erasure encoding.
+Once a node learns that it is chosen to store fragments for an object in the next epoch, it starts monitoring live fragments for that object through the gossip protocol.
 
 \subsubsection{\sys Client Protocols}
 
@@ -398,3 +401,35 @@ Given AFR of honest peers, we can derive the probability of over this number of 
 Then in turn derive data lost rate during \store and expiration.
 
 %\sgd{Maybe it is also worth to explain how well Bernoulli sampling works (the more total stakes, the more accurate how many stakes are actually selected).}
+
+
+
+%%%%%%%%%%%%%%%%%%%
+% Unused material %
+%%%%%%%%%%%%%%%%%%%
+
+\iffalse
+
+\sys nodes communicate through both point-to-point channels and a gossip protocol.
+Point-to-point channels are \textit{reliable}.
+They can be implemented using protocols such as TCP and Reliable User Datagram Protocol (RUDP).
+The gossip protocol is best-effort and only provides weak guarantees: If a node sends a message through the protocol indefinitely, eventually all non-faulty nodes receive the message.
+
+Kleroterion partitions the lifetime of an object into virtual \textit{epochs}.
+\sgd{Candidate additional detail: epochs are supposed to be overlapping because it is hard to select exact number of peers to be responsible, just a weak partial ordering. "Partition the lifetime into epochs" sounds like there is only one epoch at a time, let reader suspect whether we are assuming a strong synchronous network (which we actually do not).}
+
+In each epoch, Kleroterion uses a verifiable random function (VRF) to select a random set of nodes for storing encoding fragments for an object.
+VRF ensures that each node can independently generate a selection proof, the selection probability of a node is proportional to the fraction of stakes it owns, and that the selection proof is publicly verifiable.
+The selection proof is attached to each persistence proof.
+By properly setting the desired storage redundancy in an epoch (value of $F$),
+%\sgd{What is $F$?}
+\sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
+Moreover, a node only needs to actively monitor persistence proofs for objects that it is responsible for in the next epoch, which is a tiny fraction of the object space.
+%\sgd{What do you mean by "a small constant proportional to its stake"? If "stake" here refers to raw capacity, it's not constant since raw capacity is unknown and varies on different peers.  If "stake" here refers to number of stored fragments, it's not constant because e.g. a newly-joined peer has no stored fragment but need to keep track of several objects.  By the way we don't really define how peers suppose to hold more than one stake currently.}
+%\lijl{Describe state transition figure here.}
+
+\autoref{fig:node-state-machine} describe the state transition related to a single object on a peer.
+By default, node stays at listening state for almost every learned object, which consumes zero resource on node.
+A node only switch to monitoring and responsible on demand, and both of the state may go back to listening state through redundancy reduction (introduced in \autoref{sec:implementation}).
+
+\fi

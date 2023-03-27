@@ -49,8 +49,12 @@
 \RequirePackage[noend]{algpseudocode}
 \RequirePackage{braket}
 \RequirePackage{tikz}
+\RequirePackage{amsthm}
 
 \hypersetup{linkcolor=blue}
+
+\theoremstyle{definition}
+\newtheorem{invariant}{Invariant}
 
 \def\Snospace~{\S{}}
 % Autoref
