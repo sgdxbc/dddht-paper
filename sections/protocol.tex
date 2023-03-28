@@ -67,12 +67,14 @@ At any time $t$ after a \store for object $o$ is completed and until $o$ expires
 An encoded chunk is recoverable if at least $k + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
 \end{invariant}
 
+\paragraph{Chunk repair.}
 Storage device failures and node churns can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
 Similar to prior storage systems, \sys performs \emph{repair} by regenerating new encoding fragments when the number of alive fragments for a chunk drops below a threshold.
 To avoid relying on a centralized trusted service, chunk repair in \sys is fully decentralized.
 Each node in a chunk group periodically sends \emph{persistence proof} of its stored fragments to other peers in the group.
 When repair condition is met, nodes in the chunk group selects new peers who generate and store new encoding fragments of the chunk.
 
+\paragraph{Randomized peer selection.}
 Peer selection is critical to the safety of \sys.
 If not done carefully, adversaries can collude and claim persistence of enough fragments for a chunk such that less than $k + \epsilon$ fragments are stored on honest nodes.
 Once those adversaries discard their local fragments, the chunk is permanently lost.
@@ -89,30 +91,23 @@ Each peer can independently derive the \emph{same} fragment hash and locate an a
 
 We impose two restrictions on peer selection from a candidate set: The selection process is fully decentralized, and the selection result is publicly verifiable.
 \sys applies verifiable random function (VRF) to address both challenges.
-Upon requested, a node in the candidate set independently runs a publicly known VRF to generate a selection proof.
+Upon request, a node in the candidate set independently runs a publicly known VRF to generate a selection proof.
 The selection probability is inversely proportional to its distance to the fragment on the hash ring.
 The selection proof is unforgeable and verifiable.
-This decentralized process may lead to selection of zero or more than one peers, both of which are trivially handled by our storage scheme.
+This decentralized process may lead to selection of zero or more than one peers, both of which are easily handled by our storage scheme.
 Randomness of both the candidate set and the peer selection process ensures that every node has equal probability of participating in a chunk group.
 
-\begin{figure}
-   \begin{tikzpicture}
-        \tikzstyle{state} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
-        \tikzstyle{arrow} = [thick,->,>=stealth]
+\paragraph{Double-layer encoding to tolerate targeted attacks.}
+Fragment repair, unfortunately, reveals node identities of a chunk group.
+Adversaries can launch targeted attacks to the entire group which breaks recoverability of the chunk.
+\sys leverages the \emph{irreversibility} property of the outer-layer erasure coding to tolerate such attacks.
+Specifically, when encoding an object to a set of chunks, the client never reveals the membership of the set.
+It either keeps the hash of each chunk as a secret, or reconstructs the hashes upon object retrieval using homomorphic hashing schemes~\cite{homo_hash}.
+\sys nodes, including the adversaries, can only observe identities of individual encoded chunks but are incapable of identifying which chunks belong to the same object.
+Consequently, adversaries can not do better than launching targeted attacks to a small random set of chunks in the system.
+With a limited attack capability (\XXX\% of the nodes), \sys only requires low redundancy for its outer-layer erasure coding to tolerate such targeted attacks.
 
-        \matrix[row sep = 1.5cm, column sep = -0.5cm] {
-            & \node (listen) [state, fill = gray!10] {Listening}; \\
-            \node (act) [state] {Monitoring}; & & \node (resp) [state] {Responsible}; \\
-        };
-        \draw [arrow] (listen.west) to [out = 180] node[anchor = east, text width = 1.5cm]{Selected by Kleroterion} (act.north);
-        \draw [arrow] (act.east) to [out = 330, in = 210] node[anchor = south]{Require repair} (resp.west);
-        \draw [arrow] (resp.north) to [out = 90, in = 0] node[anchor = west, text width = 1.5cm]{Redundancy reduction} (listen.east);
-        \draw [arrow] (act.north) to [out = 90, in = 220] node[anchor = west, text width = 1.5cm]{Redundancy reduction} (listen.south);
-    \end{tikzpicture}
-    \caption{State transition of \sys nodes for every object. An unheard object starts with Listening state by default.}
-    \label{fig:node-state-machine}
-\end{figure}
-
+\paragraph{Retrieving objects.}
 Placing encoding fragments at dynamically set of randomly selected nodes complicates object lookup.
 \sys leverages efficient gossip protocols~\cite{kadcast} to disseminate \query requests, which ensures sufficient ($k + \epsilon$) encoding fragments can be located.
 This naive approach, however, leads to additional gossip traffic and degraded \query latency.
@@ -427,6 +422,25 @@ By properly setting the desired storage redundancy in an epoch (value of $F$),
 Moreover, a node only needs to actively monitor persistence proofs for objects that it is responsible for in the next epoch, which is a tiny fraction of the object space.
 %\sgd{What do you mean by "a small constant proportional to its stake"? If "stake" here refers to raw capacity, it's not constant since raw capacity is unknown and varies on different peers.  If "stake" here refers to number of stored fragments, it's not constant because e.g. a newly-joined peer has no stored fragment but need to keep track of several objects.  By the way we don't really define how peers suppose to hold more than one stake currently.}
 %\lijl{Describe state transition figure here.}
+
+\begin{figure}
+   \begin{tikzpicture}
+        \tikzstyle{state} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
+        \tikzstyle{arrow} = [thick,->,>=stealth]
+
+        \matrix[row sep = 1.5cm, column sep = -0.5cm] {
+            & \node (listen) [state, fill = gray!10] {Listening}; \\
+            \node (act) [state] {Monitoring}; & & \node (resp) [state] {Responsible}; \\
+        };
+        \draw [arrow] (listen.west) to [out = 180] node[anchor = east, text width = 1.5cm]{Selected by Kleroterion} (act.north);
+        \draw [arrow] (act.east) to [out = 330, in = 210] node[anchor = south]{Require repair} (resp.west);
+        \draw [arrow] (resp.north) to [out = 90, in = 0] node[anchor = west, text width = 1.5cm]{Redundancy reduction} (listen.east);
+        \draw [arrow] (act.north) to [out = 90, in = 220] node[anchor = west, text width = 1.5cm]{Redundancy reduction} (listen.south);
+    \end{tikzpicture}
+    \caption{State transition of \sys nodes for every object. An unheard object starts with Listening state by default.}
+    \label{fig:node-state-machine}
+\end{figure}
+
 
 \autoref{fig:node-state-machine} describe the state transition related to a single object on a peer.
 By default, node stays at listening state for almost every learned object, which consumes zero resource on node.
