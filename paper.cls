@@ -4,7 +4,7 @@
 \newif\ifacm
 \newif\ifdraft
 
-\DeclareOption{draft}{
+\DeclareOption{workingdraft}{
     \drafttrue
 }
 
