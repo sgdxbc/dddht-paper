@@ -35,25 +35,6 @@ We also make standard cryptography assumptions, i.e., the probability of subvert
 
 \subsection{Design Overview}
 
-\begin{figure}
-    \begin{mdframed}[style=protocol]
-        \textbf{\sys node:}
-        \begin{itemize}
-            \setlength\itemsep{0em}
-            \item \textit{sk}: secret key of the node
-            \item \textit{addr}: node address
-            \item \textit{S}: total stake of the system
-            \item \textit{s}: stake of the node
-            \item \textit{K}: total number of encoding fragments for an object in each epoch
-            \item \textit{D}: width of the encoding space
-            \item \textit{store}: local storage for encoding fragments and their persistence proof, indexed by object ID
-            \item \textit{next}: objects which the node is chosen in the next epoch, indexed by object ID. Each entry contains a list of live fragments the node is aware of from the gossip protocol.
-        \end{itemize}
-    \end{mdframed}
-    \caption{Local state and global constants stored on each \sys node.}
-    \label{fig:node-state}
-\end{figure}
-
 \sys uses two layers of erasure coding to ensure durability of stored objects.
 It first applies a fixed-rate erasure code to encode each object into a set of \emph{encoded chunks}.
 \lijl{Does it matter if we use fixed-rate or rateless code for outer code?}
@@ -120,38 +101,69 @@ In the worst case where no fragment pointer is found, the requesting node either
 
 \subsection{Protocol Details}
 
+\begin{figure}
+    \begin{mdframed}[style=protocol]
+        \textbf{\sys node:}
+        \begin{itemize}
+            \setlength\itemsep{0em}
+            \item \textit{sk}: secret key of the node
+            \item \textit{ID}: SHA256 hash of the public key.
+            \item \textit{K}: threshold of alive encoding fragments in a chunk group
+            \item \textit{store}: local storage for encoding fragments and their persistence proof, indexed by chunk hash
+        \end{itemize}
+    \end{mdframed}
+    \caption{Local state and global constants stored on each \sys node.}
+    \label{fig:node-state}
+\end{figure}
+
 \autoref{fig:node-state} shows the local state maintained by each \sys node.
 Each node generates a (\textit{sk}, \textit{pk}) key pair, and stores the secret key \textit{sk} locally.
 Public keys are assumed to be known by all nodes in the system.
-Each node locally stores a set of fragments generated from our rateless erasure encoding.
-Once a node learns that it is chosen to store fragments for an object in the next epoch, it starts monitoring live fragments for that object through the gossip protocol.
+A SHA256 hash of the public key is used as the node ID~\cite{kademlia}.
+This ensures that node IDs are randomly distributed on the hash ring.
+Each node also stores a set of encoding fragments generated from our rateless erasure code.
 
-\subsubsection{\sys Client Protocols}
+\subsubsection{\sys Client Protocol}
 
 \begin{algorithm}[t]
     \begin{algorithmic}[1]
-        \State $\var{pnd} \gets \langle \bot, \set{}\rangle$ \Comment{pending op. hash and fragments}
         \Procedure{\store}{$\var{obj}$}
-            \State $\var{hash} \gets \fn{Hash}(\var{obj})$
-            \State $\var{pnd} \gets \langle \var{hash}, \set{} \rangle$
-            \State $\fn{Gossip}(\msg{obj}{\var{hash}})$
-            \State wait until $|\var{pnd.frags}| \ge k_p$
-            \State \Return $hash$
-        \EndProcedure
-        \Procedure{\query}{$\var{id}$}
-            \State $\var{fp} \gets \fn{DHT-Get}(\var{id})$
-            \If{$|\var{fp}| > 0$}
-                \State $\var{frags} \gets$ retrieve fragments from $\var{fp}$
-                \While{$|\var{frags}| < k + \epsilon$}
-                    \State $\var{frags} \gets \var{frags} \cup$ traverse links in $\var{frags}$
-                    \State // if timeout, goto the else branch
+            \State $\var{chunks} \gets \fn{OuterEncode}(\var{obj})$
+            \State $\var{hashes} \gets \set{}$
+            \ForAll{$\var{chunk} \in \var{chunks}$}
+                \State $\var{hashes} \gets \var{hashes} \cup \set{\fn{Hash}(chunk)}$
+                \While{$\var{stored\ fragments} < k_{inner}$}
+                    \State $\var{frag} \gets \fn{InnerEncodeNext}(\var{chunk})$
+                    \State $\var{node} \gets \fn{Locate}(\fn{Hash}(\var{frag}))$
+                    \If{$\var{node} \ne NULL$}
+                        \State // request node to store frag
+                    \EndIf
                 \EndWhile
-            \Else
-                \State $\var{pnd} \gets \langle \var{hash}, \set{} \rangle$
-                \State wait until $|\var{pnd.frags}| \ge k + \epsilon$
-                \State $\var{frags} \gets$ retrieve fragments from $\var{pnd.frags}$
-            \EndIf
-            \State \Return \fn{Decode}($\var{frags}$)
+            \EndFor
+            \State \Return $hashes$
+        \EndProcedure
+        \Procedure{\query}{$\var{hashes}$}
+            \State $\var{chunks} \gets \set{}$
+            \While{$|\var{chunks}| < k_{outer}$}
+                \State $\var{hash} \gets \var{hashes.next()}$
+                \State $\var{frags} \gets \fn{RetreieveFrags}(\var{hash})$
+                \State $\var{chunks} \gets \var{chunks}$ $\cup$ $\fn{InnerDecode}(\var{frags})$
+            \EndWhile
+            \State \Return $\fn{OuterDecode}(\var{chunks})$
+        \EndProcedure
+        \Procedure{RetrieveFrags}{$\var{hash}$}
+            \State $\var{frags} \gets \set{}$
+            \State $\var{pointers} \gets \fn{DHT-Get}(\var{hash})$
+            \State $\var{frags} \gets \var{frags}$ $\cup$ request frags from $pointers$
+            \While{$|\var{frags}| < k_{inner}$}
+                \State // linear search if not enough pointers
+                \State $\var{fraghash} \gets \fn{InnerEncodeHashNext}(\var{hash})$
+                \State $\var{node} \gets \fn{Locate}(\var{fraghash})$
+                \If{$\var{node} \ne NULL$}
+                    \State $\var{frags} \gets \var{frags}$ $\cup$ request frag from node
+                \EndIf
+            \EndWhile
+            \State \Return $\var{frags}$
         \EndProcedure
     \end{algorithmic}
     \caption{\sys client protocol}
@@ -162,23 +174,31 @@ Once a node learns that it is chosen to store fragments for an object in the nex
 Being a decentralized peer-to-peer system, client operations are issued on participating nodes, though they can also serve as proxies for light-weight clients.
 We use \textit{client} to denote the peer node that issues a client operation.
 
-To store an object, the client calculates the hash of the object and writes the hash into a local request pending list.
-As we explain in subsequent protocols, when a node receives fragment persistence proofs through gossip, it adds verified proofs to the pending list if it matches the object.
-The node waits until it collects more than $k_p$ proofs.
-$k_p$ is calculated as $k + \epsilon + b$ where b is the expected number
-%\sgd{upper bound with high probability}
-of Byzantine nodes selected by Kleroterion in an epoch.
-Given our system model, $b$ is
-%\sgd{$\sim$}
-$\frac{K}{3}$, where $K$ is the total number of fragments in an epoch.
+To store an object, a client uses the outer layer encoding function to generate a set of encoded chunks.
+For each chunk, the client applies the inner layer code to get a stream of fragments.
+It stores $k_{inner}$ of them at responsible peers.
+Peer selection for a fragment is performed by the $\fn{Locate}()$ procedure, which we further elaborate in \autoref{sec:protocol:detail:ps}.
+If no responsible peer is found, the client skips the fragment and continues down the stream, until $k_{inner}$ fragments are properly stored.
+As there is no dependency among the different chunks and fragments, the client can perform peer selection and store request for all fragments in parallel.
 
-To retrieve an object, the requesting client first queries the DHT using the object ID.
-If the DHT contains fragment pointers of the object, the client fetches $k + \epsilon$ fragments through the pointers, traversing fragment links if necessary.
-If no pointers are found or the procedure times out, the client registers the object in the local pending list, similar to the \store protocol.
-It then waits until $k + \epsilon$ proofs are collected, and fetches fragments from the corresponding nodes.
-In either case, the client uses the rateless code decoding function to reconstruct the original object from the fragments.
+To query an object, requesting client reconstructs $k_{outer}$ encoded chunks from its list of chunk hashes.
+For each chunk hash, the client first queries the DHT to retrieve a list of fragment pointers.
+It contacts the pointed nodes and requests for the corresponding fragment.
+If the contacted node is still an active member of the chunk group, it also returns its view of other alive group members to the client, who can request for additional fragments.
+The process terminates when $k_{inner}$ fragments are collected.
+If not enough fragments are collected, the client enters a slow path to linearly search for additional fragments.
+It uses homomorphic hashing of the inner layer code to generate a stream of fragment hashes, and requests each fragment from responsible peers using the $\fn{Locate}()$ function.
+As the rear end of the membership window slides at fixed time interval, the client can start the search at an estimated stream index of the current chunk group.
+\lijl{Need to introduce sliding window earlier}
+This reduces the search time from linear to constant in the common case.
+Once $k_{inner}$ fragments are retrieved, the client uses the inner layer decoding function to reconstruct the chunk.
+The original object is recovered by applying the outer layer decoding on $k_{outer}$ reconstructed chunks.
+
+\subsubsection{Peer Selection}
+\label{sec:protocol:detail:ps}
 
 \subsubsection{Storing and Generating Encoding Fragments}
+\label{sec:protocol:detail:repair}
 
 The core of \sys centers around participating nodes storing and generating encoding fragments throughout the lifetime of data objects.
 It involves subprotocols to randomly choose nodes responsible for encoding fragments, to verify fragment persistence proofs, to handle gossip messages, and to monitor persistence of data objects.
@@ -455,5 +475,15 @@ A fragment link points to another node that stores a fragment for the same objec
 A traversal of fragment links increases the probability to recover all $k + \epsilon$ fragments.
 %\lijl{We should calculate the likelihood. Likely close to 1.}
 %\sgd{Not sure about this approach. Firstly a persistence-proof-like gossip initiated by client is not very complicated.  Just depends on how we optimize gossip protocol for traffic-efficiency, latency behavior could be poor.  If in such case a speedup DHT is leveraged, then the value associated with key (i.e. data object id) should be a set of peers who currently keeps track of health of data object, instead of the peers who currently store the fragments.  This is because the peers who are keeping track of objects (1) is more likely to still be alive (2) know at least $k$ other peers who recently store fragments.  Thus, only contacting one peer from DHT is enough to recover the object. It is more reasonable approach since we are not focusing on a secure DHT at all.  The only problem is that this exposes following responsible peers earlier. But anyway this supposes to be the direction.  Also check out repair booster in details section. An even better approach may be contacting booster first.}
+
+To store an object, the client calculates the hash of the object and writes the hash into a local request pending list.
+As we explain in subsequent protocols, when a node receives fragment persistence proofs through gossip, it adds verified proofs to the pending list if it matches the object.
+The node waits until it collects more than $k_p$ proofs.
+$k_p$ is calculated as $k + \epsilon + b$ where b is the expected number
+%\sgd{upper bound with high probability}
+of Byzantine nodes selected by Kleroterion in an epoch.
+Given our system model, $b$ is
+%\sgd{$\sim$}
+$\frac{K}{3}$, where $K$ is the total number of fragments in an epoch.
 
 \fi
