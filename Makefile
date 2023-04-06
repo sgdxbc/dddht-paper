@@ -13,9 +13,9 @@ PAPER_DEPS := $(TEX) $(CLS) $(BIB)
 
 all: $(PAPER).pdf
 
-$(PAPER).pdf: $(PAPER_DEPS)
+%.pdf: $(PAPER_DEPS)
 	@rm -f $@
-	$(LATEX) $(PAPER).tex -O .latex.out -o $@
+	$(LATEX) $(addsuffix .tex, $(basename $@)) -O .latex.out -o $@
 
 clean:
 	$(LATEX) --clean-all -O .latex.out

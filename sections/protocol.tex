@@ -245,6 +245,7 @@ Finally, the original object is recovered by applying the outer layer decoding o
 As shown in \autoref{alg:selection}, \sys uses verifiable randomness to select nodes to store encoding fragment in a decentralized manner.
 The procedure first invokes $\fn{DHT-Lookup-Nodes}()$ to get a list of candidate nodes.
 The function is a simple variant of the original DHT lookup~\cite{chord} and returns the $N$ immediate successor nodes of the hash value on the ring.
+\sgd{closest nodes}
 Note that each lookup may return a different candidate set due to the dynamic and decentralized nature of DHT.
 However, all final selection will include an unforgeable selection proof, and the protocol tolerates multiple responsible nodes for a fragment.
 \lijl{I think that's fine. Might need to argue that somewhere.}
@@ -335,7 +336,8 @@ However, peers may fail to receive client issued membership.
 Temporary network asynchrony can also lead to divergence in membership views across peers.
 To handle such cases, each peer periodically calls $\fn{MembershipTimer}()$ (\autoref{alg:membership}) to \emph{eventually} synchronize on membership views.
 The procedure linearly search the fragment hash stream of the chunk from \wl to \wh, and for each missing a member, it attempts to locate a responsible peer that currently stores the corresponding fragment.
-When new members are located, the node also updates the \wh ($\fn{UpdateWmarkH}()$) according to the following invariant: the number of unique fragments between \wl and \wh is at most $k_{inner}$.
+When new members are located, the node also updates \wh ($\fn{UpdateWmarkH}()$) according to the following invariant: the number of unique fragments between \wl and \wh is at most $k_{inner}$.
+\sgd{unique fragments that be holden by unique peers.}
 A corollary is that \wh may drop when adding new peers are added to the membership.
 We, however, do not remove peers beyond the updated \wh from the membership; those peers effectively serve as extra redundancy, and this approach reduces unnecessary repairs due to view divergence.
 
