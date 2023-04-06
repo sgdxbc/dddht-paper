@@ -108,8 +108,11 @@ In the worst case where no fragment pointer is found, the requesting node either
             \setlength\itemsep{0em}
             \item \textit{sk}: secret key of the node
             \item \textit{ID}: SHA256 hash of the public key.
-            \item \textit{K}: threshold of alive encoding fragments in a chunk group
-            \item \textit{store}: local storage for encoding fragments and their persistence proof, indexed by chunk hash
+            \item \textit{R}: threshold of alive encoding fragments in a chunk group
+            \item \textit{store}: local storage for encoding fragments. Indexed by chunk hash
+            \item \textit{group}: for each stored fragment, a local view of the current chunk group membership
+            \item \wh: for each stored fragment, next fragment index to repair
+            \item \wl: for each stored fragment, next fragment index to eliminate
         \end{itemize}
     \end{mdframed}
     \caption{Local state and global constants stored on each \sys node.}
@@ -132,13 +135,18 @@ Each node also stores a set of encoding fragments generated from our rateless er
             \State $\var{hashes} \gets \set{}$
             \ForAll{$\var{chunk} \in \var{chunks}$}
                 \State $\var{hashes} \gets \var{hashes} \cup \set{\fn{Hash}(chunk)}$
+                \State $\var{members} \gets \set{}$
                 \While{$\var{stored\ fragments} < k_{inner}$}
                     \State $\var{frag} \gets \fn{InnerEncodeNext}(\var{chunk})$
-                    \State $\var{node} \gets \fn{Locate}(\fn{Hash}(\var{frag}))$
-                    \If{$\var{node} \ne NULL$}
-                        \State // request node to store frag
+                    \State $\var{nodes} \gets \fn{Locate}(\fn{Hash}(\var{frag}))$
+                    \If{$\var{nodes} \ne \set{}$}
+                        \State // request any $\var{n}$ in $\var{nodes}$ to store frag
+                        \State $\var{members} \gets \var{members} \cup \set{n}$
                     \EndIf
                 \EndWhile
+                \ForAll{$m \in \var{members}$}
+                    \State // send $\var{members}$ to $m$
+                \EndFor
             \EndFor
             \State \Return $hashes$
         \EndProcedure
@@ -147,7 +155,7 @@ Each node also stores a set of encoding fragments generated from our rateless er
             \While{$|\var{chunks}| < k_{outer}$}
                 \State $\var{hash} \gets \var{hashes.next()}$
                 \State $\var{frags} \gets \fn{RetreieveFrags}(\var{hash})$
-                \State $\var{chunks} \gets \var{chunks}$ $\cup$ $\fn{InnerDecode}(\var{frags})$
+                \State $\var{chunks} \gets \var{chunks}$ $\cup$ $\set{\fn{InnerDecode}(\var{frags})}$
             \EndWhile
             \State \Return $\fn{OuterDecode}(\var{chunks})$
         \EndProcedure
@@ -158,9 +166,10 @@ Each node also stores a set of encoding fragments generated from our rateless er
             \While{$|\var{frags}| < k_{inner}$}
                 \State // linear search if not enough pointers
                 \State $\var{fraghash} \gets \fn{InnerEncodeHashNext}(\var{hash})$
-                \State $\var{node} \gets \fn{Locate}(\var{fraghash})$
-                \If{$\var{node} \ne NULL$}
-                    \State $\var{frags} \gets \var{frags}$ $\cup$ request frag from node
+                \State $\var{nodes} \gets \fn{Locate}(\var{fraghash})$
+                \If{$\var{nodes} \ne \set{}$}
+                    \State // request $\var{fragment}$ with hash $\var{fraghash}$ from $\var{nodes}$
+                    \State $\var{frags} \gets \var{frags}$ $\cup$ $\set{\var{fragment}}$
                 \EndIf
             \EndWhile
             \State \Return $\var{frags}$
@@ -180,6 +189,7 @@ It stores $k_{inner}$ of them at responsible peers.
 Peer selection for a fragment is performed by the $\fn{Locate}()$ procedure, which we further elaborate in \autoref{sec:protocol:detail:ps}.
 If no responsible peer is found, the client skips the fragment and continues down the stream, until $k_{inner}$ fragments are properly stored.
 As there is no dependency among the different chunks and fragments, the client can perform peer selection and store request for all fragments in parallel.
+Once enough fragments are stored, the client also forwards the chunk group membership to each peer in the group.
 
 To query an object, requesting client reconstructs $k_{outer}$ encoded chunks from its list of chunk hashes.
 For each chunk hash, the client first queries the DHT to retrieve a list of fragment pointers.
@@ -195,7 +205,7 @@ Once $k_{inner}$ fragments are retrieved, the client uses the inner layer decodi
 Finally, the original object is recovered by applying the outer layer decoding on $k_{outer}$ reconstructed chunks.
 
 \subsubsection{Peer Selection}
-\label{sec:protocol:detail:ps}
+\label{sec:protocol:detail:selection}
 
 \begin{algorithm}[t]
     \begin{algorithmic}[1]
@@ -205,7 +215,7 @@ Finally, the original object is recovered by applying the outer layer decoding o
             \ForAll{$\var{c} \in \var{candidates}$}
                 \State $\langle r, \pi, s \rangle \gets \fn{SelectionProof}_{c}(\var{hash})$
                 \If{$s \land \fn{VerifySelection}(\var{hash}, r, \pi, \var{pk}_{c})$}
-                    \State $\var{nodes} \gets \var{nodes}$ $\cup$ $\var{c}$
+                    \State $\var{nodes} \gets \var{nodes}$ $\cup$ $\set{\var{c}}$
                 \EndIf
             \EndFor
             \State \Return $\var{nodes}$
@@ -254,11 +264,83 @@ The function verifies that the random hash is properly generated by the prover u
 If $\fn{VerifyVRF}()$ passes, the caller follows the same procedure in $\fn{SelectionProof}()$ to verify node selection.
 The $\fn{NodeID}()$ function derives the ID of the node, by calculating a SHA256 hash of its public key.
 
-\subsubsection{Storing and Generating Encoding Fragments}
+\subsubsection{Chunk Group Maintenance}
+\label{sec:protocol:detail:group}
+
+\begin{algorithm}[t]
+    \begin{algorithmic}[1]
+        \Procedure{MembershipTimer}{$\var{chash}$}
+            \For{$i \in (\wl$ $..$ $\wh)$}
+                \If{$\var{group}[\var{chash}].contains(i)$}
+                    \State continue
+                \EndIf
+                \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
+                \State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
+                \ForAll{$\var{n} \in \var{nodes}$}
+                    \If{$\fn{QueryHasFrag}(\var{fhash})$}
+                        \State $\var{group}[\var{chash}] \gets \var{group}[\var{chash}] \cup \set{n}$
+                        \State $\fn{UpdateWmarkH}(\var{chash})$
+                    \EndIf
+                \EndFor
+            \EndFor
+        \EndProcedure
+        \Procedure{HeartbeatTimer}{$\var{chash}, \var{frag}, \var{i}$}
+            \State $\var{fhash} \gets \fn{Hash}(\var{frag})$
+            \State $\langle r, \pi, s \rangle \gets \fn{SelectionProof}(\var{fhash})$
+            \ForAll{$\var{n} \in \var{group}[\var{chash}]$}
+                \State $\fn{Send}(\msg{HeartBeat}{\var{chash, fhash, i, \langle r, \pi, s \rangle}})$
+            \EndFor
+        \EndProcedure
+        \Procedure{RecvHeartBeat}{$\var{chash}, \var{fhash}, i, \langle r, \pi, s \rangle$}
+            \If{$\neg \var{chash} \in \var{store}$}
+                \State \Return
+            \EndIf
+            \If{$\var{group}[\var{chash}].contains(i)$}
+                \State \Return
+            \EndIf
+            \If{$s \land \fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{sender})$}
+                \State $\var{group}[\var{chash}] \gets \var{group}[\var{chash}]$ $\cup$ $\set{sender}$
+                \State $\fn{UpdateWmarkH}(\var{chash})$
+            \EndIf
+        \EndProcedure
+        \Procedure{UpdateWmarkH}{$\var{chash}$}
+            \State $\var{nAlive} \gets 0$
+            \For{$i \in (\wl$ $..$ $\wh)$}
+                \If{$\var{group}[\var{chash}].contains(i)$}
+                    \State $\var{nAlive} \gets \var{nAlive} + 1$
+                    \If{$\var{nAlive} \ge k_{inner}$}
+                        \State $\wh \gets i$
+                        \State \Return
+                    \EndIf
+                \EndIf
+            \EndFor
+        \EndProcedure
+    \end{algorithmic}
+    \caption{Procedures to maintain group membership}
+    \label{alg:membership}
+\end{algorithm}
+
+For each stored fragment, a node maintains a local view of the current chunk group membership (the $\var{group}$ state in \autoref{fig:node-state}).
+The inaugural group peers receive the membership from the client issuing the \store (\autoref{alg:client}).
+However, peers may fail to receive client issued membership.
+Temporary network asynchrony can also lead to divergence in membership views across peers.
+To handle such cases, each peer periodically calls $\fn{MembershipTimer}()$ (\autoref{alg:membership}) to \emph{eventually} synchronize on membership views.
+The procedure linearly search the fragment hash stream of the chunk from \wl to \wh, and for each missing a member, it attempts to locate a responsible peer that currently stores the corresponding fragment.
+When new members are located, the node also updates the \wh ($\fn{UpdateWmarkH}()$) according to the following invariant: the number of unique fragments between \wl and \wh is at most $k_{inner}$.
+
+To detect failures in a chunk group, group members periodically broadcast fragment persistence claims to other peers in the group ($\fn{PeriodicHeartbeatTimer}()$).
+The persistence claim includes the hash of the chunk and the fragment, the index of the fragment within the encoding stream, and the selection proof generated by the node.
+To reduce the cost of generating fragment hashes and selection proofs every timer interval, nodes can store them alongside the fragment.
+
+When a node receives a heartbeat message.
+
+\subsubsection{Repairing Encoded Chunks}
 \label{sec:protocol:detail:repair}
 
-The core of \sys centers around participating nodes storing and generating encoding fragments throughout the lifetime of data objects.
-It involves subprotocols to randomly choose nodes responsible for encoding fragments, to verify fragment persistence proofs, to handle gossip messages, and to monitor persistence of data objects.
+The core of \sys centers around a \emph{decentralized} repair protocol that ensures the durability of encoded chunks.
+It involves subprotocols to maintain group membership, to monitor the persistence of encoding fragments in a group, and to select peers to generate and store new encoding fragments.
+
+\paragraph{Group repair.}
 
 \paragraph{Kleroterion node selection protocol.}
 
@@ -542,5 +624,8 @@ $\frac{K}{3}$, where $K$ is the total number of fragments in an epoch.
     \caption{Kleroterion node selection protocol}
     \label{alg:kleroterion}
 \end{algorithm}
+
+The core of \sys centers around participating nodes storing and generating encoding fragments throughout the lifetime of data objects.
+It involves subprotocols to randomly choose nodes responsible for encoding fragments, to verify fragment persistence proofs, to handle gossip messages, and to monitor persistence of data objects.
 
 \fi
