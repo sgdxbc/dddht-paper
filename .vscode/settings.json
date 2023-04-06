@@ -7,6 +7,8 @@
         "\\Procedure{}{}": "dummy",
         "\\XXX": "dummy",
         "\\footnote{}": "dummy",
+        "\\wh": "dummy",
+        "\\wl": "dummy",
     },
     "ltex.bibtex.fields": {
         "title": false,
