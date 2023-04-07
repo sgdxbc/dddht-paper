@@ -273,37 +273,42 @@ The $\fn{NodeID}()$ function derives the ID of the node, by calculating a SHA256
         \Procedure{MembershipTimer}{}
             \For{$i \in (\wl$ $..$ $\wh)$}
                 \If{$\var{group}.contains(i)$}
-                    \State continue
-                \EndIf
-                \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
-                \State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
-                \ForAll{$\var{n} \in \var{nodes}$}
-                    \If{$\fn{QueryHasFrag}(\var{fhash})$}
-                        \State $\var{group} \gets \var{group} \cup \set{n}$
-                        \State $\fn{UpdateWmarkH}()$
+                    \If{$\var{group}[i]$ not lived}
+                        \State $\var{group} \gets \var{group} \setminus \set{\var{group}[i]}$
                     \EndIf
-                \EndFor
+                \Else
+                    \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
+                    \State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
+                    \ForAll{$\var{n} \in \var{nodes}$}
+                        \If{$\fn{QueryHasFrag}(\var{fhash})$}
+                            \State $\var{group} \gets \var{group} \cup \set{n}$
+                            \State break
+                        \EndIf
+                    \EndFor
+                \EndIf
             \EndFor
+        \State $\fn{UpdateWmarkH}()$
+        \If{$|group[\wl $ $..$ $\wh]| < n_{inner}$}
+            \State $\fn{RepairChunk}(\var{chash})$
+        \EndIf
         \EndProcedure
         \Procedure{HeartbeatTimer}{$\var{frag}, \var{i}$}
             \State $\var{fhash} \gets \fn{Hash}(\var{frag})$
             \State $\langle r, \pi, s \rangle \gets \fn{SelectionProof}(\var{fhash})$
             \ForAll{$\var{n} \in \var{group}$}
-                \State $\fn{Send}(\msg{HeartBeat}{\var{chash, fhash, i, \langle r, \pi, s \rangle}})$
+                \State $\fn{Send}(\msg{HeartBeat}{\var{chash, fhash, i, \langle r, \pi, s \rangle}, \var{group}})$
             \EndFor
         \EndProcedure
-        \Procedure{RecvHeartBeat}{$\var{fhash}, i, \langle r, \pi, s \rangle$}
+        \Procedure{RecvHeartBeat}{$\var{fhash}, i, \langle r, \pi, s \rangle, g$}
             \If{$\neg \var{chash} \in \var{store}$}
                 \State \Return
             \EndIf
             \If{$i < \wl$}
                 \State \Return
             \EndIf
-            \If{$\var{group}.contains(i)$}
+            \If{$s \land \fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{sender})$}
+                \State $\var{group} \gets \var{group} \cup \set{sender}$
                 \State // refresh sender peer liveness
-            \ElsIf{$s \land \fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{sender})$}
-                \State $\var{group} \gets \var{group}$ $\cup$ $\set{sender}$
-                \State $\fn{UpdateWmarkH}()$
             \EndIf
         \EndProcedure
         \Procedure{UpdateWmarkH}{}
@@ -321,9 +326,6 @@ The $\fn{NodeID}()$ function derives the ID of the node, by calculating a SHA256
         \Procedure{UpdateWaterLTimer}{}
             \State $\var{group} \gets \var{group} \setminus \set{\var{group}[\wl]}$
             \State $\wl \gets \wl + 1$
-            \If{$|group[\wl $ $..$ $\wh]| < n_{inner}$}
-                \State $\fn{RepairChunk}(\var{chash})$
-            \EndIf
         \EndProcedure
     \end{algorithmic}
     \caption{Procedures to maintain group membership}
@@ -335,11 +337,12 @@ The inaugural group peers receive the membership from the client issuing the \st
 However, peers may fail to receive client issued membership.
 Temporary network asynchrony can also lead to divergence in membership views across peers.
 To handle such cases, each peer periodically calls $\fn{MembershipTimer}()$ (\autoref{alg:membership}) to \emph{eventually} synchronize on membership views.
-The procedure linearly search the fragment hash stream of the chunk from \wl to \wh, and for each missing a member, it attempts to locate a responsible peer that currently stores the corresponding fragment.
+The procedure linearly search the fragment hash stream of the chunk from \wl to \wh, and for each missing member, it attempts to locate a responsible peer that currently stores the corresponding fragment.
 When new members are located, the node also updates \wh ($\fn{UpdateWmarkH}()$) according to the following invariant: the number of unique fragments between \wl and \wh is at most $k_{inner}$.
 \sgd{unique fragments that be holden by unique peers.}
-A corollary is that \wh may drop when adding new peers are added to the membership.
-We, however, do not remove peers beyond the updated \wh from the membership; those peers effectively serve as extra redundancy, and this approach reduces unnecessary repairs due to view divergence.
+A corollary is that \wh may drop when new peers are added to the membership.
+We, however, do not remove peers beyond the updated \wh from the view; those peers effectively serve as extra redundancy, and this approach reduces unnecessary repairs due to view divergence.
+If the number of alive peers in the membership windows drops below a threshold, the procedure starts the repair process which we elaborate in \autoref{sec:protocol:detail:repair}.
 
 To detect failures in a chunk group, group members periodically broadcast fragment persistence claims to other peers in the group ($\fn{PeriodicHeartbeatTimer}()$).
 The persistence claim includes the hash of the chunk and the fragment, the index of the fragment within the encoding stream, and the selection proof generated by the node.
@@ -350,19 +353,216 @@ Otherwise, the node refreshes the sender's liveness in its local view.
 The sender may not be in the node's local view in a few scenarios: the node's local view is not complete; temporary network partition between the nodes caused by asynchrony; the sender is a new member, but the node was not informed.
 In any case, the node verifies the selection proof, adds the sender to its local membership view, and updates \wh.
 
-Adversary nodes can arbitrarily extend their membership.
-If we allow nodes to stay in a chunk group indefinitely, the group may eventually be occupied by enough faulty nodes such that \emph{recoverability} is violated.
+Adversary nodes can arbitrarily extend their membership (with or without holding their fragments).
+Since honest nodes eventually leave or fail, if we allow nodes to stay in a chunk group indefinitely, the group may eventually be occupied by enough faulty nodes such that \emph{recoverability} is violated.
 To ensure recoverability, \sys enforces that a node has a bounded lifetime in a chunk group.
 To do so, each node periodically removes peer at the \wl position in a group, and increments \wl.
-If the removal causes the number of peers in the membership window dropping below the threshold, the node starts the repair process which we elaborate next.
 
 \subsubsection{Repairing Encoded Chunks}
 \label{sec:protocol:detail:repair}
 
-The core of \sys centers around a \emph{decentralized} repair protocol that ensures the durability of encoded chunks.
-It involves subprotocols to maintain group membership, to monitor the persistence of encoding fragments in a group, and to select peers to generate and store new encoding fragments.
+\begin{algorithm}
+    \begin{algorithmic}[1]
+        \Procedure{RepairChunk}{$\var{chash}$}
+            \State $\wh \gets \wh + 1$
+            \If{$\neg \var{group}.contains(\wh)$}
+                \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
+                \State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
+                \ForAll{$n \in \var{nodes}$}
+                    \State $\fn{Send}(\msg{RepairRequest}{\var{chash}, \var{fhash}, i, \var{group}})$
+                \EndFor
+            \EndIf
+        \EndProcedure
+        \Procedure{RecvRepairRequest}{$\var{chash}, \var{fhash}, \var{i}, \var{g}$}
+            \If{$\var{store}.contains(\var{chash})$}
+                \State \Return
+            \EndIf
+            \If{$\fn{InnerEncodeHash}(\var{chash}, i) \ne \var{fhash}$}
+                \State \Return
+            \EndIf
+            \State $\langle \var{r}, \pi, s \rangle \gets \fn{SelectionProof}(\var{fhash})$
+            \If{$\neg s$}
+                \State \Return
+            \EndIf
+            \State $\fn{MergeView}(g)$
+            \State $\fn{StartRepairTimer}(\var{chash}, i)$
+        \EndProcedure
+        \Procedure{MergeView}{$g$}
+            \ForAll{$n \in g$}
+                \If{$n.i \ge \wl \land \neg \var{group}.contains(n.i) \land n.s \land \fn{VerifySelection}(\var{n.fhash}, n.r, n.\pi, \var{pk}_{n})$}
+                    \State $\var{group} \gets \var{group}$ $\cup$ $\set{sender}$
+                \EndIf
+            \EndFor
+        \EndProcedure
+        \Procedure{RepairTimer}{$\var{chash}, i$}
+            \ForAll{$n \in \var{group}$}
+                \If{$\neg \var{rfrags}.contains(n.i)$}
+                    \State $\var{frag} \gets \fn{RequestFrag}(\var{chash}, n.i, \langle \var{r}, \pi, s \rangle)$
+                    \State $\var{rfrags} \gets \var{rfrags} \cup \set{\var{frag}}$
+                \EndIf
+            \EndFor
+            \If{$|\var{rfrags}| \ge k_{inner}$}
+                \State $\var{chunk} \gets \fn{InnerDecode}(\var{rfrags})$
+                \State $\var{frag} \gets \fn{InnerEncode}(\var{chunk}, i)$
+                \State $\var{store} \gets \var{store} \cup \set{\var{frag}}$
+                \State $\fn{StopRepairTimer}(\var{chash}, i)$
+            \EndIf
+        \EndProcedure
+    \end{algorithmic}
+    \caption{Protocol to repair encoded chunk}
+    \label{alg:repair}
+\end{algorithm}
 
-\paragraph{Group repair.}
+The core of \sys centers around a \emph{decentralized} repair protocol that ensures the durability of encoded chunks.
+As listed in \autoref{alg:repair}, when a node detects that repair is necessary for a chunk, it calculates the next fragment hash in the encoding stream as marked by \wh.
+If the node's local view includes extra redundancy at \wh, the repair process can be skipped.
+It then invokes $\fn{Locate}()$ to find the responsible peers for the fragment, and sends them a \mtype{RepairRequest} message.
+The message includes the chunk hash, the repair fragment hash and its index in the stream, as well as the node's local membership view.
+
+Upon receiving a \mtype{RepairRequest}, the node verifies that the fragment hash is correct, and that it is responsible for the fragment.
+\lijl{Probably also need to check requester is a legitimate peer?}
+The later can be checked by invoking $\fn{SelectionProof}()$.
+It then merges the incoming view with its local chunk membership, adding in peers who have correct selection proofs.
+The node then starts the repair process.
+Specifically, it requests fragments from each group member in its local view.
+Each request includes its selection proof for verification.
+Once the node receives $k_{inner}$ or more encoding fragments, it uses the inner decoding function to recover the original chunk, then applies the rateless encoding function to construct its responsible fragment, completing the repair process.
+Note that the node may not find enough fragments initially due to incomplete membership view or network asynchrony.
+Subsequent \mtype{RepairRequest}{}s from other peers initiating repair will update the membership view through $\fn{MergeView}()$.
+The node also periodically runs $\fn{MembershipTimer}()$ to find new peers that are alive.
+By repeatedly invoking $\fn{RepairTimer}()$, the node will eventually receive enough fragments to complete the repair process.
+
+
+\subsection{Correctness}
+
+Typically, the durability of a storage system is analyzed by continuous-time Markov chain (CTMC) model.
+In a CTMC model system states are enumerated that include all possible numbers of persistent fragments.
+The system starts from the state with expected replication factor, and an enter-only \textit{dead} state indicates data lost where no sufficient fragments left for recovering.
+Random processes are defined to transition among states, i.e., it takes a random amount of time to transition from one state to another, distributed exponentially.
+And finally, the model is used to solve the probability $\textbf{Pr}_{f}(t)$ which is the probability of reaching the \textit{dead} state after $t$ of time.
+And important metrics such as MTTDL can be derived from it.
+
+However, for \sys such analysis can be simplified by the inductive observation of the essential epoch change strategy.
+\sys loses data if any epoch change fails, i.e., the invariant of at least $k + \epsilon$ fragments persist breaks after that epoch change.
+The sets of responsible peers of different epochs are disjoint \footnotemark{}, so the failure of one epoch change is independent to any other epoch change.
+Also, every epoch change has the same failure probability, because the number of Byzantine faulty peers of one epoch has no effect on the number of Byzantine faulty peers of the next epoch.
+Given the fact that in every epoch the number of Byzantine faulty peers follows the same random distribution, so as the failure rate of random failure of honest peers, the failure rate of every epoch change must be the same with all identical inputs.
+Thus, we can simply calculate the failure probability $p_f$ of single epoch change, and $1 - (1 - p_f)^E$ will be an upper bound of the probability for data lost where $E$ is the maximum epoch number before data goes expired.
+It is feasible to construct a Markov chain for a single epoch change, but in this sketch of proof, simpler method is enough for inferring a satisfied estimation.
+
+\footnotetext{Because the system contains limited number of peers, given enough number of epochs, one peer will eventually be responsible for multiple epochs.
+However, since only a small portion of peers are responsible in each epoch, we can safely assume that with reasonable AFR all peers leave the system before they get selected twice.}
+
+An epoch change will take at most $T_e = 2T_g + T_r$ time, where $T_g$ is gossip interval and $T_r$ is the upper bound of time to repair.
+%\sgd{Should we define all these symbol all in once somewhere?}
+% At the beginning of this interval, there are at least $k + \epsilon = k_p - b = k_p - K/3$ fragments persist, or the epoch change will start even earlier.
+The epoch change cannot fail as long as both
+(a) the peers of next epoch can successfully recover the object, i.e. collect $k + \epsilon$ fragments, which is always the case because of
+(b) by the end of the epoch change, at least $k_p = k + \epsilon + b$ peers of this epoch is still alive, so there are enough honest nodes from this epoch to support nodes of next epoch to recover the object.
+This means that at most $K - k_p$ peers die in the $T_e$ interval.
+Given AFR of honest peers, we can derive the probability of over this number of peers dead and cause epoch change fails.
+Then in turn derive data lost rate during \store and expiration.
+
+%\sgd{Maybe it is also worth to explain how well Bernoulli sampling works (the more total stakes, the more accurate how many stakes are actually selected).}
+
+
+
+%%%%%%%%%%%%%%%%%%%
+% Unused material %
+%%%%%%%%%%%%%%%%%%%
+
+\iffalse
+
+\sys nodes communicate through both point-to-point channels and a gossip protocol.
+Point-to-point channels are \textit{reliable}.
+They can be implemented using protocols such as TCP and Reliable User Datagram Protocol (RUDP).
+The gossip protocol is best-effort and only provides weak guarantees: If a node sends a message through the protocol indefinitely, eventually all non-faulty nodes receive the message.
+
+Kleroterion partitions the lifetime of an object into virtual \textit{epochs}.
+\sgd{Candidate additional detail: epochs are supposed to be overlapping because it is hard to select exact number of peers to be responsible, just a weak partial ordering. "Partition the lifetime into epochs" sounds like there is only one epoch at a time, let reader suspect whether we are assuming a strong synchronous network (which we actually do not).}
+
+In each epoch, Kleroterion uses a verifiable random function (VRF) to select a random set of nodes for storing encoding fragments for an object.
+VRF ensures that each node can independently generate a selection proof, the selection probability of a node is proportional to the fraction of stakes it owns, and that the selection proof is publicly verifiable.
+The selection proof is attached to each persistence proof.
+By properly setting the desired storage redundancy in an epoch (value of $F$),
+%\sgd{What is $F$?}
+\sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
+Moreover, a node only needs to actively monitor persistence proofs for objects that it is responsible for in the next epoch, which is a tiny fraction of the object space.
+%\sgd{What do you mean by "a small constant proportional to its stake"? If "stake" here refers to raw capacity, it's not constant since raw capacity is unknown and varies on different peers.  If "stake" here refers to number of stored fragments, it's not constant because e.g. a newly-joined peer has no stored fragment but need to keep track of several objects.  By the way we don't really define how peers suppose to hold more than one stake currently.}
+%\lijl{Describe state transition figure here.}
+
+\begin{figure}
+   \begin{tikzpicture}
+        \tikzstyle{state} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
+        \tikzstyle{arrow} = [thick,->,>=stealth]
+
+        \matrix[row sep = 1.5cm, column sep = -0.5cm] {
+            & \node (listen) [state, fill = gray!10] {Listening}; \\
+            \node (act) [state] {Monitoring}; & & \node (resp) [state] {Responsible}; \\
+        };
+        \draw [arrow] (listen.west) to [out = 180] node[anchor = east, text width = 1.5cm]{Selected by Kleroterion} (act.north);
+        \draw [arrow] (act.east) to [out = 330, in = 210] node[anchor = south]{Require repair} (resp.west);
+        \draw [arrow] (resp.north) to [out = 90, in = 0] node[anchor = west, text width = 1.5cm]{Redundancy reduction} (listen.east);
+        \draw [arrow] (act.north) to [out = 90, in = 220] node[anchor = west, text width = 1.5cm]{Redundancy reduction} (listen.south);
+    \end{tikzpicture}
+    \caption{State transition of \sys nodes for every object. An unheard object starts with Listening state by default.}
+    \label{fig:node-state-machine}
+\end{figure}
+
+
+\autoref{fig:node-state-machine} describe the state transition related to a single object on a peer.
+By default, node stays at listening state for almost every learned object, which consumes zero resource on node.
+A node only switch to monitoring and responsible on demand, and both of the state may go back to listening state through redundancy reduction (introduced in \autoref{sec:implementation}).
+
+Placing encoding fragments at dynamically set of randomly selected nodes complicates object lookup.
+\sys leverages efficient gossip protocols~\cite{kadcast} to disseminate \query requests, which ensures sufficient ($k + \epsilon$) encoding fragments can be located.
+This naive approach, however, leads to additional gossip traffic and degraded \query latency.
+\sys addresses this issue with another level of indirection using distributed hash table (DHT).
+When a node stores a new fragment for an object, it registers a \textit{fragment pointer} in the DHT.
+To handle a \query, the requesting node queries the DHT to retrieve $k + \epsilon$ distinct fragment pointers, fetches the respective encoding fragments, and reconstructs the original object.
+Fragment pointer registration, however, is best-effort.
+To handle the case where less than $k + \epsilon$ pointers are found in the DHT, \sys nodes also store a maximum of $log(k)$ \textit{fragment links} alongside each locally stored fragment.
+A fragment link points to another node that stores a fragment for the same object in the same epoch.
+A traversal of fragment links increases the probability to recover all $k + \epsilon$ fragments.
+%\lijl{We should calculate the likelihood. Likely close to 1.}
+%\sgd{Not sure about this approach. Firstly a persistence-proof-like gossip initiated by client is not very complicated.  Just depends on how we optimize gossip protocol for traffic-efficiency, latency behavior could be poor.  If in such case a speedup DHT is leveraged, then the value associated with key (i.e. data object id) should be a set of peers who currently keeps track of health of data object, instead of the peers who currently store the fragments.  This is because the peers who are keeping track of objects (1) is more likely to still be alive (2) know at least $k$ other peers who recently store fragments.  Thus, only contacting one peer from DHT is enough to recover the object. It is more reasonable approach since we are not focusing on a secure DHT at all.  The only problem is that this exposes following responsible peers earlier. But anyway this supposes to be the direction.  Also check out repair booster in details section. An even better approach may be contacting booster first.}
+
+To store an object, the client calculates the hash of the object and writes the hash into a local request pending list.
+As we explain in subsequent protocols, when a node receives fragment persistence proofs through gossip, it adds verified proofs to the pending list if it matches the object.
+The node waits until it collects more than $k_p$ proofs.
+$k_p$ is calculated as $k + \epsilon + b$ where b is the expected number
+%\sgd{upper bound with high probability}
+of Byzantine nodes selected by Kleroterion in an epoch.
+Given our system model, $b$ is
+%\sgd{$\sim$}
+$\frac{K}{3}$, where $K$ is the total number of fragments in an epoch.
+
+\begin{algorithm}[t]
+    \begin{algorithmic}[1]
+        \Procedure{Kleroterion}{$\var{hash}, e$}
+            \State $\langle \var{h}, \pi \rangle \gets \fn{VRF}_{sk}(\var{hash} \parallel e)$
+            \State $c \gets \frac{h}{2^{hashlen}} < \frac{K}{S}$
+            \State $\var{idx} \gets h \bmod 2^D$
+            \State \Return $\langle \var{h}, \pi, c, idx \rangle$
+        \EndProcedure
+        \Procedure{VerifyFrag}{$\var{oh}, e, h, \pi, \var{fh}, \var{pk}$}
+            \If{$\neg \fn{VerifyVRF}_{pk}(h, \pi, \var{oh} \parallel e)$}
+                \Return false
+            \EndIf
+            \State $c \gets \frac{h}{2^{hashlen}} < \frac{K}{S}$
+            \If{$\neg c$}
+                \Return false
+            \EndIf
+            \State $\var{idx} \gets h \bmod 2^D$
+            \State \Return $\var{fh} = \fn{FragHash}(oh, idx)$
+        \EndProcedure
+    \end{algorithmic}
+    \caption{Kleroterion node selection protocol}
+    \label{alg:kleroterion}
+\end{algorithm}
+
+The core of \sys centers around participating nodes storing and generating encoding fragments throughout the lifetime of data objects.
+It involves subprotocols to randomly choose nodes responsible for encoding fragments, to verify fragment persistence proofs, to handle gossip messages, and to monitor persistence of data objects.
 
 \paragraph{Kleroterion node selection protocol.}
 
@@ -518,136 +718,5 @@ Thanks to lazy repair, the timer interval is long, normally from several hours t
 \paragraph{Reduce redundancy caused by bursty repair.}
 Since every node individually monitors objects without explicit coordination, when repair threshold is reached, several nodes' may simultaneously regenerate encoding fragments.
 To ameliorate this issue, when a node checks for object persistence, it can filter out fragments with hash values lower than the local one.
-
-\subsection{Correctness}
-
-Typically, the durability of a storage system is analyzed by continuous-time Markov chain (CTMC) model.
-In a CTMC model system states are enumerated that include all possible numbers of persistent fragments.
-The system starts from the state with expected replication factor, and an enter-only \textit{dead} state indicates data lost where no sufficient fragments left for recovering.
-Random processes are defined to transition among states, i.e., it takes a random amount of time to transition from one state to another, distributed exponentially.
-And finally, the model is used to solve the probability $\textbf{Pr}_{f}(t)$ which is the probability of reaching the \textit{dead} state after $t$ of time.
-And important metrics such as MTTDL can be derived from it.
-
-However, for \sys such analysis can be simplified by the inductive observation of the essential epoch change strategy.
-\sys loses data if any epoch change fails, i.e., the invariant of at least $k + \epsilon$ fragments persist breaks after that epoch change.
-The sets of responsible peers of different epochs are disjoint \footnotemark{}, so the failure of one epoch change is independent to any other epoch change.
-Also, every epoch change has the same failure probability, because the number of Byzantine faulty peers of one epoch has no effect on the number of Byzantine faulty peers of the next epoch.
-Given the fact that in every epoch the number of Byzantine faulty peers follows the same random distribution, so as the failure rate of random failure of honest peers, the failure rate of every epoch change must be the same with all identical inputs.
-Thus, we can simply calculate the failure probability $p_f$ of single epoch change, and $1 - (1 - p_f)^E$ will be an upper bound of the probability for data lost where $E$ is the maximum epoch number before data goes expired.
-It is feasible to construct a Markov chain for a single epoch change, but in this sketch of proof, simpler method is enough for inferring a satisfied estimation.
-
-\footnotetext{Because the system contains limited number of peers, given enough number of epochs, one peer will eventually be responsible for multiple epochs.
-However, since only a small portion of peers are responsible in each epoch, we can safely assume that with reasonable AFR all peers leave the system before they get selected twice.}
-
-An epoch change will take at most $T_e = 2T_g + T_r$ time, where $T_g$ is gossip interval and $T_r$ is the upper bound of time to repair.
-%\sgd{Should we define all these symbol all in once somewhere?}
-% At the beginning of this interval, there are at least $k + \epsilon = k_p - b = k_p - K/3$ fragments persist, or the epoch change will start even earlier.
-The epoch change cannot fail as long as both
-(a) the peers of next epoch can successfully recover the object, i.e. collect $k + \epsilon$ fragments, which is always the case because of
-(b) by the end of the epoch change, at least $k_p = k + \epsilon + b$ peers of this epoch is still alive, so there are enough honest nodes from this epoch to support nodes of next epoch to recover the object.
-This means that at most $K - k_p$ peers die in the $T_e$ interval.
-Given AFR of honest peers, we can derive the probability of over this number of peers dead and cause epoch change fails.
-Then in turn derive data lost rate during \store and expiration.
-
-%\sgd{Maybe it is also worth to explain how well Bernoulli sampling works (the more total stakes, the more accurate how many stakes are actually selected).}
-
-
-
-%%%%%%%%%%%%%%%%%%%
-% Unused material %
-%%%%%%%%%%%%%%%%%%%
-
-\iffalse
-
-\sys nodes communicate through both point-to-point channels and a gossip protocol.
-Point-to-point channels are \textit{reliable}.
-They can be implemented using protocols such as TCP and Reliable User Datagram Protocol (RUDP).
-The gossip protocol is best-effort and only provides weak guarantees: If a node sends a message through the protocol indefinitely, eventually all non-faulty nodes receive the message.
-
-Kleroterion partitions the lifetime of an object into virtual \textit{epochs}.
-\sgd{Candidate additional detail: epochs are supposed to be overlapping because it is hard to select exact number of peers to be responsible, just a weak partial ordering. "Partition the lifetime into epochs" sounds like there is only one epoch at a time, let reader suspect whether we are assuming a strong synchronous network (which we actually do not).}
-
-In each epoch, Kleroterion uses a verifiable random function (VRF) to select a random set of nodes for storing encoding fragments for an object.
-VRF ensures that each node can independently generate a selection proof, the selection probability of a node is proportional to the fraction of stakes it owns, and that the selection proof is publicly verifiable.
-The selection proof is attached to each persistence proof.
-By properly setting the desired storage redundancy in an epoch (value of $F$),
-%\sgd{What is $F$?}
-\sys ensures that more than $k + \epsilon$ fragments are stored on honest nodes with high probability.
-Moreover, a node only needs to actively monitor persistence proofs for objects that it is responsible for in the next epoch, which is a tiny fraction of the object space.
-%\sgd{What do you mean by "a small constant proportional to its stake"? If "stake" here refers to raw capacity, it's not constant since raw capacity is unknown and varies on different peers.  If "stake" here refers to number of stored fragments, it's not constant because e.g. a newly-joined peer has no stored fragment but need to keep track of several objects.  By the way we don't really define how peers suppose to hold more than one stake currently.}
-%\lijl{Describe state transition figure here.}
-
-\begin{figure}
-   \begin{tikzpicture}
-        \tikzstyle{state} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm,text centered, draw=black]
-        \tikzstyle{arrow} = [thick,->,>=stealth]
-
-        \matrix[row sep = 1.5cm, column sep = -0.5cm] {
-            & \node (listen) [state, fill = gray!10] {Listening}; \\
-            \node (act) [state] {Monitoring}; & & \node (resp) [state] {Responsible}; \\
-        };
-        \draw [arrow] (listen.west) to [out = 180] node[anchor = east, text width = 1.5cm]{Selected by Kleroterion} (act.north);
-        \draw [arrow] (act.east) to [out = 330, in = 210] node[anchor = south]{Require repair} (resp.west);
-        \draw [arrow] (resp.north) to [out = 90, in = 0] node[anchor = west, text width = 1.5cm]{Redundancy reduction} (listen.east);
-        \draw [arrow] (act.north) to [out = 90, in = 220] node[anchor = west, text width = 1.5cm]{Redundancy reduction} (listen.south);
-    \end{tikzpicture}
-    \caption{State transition of \sys nodes for every object. An unheard object starts with Listening state by default.}
-    \label{fig:node-state-machine}
-\end{figure}
-
-
-\autoref{fig:node-state-machine} describe the state transition related to a single object on a peer.
-By default, node stays at listening state for almost every learned object, which consumes zero resource on node.
-A node only switch to monitoring and responsible on demand, and both of the state may go back to listening state through redundancy reduction (introduced in \autoref{sec:implementation}).
-
-Placing encoding fragments at dynamically set of randomly selected nodes complicates object lookup.
-\sys leverages efficient gossip protocols~\cite{kadcast} to disseminate \query requests, which ensures sufficient ($k + \epsilon$) encoding fragments can be located.
-This naive approach, however, leads to additional gossip traffic and degraded \query latency.
-\sys addresses this issue with another level of indirection using distributed hash table (DHT).
-When a node stores a new fragment for an object, it registers a \textit{fragment pointer} in the DHT.
-To handle a \query, the requesting node queries the DHT to retrieve $k + \epsilon$ distinct fragment pointers, fetches the respective encoding fragments, and reconstructs the original object.
-Fragment pointer registration, however, is best-effort.
-To handle the case where less than $k + \epsilon$ pointers are found in the DHT, \sys nodes also store a maximum of $log(k)$ \textit{fragment links} alongside each locally stored fragment.
-A fragment link points to another node that stores a fragment for the same object in the same epoch.
-A traversal of fragment links increases the probability to recover all $k + \epsilon$ fragments.
-%\lijl{We should calculate the likelihood. Likely close to 1.}
-%\sgd{Not sure about this approach. Firstly a persistence-proof-like gossip initiated by client is not very complicated.  Just depends on how we optimize gossip protocol for traffic-efficiency, latency behavior could be poor.  If in such case a speedup DHT is leveraged, then the value associated with key (i.e. data object id) should be a set of peers who currently keeps track of health of data object, instead of the peers who currently store the fragments.  This is because the peers who are keeping track of objects (1) is more likely to still be alive (2) know at least $k$ other peers who recently store fragments.  Thus, only contacting one peer from DHT is enough to recover the object. It is more reasonable approach since we are not focusing on a secure DHT at all.  The only problem is that this exposes following responsible peers earlier. But anyway this supposes to be the direction.  Also check out repair booster in details section. An even better approach may be contacting booster first.}
-
-To store an object, the client calculates the hash of the object and writes the hash into a local request pending list.
-As we explain in subsequent protocols, when a node receives fragment persistence proofs through gossip, it adds verified proofs to the pending list if it matches the object.
-The node waits until it collects more than $k_p$ proofs.
-$k_p$ is calculated as $k + \epsilon + b$ where b is the expected number
-%\sgd{upper bound with high probability}
-of Byzantine nodes selected by Kleroterion in an epoch.
-Given our system model, $b$ is
-%\sgd{$\sim$}
-$\frac{K}{3}$, where $K$ is the total number of fragments in an epoch.
-
-\begin{algorithm}[t]
-    \begin{algorithmic}[1]
-        \Procedure{Kleroterion}{$\var{hash}, e$}
-            \State $\langle \var{h}, \pi \rangle \gets \fn{VRF}_{sk}(\var{hash} \parallel e)$
-            \State $c \gets \frac{h}{2^{hashlen}} < \frac{K}{S}$
-            \State $\var{idx} \gets h \bmod 2^D$
-            \State \Return $\langle \var{h}, \pi, c, idx \rangle$
-        \EndProcedure
-        \Procedure{VerifyFrag}{$\var{oh}, e, h, \pi, \var{fh}, \var{pk}$}
-            \If{$\neg \fn{VerifyVRF}_{pk}(h, \pi, \var{oh} \parallel e)$}
-                \Return false
-            \EndIf
-            \State $c \gets \frac{h}{2^{hashlen}} < \frac{K}{S}$
-            \If{$\neg c$}
-                \Return false
-            \EndIf
-            \State $\var{idx} \gets h \bmod 2^D$
-            \State \Return $\var{fh} = \fn{FragHash}(oh, idx)$
-        \EndProcedure
-    \end{algorithmic}
-    \caption{Kleroterion node selection protocol}
-    \label{alg:kleroterion}
-\end{algorithm}
-
-The core of \sys centers around participating nodes storing and generating encoding fragments throughout the lifetime of data objects.
-It involves subprotocols to randomly choose nodes responsible for encoding fragments, to verify fragment persistence proofs, to handle gossip messages, and to monitor persistence of data objects.
 
 \fi
