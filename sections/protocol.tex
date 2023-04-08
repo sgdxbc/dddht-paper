@@ -296,10 +296,10 @@ The $\fn{NodeID}()$ function derives the ID of the node, by calculating a SHA256
             \State $\var{fhash} \gets \fn{Hash}(\var{frag})$
             \State $\langle r, \pi, s \rangle \gets \fn{SelectionProof}(\var{fhash})$
             \ForAll{$\var{n} \in \var{group}$}
-                \State $\fn{Send}(\msg{HeartBeat}{\var{chash, fhash, i, \langle r, \pi, s \rangle}, \var{group}})$
+                \State $\fn{Send}(\msg{HeartBeat}{\var{chash, fhash, i, \langle r, \pi, s \rangle}})$
             \EndFor
         \EndProcedure
-        \Procedure{RecvHeartBeat}{$\var{fhash}, i, \langle r, \pi, s \rangle, g$}
+        \Procedure{RecvHeartBeat}{$\var{fhash}, i, \langle r, \pi, s \rangle$}
             \If{$\neg \var{chash} \in \var{store}$}
                 \State \Return
             \EndIf
