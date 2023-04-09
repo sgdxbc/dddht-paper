@@ -1,16 +1,16 @@
 Why is it hard to guarantee data durability in a decentralized storage system?
 In this section, we analyze key challenges faced by existing systems to prevent data losses in an open, permissionless environment.
-We then present our approach of using rateless fountain code and verifiable randomness to tackle the durability challenge.
+We then present our approach of using rateless fountain code, verifiable randomness, and dual-layer encoding to tackle the durability challenge.
 
 \subsection{The Durability Challenge in Decentralized Storage}
 \label{sec:approach:challenge}
 
 How to maintain data durability in the presence of server and device failures?
-The de facto standard approach is data replication and erasure code.
+The de facto standard approach is data replication and erasure coding.
 It is well-studied how \textit{redundancy} can mask failures -- including Byzantine ones -- of individual components and ensure data availability.
 The approach is particularly effective in centralized settings, in which system participants and failure distributions are managed by a single entity.
 For instance, the central administrator can control node/device selection such that out of the $n$ nodes storing a data object, at most $n-r$, where $r$ is the level of redundancy, of them can fail.
-%\lijl{Can add placement group discussion here.}
+\lijl{Add placement group discussion here.}
 
 The formula changes completely in an open, decentralized system.
 Nodes are free to join and leave the system at any time.
@@ -28,17 +28,16 @@ Data durability is immediately violated under these attack scenarios.
 
 Existing blockchain systems face similar attack vectors.
 However, decentralized storage systems are particularly vulnerable, given their scale and redundancy constraints.
-In large scale deployments, the size of the system, which can reach beyond 100K nodes~\cite{ipfs}, easily overwhelms the replication factor of each storage object, which is typically below 20.
-%\lijl{citation?}.
-In fact, reducing redundancy is a key metric to improve the overall storage efficiency.
+In large scale deployments, the size of the system, which can reach beyond 100K nodes~\cite{ipfs}, easily overwhelms the replication factor of each storage object, which is typically below 20~\cite{kademlia}.
 This is in contrast to a blockchain, in which chain data is replicated on every participant.
-With such a small redundancy, effectiveness of adversarial attacks grows exponentially, even when the adversaries account for a small percentage of the entire system.
+Similar to traditional distributed storage, minimizing redundancy is a key metric to improve the overall storage efficiency.
+With smaller redundancy, effectiveness of adversarial attacks grows exponentially, even when the adversaries account for a small percentage of the entire system.
 
 Another challenge faced by open, decentralized systems is that consensus and coordination are \textit{costly}.
 To safely confirm a transaction, the Bitcoin network requires a confirmation latency of around one hour;
 even the faster Ethereum network incurs a finality latency of over 12 seconds.
 Besides latency, both networks also suffers low consensus throughput -- 7 transaction per second (TPS) for Bitcoin and 20 TPS for Ethereum -- as well as high transaction fees.
-Storage mechanisms that rely on frequent consensus are impractical in such settings.
+Decentralized Storage designs that rely on frequent consensus are impractical in such settings.
 
 %\sgd{Maybe go into related work, or omitted.}
 %\paragraph{Purely incentive-based approaches.} Filecoin and Arweave.
@@ -54,13 +53,15 @@ Storage mechanisms that rely on frequent consensus are impractical in such setti
 %\end{itemize}
 
 \subsection{The Case for Using Fountain Code}
-\label{sec:background:code}
+\label{sec:approach:code}
 
 Fountain codes are a family of erasure codes that have two special properties.
-Firstly, fountain codes are rateless: They generate a potentially \textit{infinite sequence} of encoding symbols from $k$ source blocks.
+Firstly, fountain codes are rateless.
+They generate a potentially \emph{infinite sequence} of encoding symbols from $k$ source blocks.
 Any $k+\epsilon$ encoding symbols can be used to reconstruct the original source data.
 This is different from traditional maximum distance separable (MDS) codes, such as Reed-Solomon codes, which produces $n$ fixed encoding symbols from the $k$ source blocks.
-Second, fountain codes work well with large values of $n$, $k$, and $r$ --- real deployment of $(1200, 1000, 200)$ fountain code has been shown to be efficient~\cite{liquid}.
+Second, fountain codes work well with large $(n, k, r)$ parameters, where $n$, $k$, $r$ represents the number of total, original, and redundant symbols respectively.
+Real deployment of $(1200, 1000, 200)$ fountain code has been shown to be efficient~\cite{liquid}.
 Such numbers are two orders of magnitude larger than practical MDS codes used in production systems.
 
 Why do these properties matter in a decentralized storage system?
@@ -70,48 +71,72 @@ However, decentralized systems, unlike centrally managed clusters, exhibit high 
 Strict timing requirement for detection and recovery of encoding symbols is therefore impractical in a decentralized environment.
 On the other hand, large values of $r$ in fountain codes can tolerate bursty encoding failures without losing the data, and permit the system to recover at a steady average rate.
 Such property is more favorable in a highly aynchronous environment.
-%Note that the increase in $r$ in fountain codes does not lead to higher redundancy: a \XXX and a \XXX code have the exact same redundancy, \XXX.
+For instance, a $(1200, 1000, 200)$ code can tolerate 200 simultaneous symbol failures, while losing 3 symbols will result in permanent data loss when deploying a $(12, 10, 2)$ code.
+The increase in $r$ in fountain codes, however, does not lead to higher redundancy.
+The redundancy rate of the above two codes are identical.
 
 The rateless property of fountain code is also beneficial.
 As discussed in \autoref{sec:approach:challenge}, coordination and consensus are costly in decentralized systems.
 MDS codes with small values of $(n, k, r)$ necessitate participants to coordinate to agree on the assignment of symbols.
 Uncoordinated symbol generation may lead to insufficient \textit{unique} symbols to recover the original data, an issue analogous to the coupon collector's problem \cite{ccp}.
 Rateless codes eschew this issue completely.
-The availability of an infinite stream of encoding symbols enables participants to \textit{independently} generate symbols with a negligible probability of collision.
-%\lijl{May need to rephrase this sentence.}
+The infinite encoding space enables participants to generate unique symbols with high probability without explicit coordination.
 
 %Infinite, ordered fragments. Given order $i$, the $i$-th fragment can be generated in time linear to data object size.
 %Similar arguments have been made in the liquid system~\cite{liquid} and OceanStore~\cite{oceanstore}
 
-\subsection{Verifiable Randomness for Adversary Tolerance}
+\subsection{Verifiable Randomness for Byzantine Tolerance}
 
-\lijl{Other related work: verifiable secret sharing, decentralized randomness}
-
+\lijl{Other related work: verifiable secret sharing, decentralized randomness.}
 \lijl{Can discuss how our approach (how we select new ``replicas'') differs from traditional DHT.}
 
-Rateless erasure code is only half of the equation --- using it alone does not solve the durability issue.
-Adversaries can still claim storage of sufficient number of encoding symbols, resulting in less than $k + \epsilon$ symbols survived on honest nodes.
-Simply increasing the redundancy to tolerate adversarial behaviors limits the overall storage capacity of the system.
-At the fault tolerance level we are targeting ($1/3$ Byzantine participants), the capacity would not scale beyond a few times of an individual node under such naive approach.
+Rateless erasure code alone does not solve the durability challenge.
+Byzantine participants can claim storage of sufficient number of encoding symbols, resulting in less than $k + \epsilon$ symbols survived on honest nodes.
+Once they collude and delete the stored symbols, the original object is permanently lost.
+Simply increasing the redundancy to tolerate Byzantine behaviors would limit the effective storage capacity of the system.
+For instance, at the fault tolerance level we are targeting ($1/3$ Byzantine participants), storing symbols of each object on $\frac{N}{3} + k + \epsilon$ distinct nodes can ensure durability.
+Unfortunately, the overall storage capacity would not scale beyond a few times that of an individual node under such naive approach.
 
-In \sys, we leverage \textit{randomness} to tolerate adversarial behaviors.
-Under the assumption
-%\sgd{I prefer to say this as an "assertion" instead of "assumption". Assumption sounds like it may be violated some time. However we rely on it to be hold for all time in order to ensure safety.}
-that less than $1/3$ of the participants are Byzantine at any time, by randomly selecting nodes to store the generated or the repaired encoding symbols, \sys only needs to pay an approximately $0.33$ redundancy penalty compared to the base fountain code.
-%\sgd{Should be 0.5: (1 + 0.5) * (1 - 1/3) = 1}
-Note that the assumption doesn't rule out strong adversaries generating new identities --- proof of stake (PoS) or proof of work (PoW) can be used to defend against arbitrary Sybil attacks.
+In \sys, we leverage \textit{randomness} to tolerate Byzantine participants without sacrificing capacity.
+By randomly choosing nodes to store the encoding symbols for an object, each selected node has approximately $\frac{1}{3}$ probability of being Byzantine.
+Consequently, \sys only needs to pay a $0.5$ redundancy penalty~\footnote{Suppose the based fountain code generates $n$ symbols, each stored on a unique node. By storing $1.5n$ symbols on distinct nodes, even when $\frac{1}{3}$ of the nodes are Byzantine, $n$ symbols are still stored on honest nodes.} over the base fountain code for Byzantine fault tolerance.
+This extra redundancy is independent of $N$, implying that the effective storage capacity scales linearly with increasing system size, a desirable property for storage systems.
+Note that our model doesn't rule out strong adversaries generating new identities --- proof of stake (PoS) can be used to defend against arbitrary Sybil attacks.
 
-We, however, avoid relying on a centralized, trusted entity to provide this random selection service.
-Instead, \sys performs node selection in a fully decentralized fashion, through a procedure termed Kleroterion~\footnote{Kleroterion was a randomization machine used in ancient Athens to select council members from citizens.}.
-The core of Kleroterion is the use of \textit{verifiable random functions} (VRF) \cite{vrf}.
-A verifiable random function takes an input string and the private key of a prover, and it produces a deterministic random hash value plus a short proof.
+We avoid relying on a centralized, trusted entity to provide this random selection service.
+Instead, \sys performs node selection in a fully decentralized fashion using \emph{verifiable random functions} (VRF)~\cite{vrf}.
+A verifiable random function takes an input string and the private key of a prover, and it produces a deterministic hash value plus a short proof.
+The output hash is indistinguishable from a uniformly random value.
 Using the proof and the public key of the prover, anyone can verify that the hash is correctly generated by the prover, and the prover only, from the input string.
-%\lijl{Include proper mathematical definition?}
-This public verifiability enables storage nodes to independently generate checkable proofs that they are selected randomly by Kleroterion to store an encoding symbol for an object.
-Specifically, \sys nodes feed the hash of an object plus a virtual time to a VRF function.
-Kleroterion defines static and fair rules to determine eligibility from the output random hash values.
-The ``winning'' hash values then serve as \textit{unforgeable tokens} to store object encoding symbols at that virtual time, which can be publicly verified using the generated proof.
-Properties of VRF ensure that adversaries, even when they can generate identities and launch targeted attacks, have no ability to influence the Kleroterion selection process.
+This public verifiability enables \sys participants to independently generate checkable proofs that they are selected randomly to store an encoding symbol.
+Specifically, for each encoding symbol, a node in the system can generate a VRF hash, and \sys defines publicly-known rules to calculate selection probability \emph{inversely proportional} to the node's distance to the symbol on the hash ring~\cite{chash,chord}.
+The ``winning'' hash values then serve as \textit{unforgeable tokens} to store encoding symbols, which can be publicly verified using the generated proof.
+Given that fountain code produces an infinite stream of encoding symbol each with a random value, our decentralized selection scheme ensures that the chosen nodes storing the symbols for an object are randomly distributed.
+
+\subsection{Dual-Layer Encoding to Defend Targeted Adversaries}
+
+Strong adversaries not only can discard stored encoding symbols, but also launch specific attacks targeting honest nodes to compromise data durability.
+Our deployment scenario makes it impossible to completely hide the identities of nodes selected to store symbols for an object, as the symbol storing and periodic repair process will reveal their identities.
+This is in contrast to prior work~\cite{algorand} that uses VRF to select consortium for a round of consensus.
+In \sys, we take a different approach to defending targeted attacks, by adding another layer of erasure coding.
+For each stored object, \sys first applies a \emph{keyed} erasure coding function with a small $(n, k, r)$ parameter to produce a set of encoded chunks.
+Critically, this \emph{outer layer} encoding ensures that each generated chunk appears completed random to an external party, and the mapping between chunks to an object is \emph{private} to the client applying the encoding.
+The client then applies the \emph{inner layer} fountain code (\autoref{sec:approach:code}) to store each chunk as a stream of encoded fragments.
+As every chunk appears completely random to adversaries, targeted attacks can do no better than compromising randomly selected chunks in the system.
+With large enough number of stored objects, the chance of simultaneously attacking more than $r$ chunks of a particular object becomes negligible, and the client (who privately knows the mapping) can recover the original object with overwhelming probability.
+
+\iffalse
+
+%Through a procedure termed Kleroterion~\footnote{Kleroterion was a randomization machine used in ancient Athens to select council members from citizens.}.
+%The core of Kleroterion is the use of \textit{verifiable random functions} (VRF) \cite{vrf}.
+%A verifiable random function takes an input string and the private key of a prover, and it produces a deterministic random hash value plus a short proof.
+%Using the proof and the public key of the prover, anyone can verify that the hash is correctly generated by the prover, and the prover only, from the input string.
+%%\lijl{Include proper mathematical definition?}
+%This public verifiability enables storage nodes to independently generate checkable proofs that they are selected randomly by Kleroterion to store an encoding symbol for an object.
+%Specifically, \sys nodes feed the hash of an object plus a virtual time to a VRF function.
+%Kleroterion defines static and fair rules to determine eligibility from the output random hash values.
+%The ``winning'' hash values then serve as \textit{unforgeable tokens} to store object encoding symbols at that virtual time, which can be publicly verified using the generated proof.
+%Properties of VRF ensure that adversaries, even when they can generate identities and launch targeted attacks, have no ability to influence the Kleroterion selection process.
 
 %Critically, a node only needs to reveal its eligibility after it has stored the encoding symbol.
 
@@ -126,3 +151,5 @@ Properties of VRF ensure that adversaries, even when they can generate identitie
 %\textbf{Insight of randomized rotation.} Only encounter a small subset of Byzantine node for all the time.
 %
 %\textbf{Overhead of fountain code.} Encode/decode performance is good enough. $\epsilon$ exist but small enough (on average much less than 1).
+
+\fi
