@@ -86,6 +86,7 @@ The infinite encoding space enables participants to generate unique symbols with
 %Similar arguments have been made in the liquid system~\cite{liquid} and OceanStore~\cite{oceanstore}
 
 \subsection{Verifiable Randomness for Byzantine Tolerance}
+\label{sec:approach:random}
 
 \lijl{Other related work: verifiable secret sharing, decentralized randomness.}
 \lijl{Can discuss how our approach (how we select new ``replicas'') differs from traditional DHT.}
@@ -114,6 +115,7 @@ The ``winning'' hash values then serve as \textit{unforgeable tokens} to store e
 Given that fountain code produces an infinite stream of encoding symbol each with a random value, our decentralized selection scheme ensures that the chosen nodes storing the symbols for an object are randomly distributed.
 
 \subsection{Dual-Layer Encoding to Defend Targeted Adversaries}
+\label{sec:approach:dualencode}
 
 Strong adversaries not only can discard stored encoding symbols, but also launch specific attacks targeting honest nodes to compromise data durability.
 Our deployment scenario makes it impossible to completely hide the identities of nodes selected to store symbols for an object, as the symbol storing and periodic repair process will reveal their identities.
