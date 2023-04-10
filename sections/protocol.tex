@@ -41,7 +41,7 @@ It first applies a fixed-rate erasure code to encode each object into a set of \
 \sgd{A fixed-rate code will generate finite enumerable fixed-content fragments, which could be used to trace data object by attackers.}
 For each chunk, \sys then uses a publicly-known rateless erasure code to generate an infinite stream of \emph{encoding fragments}.
 The encoding fragments for a chunk are stored on a dynamic set of \sys nodes, collectively termed a chunk group.
-As introduced in \autoref{sec:background:code}, an encoded chunk can be reconstructed from any $k + \epsilon$ distinct encoding fragments with overwhelmingly high probability, and any $k$ distinct encoded chunks can recover the original object.
+As introduced in \autoref{sec:approach:code}, an encoded chunk can be reconstructed from any $k + \epsilon$ distinct encoding fragments with overwhelmingly high probability, and any $k$ distinct encoded chunks can recover the original object.
 To guarantee data durability, \sys enforces the following invariant: \lijl{should we use different k for each definition}
 
 \begin{invariant}
@@ -103,19 +103,40 @@ In the worst case where no fragment pointer is found, the requesting node either
 
 \begin{figure}
     \begin{mdframed}[style=protocol]
-        \textbf{\sys node:}
+        \textbf{\sys node:} \\
+        State:
         \begin{itemize}
             \setlength\itemsep{0em}
             \item \textit{sk}: secret key of the node
-            \item \textit{ID}: SHA256 hash of the public key.
-            \item \textit{R}: threshold of alive encoding fragments in a chunk group
-            \item \textit{store}: local storage for encoding fragments. Indexed by chunk hash
-            \item \textit{group}: for each stored fragment, a local view of the current chunk group membership
-            \item \wh: for each stored fragment, next fragment index to repair
-            \item \wl: for each stored fragment, next fragment index to eliminate
+            \item \textit{ID}: SHA256 hash of the node public key
+            \item \textit{store}: local storage of encoding fragments. Indexed by chunk hash
+        \end{itemize}
+        Per-stored-fragment state:
+        \begin{itemize}
+            \setlength\itemsep{0em}
+            \item \textit{group}: local view of chunk group membership
+            \item \wh: highest coding index of active members
+            \item \wl: lowest coding index of active members
+        \end{itemize}
+        Constants:
+        \begin{itemize}
+            \setlength\itemsep{0em}
+            \item \kout: number of distinct chunks to recover an object using outer layer encoding
+            \item \kin: number of distinct fragments to recover a chunk using inner layer encoding
+            \item $R$: threshold of alive encoding fragments in a chunk group to start repair
+        \end{itemize}
+        Utility Functions:
+        \begin{itemize}
+            \setlength\itemsep{0em}
+            \item $\fn{Hash}(in)$: output a cryptographic hash of $in$
+            \item $\fn{OuterEncode}(\var{data})$: encode $data$ into a set of encoded chunks using outer erasure code
+            \item $\fn{OuterDecode}(\set{..})$: decode data from a set of encoded chunks using outer erasure code
+            \item $\fn{InnerEncode}(\var{data}, i)$: generate the $i$th encoding fragment of $data$ using inner erasure code
+            \item $\fn{InnerEncodeHash}(\var{hash}, i)$: from data $hash$, generate the hash of the $i$th fragment
+            \item $\fn{InnerDecode}(\set{..})$: decode data from a set of encoded fragments using inner erasure code
         \end{itemize}
     \end{mdframed}
-    \caption{Local state and global constants stored on each \sys node.}
+    \caption{Local state, constants, and utility functions maintained on each \sys node}
     \label{fig:node-state}
 \end{figure}
 
