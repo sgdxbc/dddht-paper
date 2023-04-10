@@ -153,12 +153,13 @@ Each node also stores a set of encoding fragments generated from our rateless er
     \begin{algorithmic}[1]
         \Procedure{\store}{$\var{obj}$}
             \State $\var{chunks} \gets \fn{OuterEncode}(\var{obj})$
-            \State $\var{hashes} \gets \set{}$
+            \State $\var{chashes} \gets \set{}$
             \ForAll{$\var{chunk} \in \var{chunks}$}
-                \State $\var{hashes} \gets \var{hashes} \cup \set{\fn{Hash}(chunk)}$
-                \State $\var{members} \gets \set{}$
-                \While{$\var{stored\ fragments} < k_{inner}$}
-                    \State $\var{frag} \gets \fn{InnerEncodeNext}(\var{chunk})$
+                \State $\var{chashes} \gets \var{chashes} \cup \set{\fn{Hash}(chunk)}$
+                \State $\var{members} \gets \set{}, i \gets 0$
+                \While{stored fragments $ < R$}
+                    \State $\var{frag} \gets \fn{InnerEncode}(\var{chunk}, i)$
+                    \State $i \gets i + 1$
                     \State $\var{nodes} \gets \fn{Locate}(\fn{Hash}(\var{frag}))$
                     \If{$\var{nodes} \ne \set{}$}
                         \State // request any $\var{n}$ in $\var{nodes}$ to store frag
@@ -169,29 +170,28 @@ Each node also stores a set of encoding fragments generated from our rateless er
                     \State // send $\var{members}$ to $m$
                 \EndFor
             \EndFor
-            \State \Return $hashes$
+            \State \Return $chashes$
         \EndProcedure
-        \Procedure{\query}{$\var{hashes}$}
+        \Procedure{\query}{$\var{chashes}$}
             \State $\var{chunks} \gets \set{}$
-            \While{$|\var{chunks}| < k_{outer}$}
-                \State $\var{hash} \gets \var{hashes.next()}$
-                \State $\var{frags} \gets \fn{RetreieveFrags}(\var{hash})$
+            \While{$|\var{chunks}| < \kout$}
+                \State $\var{chash} \gets \var{chashes.next()}$
+                \State $\var{frags} \gets \fn{RetreieveFrags}(\var{chash})$
                 \State $\var{chunks} \gets \var{chunks}$ $\cup$ $\set{\fn{InnerDecode}(\var{frags})}$
             \EndWhile
             \State \Return $\fn{OuterDecode}(\var{chunks})$
         \EndProcedure
-        \Procedure{RetrieveFrags}{$\var{hash}$}
-            \State $\var{frags} \gets \set{}$
-            \State $\var{pointers} \gets \fn{DHT-Get}(\var{hash})$
-            \State $\var{frags} \gets \var{frags}$ $\cup$ request frags from $pointers$
-            \While{$|\var{frags}| < k_{inner}$}
-                \State // linear search if not enough pointers
-                \State $\var{fraghash} \gets \fn{InnerEncodeHashNext}(\var{hash})$
-                \State $\var{nodes} \gets \fn{Locate}(\var{fraghash})$
-                \If{$\var{nodes} \ne \set{}$}
-                    \State // request $\var{fragment}$ with hash $\var{fraghash}$ from $\var{nodes}$
-                    \State $\var{frags} \gets \var{frags}$ $\cup$ $\set{\var{fragment}}$
-                \EndIf
+        \Procedure{RetrieveFrags}{$\var{chash}$}
+            \State $\var{frags} \gets \set{}, i \gets 0$
+            \While{$|\var{frags}| < \kin$}
+                \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
+                \State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
+                \ForAll{$n \in \var{nodes}$}
+                    \If{receive $\var{frag}$ with hash $\var{fhash}$ from $n$}
+                        \State $\var{frags} \gets \var{frags}$ $\cup$ $\set{\var{frag}}$
+                        \State break
+                    \EndIf
+                \EndFor
             \EndWhile
             \State \Return $\var{frags}$
         \EndProcedure
