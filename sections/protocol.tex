@@ -161,12 +161,12 @@ Each node also stores a set of encoding fragments generated from our rateless er
                     \State $i \gets i + 1$
                     \State $\var{nodes} \gets \fn{Locate}(\fn{Hash}(\var{frag}))$
                     \If{$\var{nodes} \ne \set{}$}
-                        \State // request any $\var{n}$ in $\var{nodes}$ to store frag
+                        \State request any $\var{n}$ in $\var{nodes}$ to store frag
                         \State $\var{members} \gets \var{members} \cup \set{n}$
                     \EndIf
                 \EndWhile
                 \ForAll{$m \in \var{members}$}
-                    \State // send $\var{members}$ to $m$
+                    \State send $\var{members}$ to $m$
                 \EndFor
             \EndFor
             \State \Return $chashes$
@@ -233,7 +233,7 @@ Finally, the original object is recovered by applying the outer layer decoding o
         \Procedure{Locate}{$\var{fhash}$}
             \State $\var{candidates} \gets \fn{DHT-Lookup}(\var{fhash}), \var{nodes} \gets \set{}$
             \ForAll{$\var{c} \in \var{candidates}$}
-                \State // request selection proof $\langle r, \pi, s \rangle$ from $c$
+                \State request selection proof $\langle r, \pi, s \rangle$ from $c$
                 \If{$s \land \fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{c})$}
                     \State $\var{nodes} \gets \var{nodes}$ $\cup$ $\set{\var{c}}$
                 \EndIf
@@ -294,24 +294,13 @@ The $\fn{NodeID}()$ function derives the ID of the node, by calculating a SHA256
         \Procedure{MembershipTimer}{}
             \For{$i \in (\wl$ $..$ $\wh)$}
                 \If{$\var{group}.contains(i)$}
-                    \If{$\var{group}[i]$ not lived}
-                        \State $\var{group} \gets \var{group} \setminus \set{\var{group}[i]}$
-                    \EndIf
-                \Else
-                    \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
-                    \State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
-                    \ForAll{$\var{n} \in \var{nodes}$}
-                        \If{$\fn{QueryHasFrag}(\var{fhash})$}
-                            \State $\var{group} \gets \var{group} \cup \set{n}$
-                            \State break
-                        \EndIf
-                    \EndFor
+                    \State remove $i$ from $group$ if no \mtype{HeartBeat} received from $i$
                 \EndIf
             \EndFor
-        \State $\fn{UpdateWmarkH}()$
-        \If{$|group[\wl $ $..$ $\wh]| < n_{inner}$}
-            \State $\fn{RepairChunk}(\var{chash})$
+        \If{$|group[\wl $ $..$ $\wh]| < R$}
+            \State $\fn{RepairChunks}(\var{chash})$
         \EndIf
+        \State $\fn{UpdateWmarkH}()$
         \EndProcedure
         \Procedure{HeartbeatTimer}{$\var{frag}, \var{i}$}
             \State $\var{fhash} \gets \fn{Hash}(\var{frag})$
@@ -320,7 +309,7 @@ The $\fn{NodeID}()$ function derives the ID of the node, by calculating a SHA256
                 \State $\fn{Send}(\msg{HeartBeat}{\var{chash, fhash, i, \langle r, \pi, s \rangle}})$
             \EndFor
         \EndProcedure
-        \Procedure{RecvHeartBeat}{$\var{fhash}, i, \langle r, \pi, s \rangle$}
+        \Procedure{RecvHeartBeat}{$\var{chash}, \var{fhash}, i, \langle r, \pi, s \rangle$}
             \If{$\neg \var{chash} \in \var{store}$}
                 \State \Return
             \EndIf
@@ -329,20 +318,12 @@ The $\fn{NodeID}()$ function derives the ID of the node, by calculating a SHA256
             \EndIf
             \If{$s \land \fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{sender})$}
                 \State $\var{group} \gets \var{group} \cup \set{sender}$
-                \State // refresh sender peer liveness
             \EndIf
         \EndProcedure
         \Procedure{UpdateWmarkH}{}
-            \State $\var{nAlive} \gets 0$
-            \For{$i \in (\wl$ $..$ $\wh)$}
-                \If{$\var{group}.contains(i)$}
-                    \State $\var{nAlive} \gets \var{nAlive} + 1$
-                    \If{$\var{nAlive} \ge n_{inner}$}
-                        \State $\wh \gets i$
-                        \State \Return
-                    \EndIf
-                \EndIf
-            \EndFor
+            \If{$|group[\wl $ $..$ $\wh]| > R$}
+                \State $\wh \gets i$ where $|group[\wl $ $..$ $i]| = R$
+            \EndIf
         \EndProcedure
         \Procedure{UpdateWaterLTimer}{}
             \State $\var{group} \gets \var{group} \setminus \set{\var{group}[\wl]}$
@@ -384,7 +365,7 @@ To do so, each node periodically removes peer at the \wl position in a group, an
 
 \begin{algorithm}
     \begin{algorithmic}[1]
-        \Procedure{RepairChunk}{$\var{chash}$}
+        \Procedure{RepairChunks}{$\var{chash}$}
             \State $\wh \gets \wh + 1$
             \If{$\neg \var{group}.contains(\wh)$}
                 \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
@@ -739,5 +720,28 @@ Thanks to lazy repair, the timer interval is long, normally from several hours t
 \paragraph{Reduce redundancy caused by bursty repair.}
 Since every node individually monitors objects without explicit coordination, when repair threshold is reached, several nodes' may simultaneously regenerate encoding fragments.
 To ameliorate this issue, when a node checks for object persistence, it can filter out fragments with hash values lower than the local one.
+
+                    %\If{$\var{group}[i]$ not live}
+                    %    \State $\var{group} \gets \var{group} \setminus \set{\var{group}[i]}$
+                    %\EndIf
+                    %\State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
+                    %\State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
+                    %\ForAll{$\var{n} \in \var{nodes}$}
+                    %    \If{$\fn{QueryHasFrag}(\var{fhash})$}
+                    %        \State $\var{group} \gets \var{group} \cup \set{n}$
+                    %        \State break
+                    %    \EndIf
+                    %\EndFor
+
+            %\State $\var{nAlive} \gets 0$
+            %\For{$i \in (\wl$ $..$ $\wh)$}
+            %    \If{$\var{group}.contains(i)$}
+            %        \State $\var{nAlive} \gets \var{nAlive} + 1$
+            %        \If{$\var{nAlive} \ge n_{inner}$}
+            %            \State $\wh \gets i$
+            %            \State \Return
+            %        \EndIf
+            %    \EndIf
+            %\EndFor
 
 \fi
