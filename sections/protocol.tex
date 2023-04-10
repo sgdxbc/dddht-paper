@@ -125,18 +125,18 @@ In the worst case where no fragment pointer is found, the requesting node either
             \item \kin: number of distinct fragments to recover a chunk using inner layer encoding
             \item $R$: threshold of alive encoding fragments in a chunk group to start repair
         \end{itemize}
-        Utility Functions:
-        \begin{itemize}
-            \setlength\itemsep{0em}
-            \item $\fn{Hash}(in)$: output a cryptographic hash of $in$
-            \item $\fn{OuterEncode}(\var{data})$: encode $data$ into a set of encoded chunks using outer erasure code
-            \item $\fn{OuterDecode}(\set{..})$: decode data from a set of encoded chunks using outer erasure code
-            \item $\fn{InnerEncode}(\var{data}, i)$: generate the $i$th encoding fragment of $data$ using inner erasure code
-            \item $\fn{InnerEncodeHash}(\var{hash}, i)$: from data $hash$, generate the hash of the $i$th fragment
-            \item $\fn{InnerDecode}(\set{..})$: decode data from a set of encoded fragments using inner erasure code
-        \end{itemize}
+        %Utility Functions:
+        %\begin{itemize}
+        %    \setlength\itemsep{0em}
+        %    \item $\fn{Hash}(in)$: output a cryptographic hash of $in$
+        %    \item $\fn{OuterEncode}(\var{data})$: encode $data$ into a set of encoded chunks using outer erasure code
+        %    \item $\fn{OuterDecode}(\set{..})$: decode data from a set of encoded chunks using outer erasure code
+        %    \item $\fn{InnerEncode}(\var{data}, i)$: generate the $i$th encoding fragment of $data$ using inner erasure code
+        %    \item $\fn{InnerEncodeHash}(\var{hash}, i)$: from data $hash$, generate the hash of the $i$th fragment
+        %    \item $\fn{InnerDecode}(\set{..})$: decode data from a set of encoded fragments using inner erasure code
+        %\end{itemize}
     \end{mdframed}
-    \caption{Local state, constants, and utility functions maintained on each \sys node}
+    \caption{Local state and constants maintained on each \sys node}
     \label{fig:node-state}
 \end{figure}
 
@@ -152,8 +152,7 @@ Each node also stores a set of encoding fragments generated from our rateless er
 \begin{algorithm}[t]
     \begin{algorithmic}[1]
         \Procedure{\store}{$\var{obj}$}
-            \State $\var{chunks} \gets \fn{OuterEncode}(\var{obj})$
-            \State $\var{chashes} \gets \set{}$
+            \State $\var{chunks} \gets \fn{OuterEncode}(\var{obj}), \var{chashes} \gets \set{}$
             \ForAll{$\var{chunk} \in \var{chunks}$}
                 \State $\var{chashes} \gets \var{chashes} \cup \set{\fn{Hash}(chunk)}$
                 \State $\var{members} \gets \set{}, i \gets 0$
@@ -185,6 +184,7 @@ Each node also stores a set of encoding fragments generated from our rateless er
             \State $\var{frags} \gets \set{}, i \gets 0$
             \While{$|\var{frags}| < \kin$}
                 \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
+                \State $i \gets i + 1$
                 \State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
                 \ForAll{$n \in \var{nodes}$}
                     \If{receive $\var{frag}$ with hash $\var{fhash}$ from $n$}
@@ -230,33 +230,33 @@ Finally, the original object is recovered by applying the outer layer decoding o
 
 \begin{algorithm}[t]
     \begin{algorithmic}[1]
-        \Procedure{Locate}{$\var{hash}$}
-            \State $\var{candidates} \gets \fn{DHT-Lookup-Nodes}(\var{hash})$
-            \State $\var{nodes} \gets \set{}$
+        \Procedure{Locate}{$\var{fhash}$}
+            \State $\var{candidates} \gets \fn{DHT-Lookup}(\var{fhash}), \var{nodes} \gets \set{}$
             \ForAll{$\var{c} \in \var{candidates}$}
-                \State $\langle r, \pi, s \rangle \gets \fn{SelectionProof}_{c}(\var{hash})$
-                \If{$s \land \fn{VerifySelection}(\var{hash}, r, \pi, \var{pk}_{c})$}
+                \State // request selection proof $\langle r, \pi, s \rangle$ from $c$
+                \If{$s \land \fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{c})$}
                     \State $\var{nodes} \gets \var{nodes}$ $\cup$ $\set{\var{c}}$
                 \EndIf
             \EndFor
             \State \Return $\var{nodes}$
         \EndProcedure
-        \Procedure{SelectionProof}{$\var{hash}$}
-            \State $\var{db} \gets \fn{DistanceBucket}(\var{hash}, \var{ID})$
-            \State $\langle \var{r}, \pi \rangle \gets \fn{VRF}_{sk}(\var{hash})$
-            \State $s \gets r < 2^{hashlen - \var{db}}$
+        \Procedure{SelectionProof}{$\var{fhash}$}
+            \State $\var{d} \gets \fn{Distance}(\var{hash}, \var{ID})$
+            \State $\langle \var{r}, \pi \rangle \gets \fn{VRF}_{sk}(\var{fhash})$
+            \State $s \gets r < 2^{hashlen - \var{d}}$
             \State \Return $\langle \var{r}, \pi, s \rangle$
         \EndProcedure
-        \Procedure{VerifySelection}{$\var{hash}, r, \pi, \var{pk}$}
-            \If{$\neg \fn{VerifyVRF}_{pk}(r, \pi, \var{hash})$}
+        \Procedure{VerifySelection}{$\var{fhash}, r, \pi, \var{pk}$}
+            \If{$\neg \fn{VerifyVRF}_{pk}(r, \pi, \var{fhash})$}
                 \Return false
             \EndIf
             \State $\var{nID} \gets \fn{NodeID}(\var{pk})$
-            \State $\var{db} \gets \fn{DistanceBucket}(\var{hash}, \var{nID})$
-            \State \Return $r < 2^{hashlen - \var{db}}$
+            \State $\var{d} \gets \fn{Distance}(\var{hash}, \var{nID})$
+            \State \Return $r < 2^{hashlen - d}$
         \EndProcedure
-        \Procedure{DistanceBucket}{$\var{a}, \var{b}$}
-            \State \Return $\frac{|a - b|}{\var{BucketSize}} + 1$
+        \Procedure{Distance}{$\var{a}, \var{b}$}
+            \State $D \gets \frac{2^{hashlen}}{N}$ // $N$ is the total number of nodes
+            \State \Return $\frac{|a - b|}{D} + 1$
         \EndProcedure
     \end{algorithmic}
     \caption{\sys peer selection protocol}
