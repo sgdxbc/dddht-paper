@@ -141,11 +141,15 @@ In the worst case where no fragment pointer is found, the requesting node either
 \end{figure}
 
 \autoref{fig:node-state} shows the local state maintained by each \sys node.
-Each node generates a (\textit{sk}, \textit{pk}) key pair, and stores the secret key \textit{sk} locally.
+Each node generates a (\textit{sk}, \textit{pk}) key pair, and keeps the secret key \textit{sk} locally.
 Public keys are assumed to be known by all nodes in the system.
 A SHA256 hash of the public key is used as the node ID~\cite{kademlia}.
 This ensures that node IDs are randomly distributed on the hash ring.
-Each node also stores a set of encoding fragments generated from our rateless erasure code.
+Each node stores a set of encoding fragments.
+For each fragment, the node maintains a view of the alive peers in the constituent chunk group.
+\wl and \wh defines the encoding index window of the rateless erasure code.
+Only peers within the encoding window are considered \emph{active}.
+Peers below \wl are permanently ignored, while nodes above \wh wait for future group selection.
 
 \subsubsection{\sys Client Protocol}
 
