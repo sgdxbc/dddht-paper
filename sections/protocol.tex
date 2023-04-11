@@ -158,46 +158,41 @@ Peers below \wl are permanently ignored, while nodes above \wh wait for future g
         \Procedure{\store}{$\var{obj}$}
             \State $\var{chunks} \gets \fn{OuterEncode}(\var{obj}), \var{chashes} \gets \set{}$
             \ForAll{$\var{chunk} \in \var{chunks}$}
-                \State $\var{chashes} \gets \var{chashes} \cup \set{\fn{Hash}(chunk)}$
+                \State $\var{chash} \gets \fn{Hash}(\var{chunks})$
                 \State $\var{members} \gets \set{}, i \gets \wl$
-                \While{stored fragments $ < R$}
+                \While{$|$stored fragments$|$ $ < R$}
                     \State $\var{frag} \gets \fn{InnerEncode}(\var{chunk}, i)$
-                    \State $i \gets i + 1$
                     \State $\var{nodes} \gets \fn{Locate}(\fn{Hash}(\var{frag}))$
-                    \If{$\var{nodes} \ne \set{}$}
-                        \State request any $\var{n}$ in $\var{nodes}$ to store frag
-                        \State $\var{members} \gets \var{members} \cup \set{n}$
+                    \If{$\var{nodes}$ is not empty}
+                    \State request any $\var{n} \in \var{nodes}$ to store frag
+                    \State insert $n$ into $\var{members}$
                     \EndIf
+                    \State increment $i$
                 \EndWhile
-                \ForAll{$m \in \var{members}$}
-                    \State send $\var{members}$ to $m$
+                \ForAll{$\var{node} \in \var{members}$}
+                    \State initialize $\var{chash}$ group with $\var{members}$
                 \EndFor
+                \State insert $\var{chash}$ into $\var{chashes}$
             \EndFor
-            \State \Return $chashes$
+            \State \Return $\var{chashes}$
         \EndProcedure
         \Procedure{\query}{$\var{chashes}$}
-            \State $\var{chunks} \gets \set{}$
-            \While{$|\var{chunks}| < \kout$}
-                \State $\var{chash} \gets \var{chashes.next()}$
-                \State $\var{frags} \gets \fn{RetreieveFrags}(\var{chash})$
-                \State $\var{chunks} \gets \var{chunks}$ $\cup$ $\set{\fn{InnerDecode}(\var{frags})}$
-            \EndWhile
+            \ForAll{$\var{chash} \in \var{chashes}$}
+                \State $\fn{RetrieveChunk}(\var{chash})$
+            \EndFor
+            \State $\var{chunks} \gets$ wait for $\kout$ chunks to be retrieved
             \State \Return $\fn{OuterDecode}(\var{chunks})$
         \EndProcedure
-        \Procedure{RetrieveFrags}{$\var{chash}$}
+        \Procedure{RetrieveChunk}{$\var{chash}$}
             \State $\var{frags} \gets \set{}, i \gets \wl$
             \While{$|\var{frags}| < \kin$}
                 \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
-                \State $i \gets i + 1$
                 \State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
-                \ForAll{$n \in \var{nodes}$}
-                    \If{receive $\var{frag}$ with hash $\var{fhash}$ from $n$}
-                        \State $\var{frags} \gets \var{frags}$ $\cup$ $\set{\var{frag}}$
-                        \State break
-                    \EndIf
-                \EndFor
+                \State $\var{frag} \gets $ retrieve from any $\var{n} \in \var{nodes}$
+                \State insert $\var{frag}$ into $\var{frags}$
+                \State increment $i$
             \EndWhile
-            \State \Return $\var{frags}$
+            \State \Return $\fn{InnerDecode}(\var{frags})$
         \EndProcedure
     \end{algorithmic}
     \caption{\sys client protocol}
