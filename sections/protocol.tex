@@ -114,6 +114,8 @@ In the worst case where no fragment pointer is found, the requesting node either
         Per-stored-fragment state:
         \begin{itemize}
             \setlength\itemsep{0em}
+            \item \textit{frag}
+            \item \textit{index}: coding index of \textit{frag}
             \item \textit{group}: local view of chunk group membership
             \item \wh: highest coding index of active members
             \item \wl: lowest coding index of active members
@@ -239,9 +241,9 @@ Similar to \fn{store}, all fragment retrievals can be done in parallel.
         \Procedure{Locate}{$\var{fhash}$}
             \State $\var{candidates} \gets \fn{DHT-Lookup}(\var{fhash}), \var{nodes} \gets \set{}$
             \ForAll{$\var{c} \in \var{candidates}$}
-                \State request selection proof $\langle r, \pi, s \rangle$ from $c$
-                \If{$s \land \fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{c})$}
-                    \State $\var{nodes} \gets \var{nodes}$ $\cup$ $\set{\var{c}}$
+                \State request selection proof $\langle r, \pi \rangle$ from $c$
+                \If{$\fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{c})$}
+                    \State insert $\var{c}$ into $\var{nodes}$ 
                 \EndIf
             \EndFor
             \State \Return $\var{nodes}$
@@ -298,40 +300,44 @@ The $\fn{NodeID}()$ function derives the ID of the node, by calculating a SHA256
 \begin{algorithm}[t]
     \begin{algorithmic}[1]
         \Procedure{MembershipTimer}{}
-            \ForAll{$n \in \var{group}$}
-                \State remove $n$ from $group$ if no \mtype{HeartBeat} received
-            \EndFor
-        \If{$|group[\wl $ $..$ $\wh]| < R$}
-            \State $\fn{RepairChunk}(\var{chash})$
-        \EndIf
-        \State $\fn{UpdateWmarkH}()$
+            \State $\fn{UpdateGroup}$
+            \State $\fn{RepairChunk}$
         \EndProcedure
-        \Procedure{HeartbeatTimer}{$\var{frag}, \var{i}$}
+        \Procedure{HeartbeatTimer}{}
             \State $\var{fhash} \gets \fn{Hash}(\var{frag})$
-            \State $\langle r, \pi, s \rangle \gets \fn{SelectionProof}(\var{fhash})$
+            \State $\langle r, \pi, \_ \rangle \gets \fn{SelectionProof}(\var{fhash})$
             \ForAll{$\var{n} \in \var{group}$}
-                \State $\fn{Send}(\msg{HeartBeat}{\var{chash, fhash, i, \langle r, \pi, s \rangle}})$
+                \State $\fn{Send}(\msg{HeartBeat}{\var{index, \langle r, \pi \rangle}})$
             \EndFor
         \EndProcedure
-        \Procedure{RecvHeartBeat}{$\var{chash}, \var{fhash}, i, \langle r, \pi, s \rangle$}
-            \If{$\neg \var{chash} \in \var{store}$}
+        \Procedure{RecvHeartBeat}{$i, \langle r, \pi \rangle$}
+            \If{$i \notin \set{\wl .. \wh}$}
                 \State \Return
             \EndIf
-            \If{$i < \wl$}
-                \State \Return
-            \EndIf
-            \If{$s \land \fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{sender})$}
-                \State $\var{group} \gets \var{group} \cup \set{sender}$
+            \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
+            \If{$\fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{sender})$}
+                \State insert sender into $\var{group}$
+                \State $\fn{UpdateGroup}$
             \EndIf
         \EndProcedure
-        \Procedure{UpdateWmarkH}{}
-            \If{$|group[\wl $ $..$ $\wh]| > R$}
-                \State $\wh \gets i$ where $|group[\wl $ $..$ $i]| = R$
-            \EndIf
+        \Procedure{UpdateGroup}{}
+            \State $\var{group'} \gets \set{}, i \gets \wl$
+            \While{$i \leq \wh$}
+                \State $\var{nodes_i} \gets \set{n \in \var{group} \mid n\textrm{'s fragment index} = i}$
+                \State $\var{fhash_i} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
+                \State increment $i$
+                \If{$n \in \var{nodes_i}$ is alive and closest to $\var{fhash_i}$}
+                    \State insert $n$ into $\var{group'}$
+                \EndIf
+                \If{$|\var{group'}| = R$}
+                    \State break
+                \EndIf
+            \EndWhile
+            \State $\var{group} \gets \var{group'}$
+            \State $\wh \gets i - 1$
         \EndProcedure
         \Procedure{UpdateWaterLTimer}{}
-            \State $\var{group} \gets \var{group} \setminus \set{\var{group}[\wl]}$
-            \State $\wl \gets \wl + 1$
+            \State increment $\wl$
         \EndProcedure
     \end{algorithmic}
     \caption{Procedures to maintain group membership}
@@ -369,68 +375,53 @@ To do so, each node periodically removes peer at the \wl position in a group, an
 
 \begin{algorithm}
     \begin{algorithmic}[1]
-        \Procedure{RepairChunk}{$\var{chash}$}
-            \State $\var{target} \gets R - |group[\wl $ $..$ $\wh]|$
+        \Procedure{RepairChunk}{}
             \State $i \gets \wl, \var{nr} \gets 0$
-            \While{$\var{nr} < \var{target}$}
-                \If{$\neg \var{group}.has(i) \lor i > \wh $}
-                    \If{$\fn{RepairFrag}(\var{chash}, i)$}
-                        \State $\var{nr} \gets \var{nr} + 1$
+            \ForAll{$i \in \set{\wl .. \wh}$}
+                \If{$\nexists n \in \var{group}: n.\var{index} = i$}
+                    \If{$\fn{RepairFrag}(i)$}
+                        \State increment $\var{nr}$
                     \EndIf
                 \EndIf
-                \State $i \gets i + 1$
+            \EndFor
+            \While{$\var{nr} < R - |group|$}
+                \State increment $\wh$
+                \If{$\fn{RepairFrag}(\wh)$}
+                    \State increment $\var{nr}$
+                \EndIf
             \EndWhile
-            \State $\wh \gets \fn{max}(\wh, i)$
-        \EndProcedure
-        \Procedure{RepairFrag}{$\var{chash}, i$}
-            \If{$\var{group}.has(i)$}
-                \State \Return true
+            \If{not holding $\var{frag}$}
+                \State $\var{rfrags} \gets \set{}$
+                \While{$|\var{rfrags} < \kin|$}
+                    \State wait $\msg{RepairResponse}{frag, \langle r, \pi \rangle}$
+                    \State $\var{fh} \gets \fn{Hash}(frag)$
+                    \If{$\fn{VerifySelection}(\var{fh}, r, \pi, \var{pk}_{sender})$}
+                        \State insert $\var{frag}$ into $\var{rfrags}$
+                        \State insert sender into $\var{group}$
+                    \EndIf
+                \EndWhile
+                \State $\var{frag} \gets \fn{InnerDecode}(rfrags)$
             \EndIf
+        \EndProcedure
+        \Procedure{RepairFrag}{$\var{i}$}
             \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
             \State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
-            \If{any $n$ in $\var{nodes}$ stores $\var{fhash}$}
-                \State $\var{group} \gets \var{group} \cup \set{n}$
-                \State \Return true
-            \Else
-                \State send $\msg{RepairRequest}{\var{chash}, \var{fhash}, i, \var{group}}$ to $nodes$, collect $\var{responses}$
-                \State \Return $\var{responses} \ne \set{}$
-            \EndIf
-        \EndProcedure
-        \Procedure{RecvRepairRequest}{$\var{chash}, \var{fhash}, \var{i}, \var{g}$}
-            \If{$\var{store}.has(\var{chash})$}
-                \State \Return
-            \EndIf
-            \If{$\fn{InnerEncodeHash}(\var{chash}, i) \ne \var{fhash}$}
-                \State \Return
-            \EndIf
-            \State $\langle \var{r}, \pi, s \rangle \gets \fn{SelectionProof}(\var{fhash})$
-            \If{$\neg s$}
-                \State \Return
-            \EndIf
-            \State $\fn{MergeView}(g)$
-            \State $\fn{StartRepair}(\var{chash}, i, \langle \var{r}, \pi, s \rangle)$
-        \EndProcedure
-        \Procedure{MergeView}{$g$}
-            \ForAll{$n \in g$}
-                \If{$n.i \ge \wl \land \neg \var{group}.has(n.i) \land n.s \land \fn{VerifySelection}(\var{n.fhash}, n.r, n.\pi, \var{pk}_{n})$}
-                    \State $\var{group} \gets \var{group}$ $\cup$ $\set{sender}$
-                \EndIf
+            \ForAll{$n \in \var{nodes}$}
+                \State send $\msg{RepairRequest}{i}$ to $n$
             \EndFor
+            \State \Return $\var{nodes} \ne \set{}$
         \EndProcedure
-        \Procedure{StartRepair}{$\var{chash}, i, \langle \var{r}, \pi, s \rangle$}
-            \State $\var{rfrags} \gets \set{}$
-            \While{$|\var{rfrags}| < \kin$}
-                \ForAll{$n \in \var{group} \setminus \var{rfrags}.nodes$}
-                    \State $\var{frag} \gets \fn{RequestFrag}(\var{chash}, n.i, \langle \var{r}, \pi, s \rangle)$
-                    \State $\var{rfrags} \gets \var{rfrags} \cup \set{\var{frag}}$
-                \EndFor
-            \EndWhile
-            \State $\var{chunk} \gets \fn{InnerDecode}(\var{rfrags})$
-            \State $\var{frag} \gets \fn{InnerEncode}(\var{chunk}, i)$
-            \State $\var{store} \gets \var{store} \cup \set{\var{frag}}$
+        \Procedure{RecvRepairRequest}{$\var{i}$}
+            \If{holding $\var{frag}$ for $\var{chash}$}
+                \State $\var{fhash} \gets \fn{Hash}(\var{frag})$
+                \State $\langle r, \pi, \_ \rangle \gets \fn{SelectionProof}(\var{fhash})$
+                \State respond with $\msg{RepairResponse}{frag, \langle r, \pi \rangle}$
+            \Else
+                \State start $\fn{MembershipTimer}$ if not yet started
+            \EndIf
         \EndProcedure
     \end{algorithmic}
-    \caption{Protocol to repair encoded chunk}
+    \caption{Protocol to repair encoded chunk \sgd{Constructing/Reconstructing}}
     \label{alg:repair}
 \end{algorithm}
 
