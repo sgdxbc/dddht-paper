@@ -50,24 +50,24 @@ We analyze our system as a Continuous-time Markov chain (CMTC). Expressing our i
 We express the probability of reaching any state $T=t$ as $t$ exponentiations of a $(n-k+1 \times n-k+1)$ stochastic matrix $\Theta = (\theta_{i,j})$ on this intitial probability vector.
 $\theta_{i,j}$ denotes the probability a group with $i$ byzantine nodes at $T=t$ will have $j$ byzantine nodes at $T=t+1$. 
 
-Since we take our group as invalid in perpetuity once its reached an invalid state. Our matrix is only $(n-k+1 \times n-k+1)$ instead of $(n \times n)$. Furthemore, $\theta_{n-k+1,n-k+1} = 1 \wedge \forall g\in[0,n-k], \theta_{n-k+1,g} = 0$. This handles all transitions from absorbing to absorbing states. 
+Since we take our group as invalid in perpetuity once its reached an invalid state; These states are referred to as \textit{absorbing states}. Any other state is considered as an \textit{transient states}. Our matrix is only $(n-k+1 \times n-k+1)$ instead of $(n \times n)$. Furthemore, $\theta_{n-k+1,n-k+1} = 1 \wedge \forall g\in[0,n-k], \theta_{n-k+1,g} = 0$. This handles all transitions from \textit{absorbing} to \textit{absorbing states}. 
 
 To construct the remainder of our matrix, we will have to consider the possible state transitions of each originating state. Suppose for some $\lambda(N-F)$ , let $C$ be the random variable denoting the number of honest nodes lost due to the churn rate:
 \begin{gather*}
     Pr(C=c) = \frac{\lambda(N-F)^c e^{-c}}{c!}
 \end{gather*}
 
-Furthermore, our system has a eviction rate $\Upsilon$, which denotes the number nodes from all nodes that are selected randomly to be removed from the committee. 
+Furthermore, our system has a fixed eviction rate $\Upsilon$, which denotes the number nodes from all nodes that are selected randomly to be removed from the group. 
 
 \begin{gather*}
     \forall i,j \in [0, n-k],\\
-    p_{i,j} = 
+    \theta_{i,j} = 
     \Biggl( 
     \sum_{c=0}^{n-i-k} 
     \frac{\lambda(N-F)^c e^{-c}}{c!} \\
     %This sum is the probabilities of all the churn results that will result in a durable state. Ie: c <- number of honest nodes that leave
     \Biggl( 
-    \sum_{\substack{\upsilon=0\\(j-i+\Upsilon-\upsilon) \geq 0} }^{min(n-i-c,\Upsilon)} 
+    \sum_{\substack{\upsilon=0\\(j-i+\Upsilon-\upsilon) \geq 0\\(n-k-c)\geq \Upsilon} }^{min(n-i-k-c,\Upsilon)} 
     \frac{\binom{i}{\Upsilon-\upsilon}\binom{n-i-c}{\upsilon}}{\binom{n-c}{\Upsilon}} \\
     %At this point, (n-i-c) honest nodes are left. Therefore, i can evict a range of [0 honest nodes, min(n-i-c,Upsilon)] honest nodes. 
     %in other words, if i evict v honest nodes, im actually evicting Upsilon-v honest nodes. 
@@ -78,8 +78,26 @@ Furthermore, our system has a eviction rate $\Upsilon$, which denotes the number
     \Biggl)\Biggl)
 \end{gather*}
 
+Since this only considers $\forall i,j \in [0, n-k]$, it only concerns \textit{transient} to \textit{transient state} transitions. The first summation considers all the possible valid number honest nodes churned, such that at least $k$ honest nodes remain. The second summation considers the eviction rate; It first considers the amount of churned honest nodes and then decides how many honest nodes can be evicted $min(n-i-k-c,\Upsilon)$. For example, if the amount of honest nodes after churning is $k$, then obviously only byzantine nodes can be evicted if the next state is a transient state. 
 
+The first fraction thus considers how many byzantine nodes can be evicted. The condition $(n-k-c)\geq \Upsilon$ checks if there exists sufficient nodes to be evicted, and $(j-i+\Upsilon-\upsilon) \geq 0$ considers if the next state can be reached after churning and eviction. The second fraction then considers the probability of adding back exactly $(j-i+\Upsilon-\upsilon)$ byzantine nodes back into the group to acheive the desired transient state. 
 
+Lastly, we consider transitions from \textit{transient} to \textit{absorbing states}:
+
+\begin{gather*}
+    % we consider 3 main cases:
+    % 1. We churned too much
+    % 2. we churned okay, but evicted too much
+     \forall i\in[0, n-k], j = n-k+1,\\
+     p_{i,j} = 
+     1- \sum_{g = 0}^{n-k} p_{i,g}
+\end{gather*}
+
+The probability that the group has entered an absorbing state is then expressed as:
+
+\begin{gather*}
+    \sum_{T=1}^{t} (\pi P^{T})_{n-k+1}
+\end{gather*}
 
 Given enough time, the probability of reaching any state is $1$, therefore, that is to say there is no durability at $T=\infty$. 
 
