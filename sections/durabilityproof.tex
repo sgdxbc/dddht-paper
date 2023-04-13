@@ -1,1 +1,88 @@
-\subsection{Test}
+\subsection{Durability analysis}
+\subsubsection{Primitives}
+
+Suppose a system with $N$ total nodes. There exists $F$ byzantine nodes, where $F = \frac{N}{3}$ and the number of honest nodes is $N-F$. 
+
+Out of these $N$ nodes, a group of $n$ nodes is selected (without replacement, since only unique identities are considered), at any $T\in \mathbb{Z}$ there needs to be very high probability that:
+\begin{enumerate}
+    \item The initial state of $n$ at time $T=0$, there exists at least a certain threshold of honest nodes $k$, with overwhelming probability. Suppose then max number of byzantine nodes are $b = n-k$ 
+    \item Given a churn rate that is expressed with the Poisson distribution, there must still always exist $k$ honest nodes after some time $T=t, t>0$. 
+\end{enumerate}
+
+$N$ and $n$ are parameters to this algorithm, where $k$ would exist as a fixed constant. 
+
+\subsubsection{Intitial chunk state durability}
+
+We say a state is valid if $Pr(b>n-k) < \varepsilon = 2^{-128}$. Since we know that group selection is expressed with the hypergeometric distribution, there are two way to show this:
+\begin{enumerate}
+    \item Utilizing the generalized hypergeometric function or summation of PMF to derive the CDF. 
+    \item Utilizing chebyshev's inequality to draw a bound. 
+\end{enumerate}
+
+
+\begin{gather}
+    P(b > n-k) = 1- \sum_{i=0}^{n-k}\frac{\binom{\frac{N}{3}}{i}\binom{\frac{2N}{3}}{n-i}}{\binom{N}{n}} \\
+    \leq 
+    \frac{n\frac{F}{N}\frac{N-F}{N}\frac{N-n}{N-1}}{(n(1+\frac{F}{N})-k)^2} \\
+    \leq 
+    \frac{n(N-n)}{(4n-3k)^2(N-1)} |_{F=\frac{N}{3}}\\
+    \leq \varepsilon
+\end{gather}
+
+However, Although the intitial state might be valid, we cannot say future states will be. The validity of any state at $T=t$ is evaluated in the next section. 
+
+One thing to note is that, if our $N$ shrinks, $Pr(b>n-k)$ actually decreases. This can be seen in $(1)$, as $N$ decreases, each summation step increases slightly, making the inverse of the probability sum smaller. 
+
+\subsubsection{Bounded state chunk durability}
+
+We analyze our system as a Continuous-time Markov chain (CMTC). Expressing our initial group state as a $(n-k+1 \times 1)$ probability vector:
+
+\begin{gather}
+    I = \begin{pmatrix}
+            Pr(B=0) \\ 
+            Pr(B=1)\\
+            \vdots \\
+            Pr(B \geq n-k+1)
+            \end{pmatrix}, 
+    Pr(B = b) = \frac{\binom{F}{b}\binom{N-F}{n-b}}{\binom{N}{n}}
+\end{gather}
+
+We express the probability of reaching any state $T=t$ as $t$ exponentiations of a $(n-k+1 \times n-k+1)$ stochastic matrix $\Theta = (\theta_{i,j})$ on this intitial probability vector.
+$\theta_{i,j}$ denotes the probability a group with $i$ byzantine nodes at $T=t$ will have $j$ byzantine nodes at $T=t+1$. 
+
+Since we take our group as invalid in perpetuity once its reached an invalid state. Our matrix is only $(n-k+1 \times n-k+1)$ instead of $(n \times n)$. Furthemore, $\theta_{n-k+1,n-k+1} = 1 \wedge \forall g\in[0,n-k], \theta_{n-k+1,g} = 0$. This handles all transitions from absorbing to absorbing states. 
+
+To construct the remainder of our matrix, we will have to consider the possible state transitions of each originating state. Suppose for some $\lambda(N-F)$ , let $C$ be the random variable denoting the number of honest nodes lost due to the churn rate:
+\begin{gather*}
+    Pr(C=c) = \frac{\lambda(N-F)^c e^{-c}}{c!}
+\end{gather*}
+
+Furthermore, our system has a eviction rate $\Upsilon$, which denotes the number nodes from all nodes that are selected randomly to be removed from the committee. 
+
+\begin{gather*}
+    \forall i,j \in [0, n-k],\\
+    p_{i,j} = 
+    \Biggl( 
+    \sum_{c=0}^{n-i-k} 
+    \frac{\lambda(N-F)^c e^{-c}}{c!} \\
+    %This sum is the probabilities of all the churn results that will result in a durable state. Ie: c <- number of honest nodes that leave
+    \Biggl( 
+    \sum_{\substack{\upsilon=0\\(j-i+\Upsilon-\upsilon) \geq 0} }^{min(n-i-c,\Upsilon)} 
+    \frac{\binom{i}{\Upsilon-\upsilon}\binom{n-i-c}{\upsilon}}{\binom{n-c}{\Upsilon}} \\
+    %At this point, (n-i-c) honest nodes are left. Therefore, i can evict a range of [0 honest nodes, min(n-i-c,Upsilon)] honest nodes. 
+    %in other words, if i evict v honest nodes, im actually evicting Upsilon-v honest nodes. 
+    %NOTE: if j-(i-(Upsilon-v))  is negative, we dont count, we just simply ignore and go to a churn rate that matters. 
+    \frac{\binom{F-i-(\Upsilon-\upsilon)}{j-i+\Upsilon-\upsilon}\binom{N-(n-c-\Upsilon)-(F-i-(\Upsilon-\upsilon))}{n-c-\Upsilon-(j-i+\Upsilon-\upsilon)}}{\binom{N-(n-c-\Upsilon)}{n-c-\Upsilon}}
+    %now there is a remainder of i-(Upsilon-v) byzantine nodes. 
+    %that means we need to find j-(i-(Upsilon-v)) or (j-i+\Upsilon-\upsilon) byzantine nodes
+    \Biggl)\Biggl)
+\end{gather*}
+
+
+
+
+Given enough time, the probability of reaching any state is $1$, therefore, that is to say there is no durability at $T=\infty$. 
+
+However, we can guarantee at some $T=t$, the probability the group has reached an invalid state is still negligable. By extension, it also shows that the probability the group has reached an invalid state for $T=t'|t'\in \mathbb{Z} \wedge t'<t$ is negligable too. 
+
+
