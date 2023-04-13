@@ -450,33 +450,70 @@ By repeatedly invoking $\fn{RepairTimer}()$, the node will eventually receive en
 
 \subsection{Correctness}
 
-Typically, the durability of a storage system is analyzed by continuous-time Markov chain (CTMC) model.
-In a CTMC model system states are enumerated that include all possible numbers of persistent fragments.
-The system starts from the state with expected replication factor, and an enter-only \textit{dead} state indicates data lost where no sufficient fragments left for recovering.
-Random processes are defined to transition among states, i.e., it takes a random amount of time to transition from one state to another, distributed exponentially.
-And finally, the model is used to solve the probability $\textbf{Pr}_{f}(t)$ which is the probability of reaching the \textit{dead} state after $t$ of time.
-And important metrics such as MTTDL can be derived from it.
+\mh{Ive re-written this seciton, please let me know what you think}
 
-However, for \sys such analysis can be simplified by the inductive observation of the essential epoch change strategy.
-\sys loses data if any epoch change fails, i.e., the invariant of at least $k + \epsilon$ fragments persist breaks after that epoch change.
-The sets of responsible peers of different epochs are disjoint \footnotemark{}, so the failure of one epoch change is independent to any other epoch change.
-Also, every epoch change has the same failure probability, because the number of Byzantine faulty peers of one epoch has no effect on the number of Byzantine faulty peers of the next epoch.
-Given the fact that in every epoch the number of Byzantine faulty peers follows the same random distribution, so as the failure rate of random failure of honest peers, the failure rate of every epoch change must be the same with all identical inputs.
-Thus, we can simply calculate the failure probability $p_f$ of single epoch change, and $1 - (1 - p_f)^E$ will be an upper bound of the probability for data lost where $E$ is the maximum epoch number before data goes expired.
-It is feasible to construct a Markov chain for a single epoch change, but in this sketch of proof, simpler method is enough for inferring a satisfied estimation.
 
-\footnotetext{Because the system contains limited number of peers, given enough number of epochs, one peer will eventually be responsible for multiple epochs.
-However, since only a small portion of peers are responsible in each epoch, we can safely assume that with reasonable AFR all peers leave the system before they get selected twice.}
+\subsubsection{Durability of the inner-code}
+The durability of our protocol hinges on the invariant that at least $k$ fragments in each group will persist after some bounded time $T$. The number of fragments might vary from time due to innate randomness in the system. 
+It is important to note that if a group dips below $k$ fragments, there is no guarantee it will ever recover. These group states are therefore impossible to exit and typically referred to a \textit{absorbing states}, \textit{non-absorbing states} are referred to as \textit{transient states}. 
 
-An epoch change will take at most $T_e = 2T_g + T_r$ time, where $T_g$ is gossip interval and $T_r$ is the upper bound of time to repair.
-%\sgd{Should we define all these symbol all in once somewhere?}
-% At the beginning of this interval, there are at least $k + \epsilon = k_p - b = k_p - K/3$ fragments persist, or the epoch change will start even earlier.
-The epoch change cannot fail as long as both
-(a) the peers of next epoch can successfully recover the object, i.e. collect $k + \epsilon$ fragments, which is always the case because of
-(b) by the end of the epoch change, at least $k_p = k + \epsilon + b$ peers of this epoch is still alive, so there are enough honest nodes from this epoch to support nodes of next epoch to recover the object.
-This means that at most $K - k_p$ peers die in the $T_e$ interval.
-Given AFR of honest peers, we can derive the probability of over this number of peers dead and cause epoch change fails.
-Then in turn derive data lost rate during \store and expiration.
+To ensure durability, we must assertain that with high probability, the groups will not reach an absorbing state in $T$ steps. That is to say that with an negligible probability $\varepsilon = 2^{-128}$, the groups will reach an absorbing state. 
+
+The durability of our groups can be analyzed by utilizing a continuous-time Markov chain (CMTC) model.
+In the CMTC model, we first express the a set of initial states of our system and the probabilities associated with those states as a $(n-k+1 \times 1)$ initial probability vector $I$. Since our group identities must be unique, we can construct the initial probabilty vector utilizing the hypergeometric distribution. 
+
+We then constuct a $(n-k+1 \times n-k+1)$ stochastic matrix $\theta$ representing the transition probabilities of one state to another. Where the rows represent the starting states and the columns representing the transitioned state. Where \textit{transient to transient} states and \textit{transient to absorbing} states are a function of the churn rate as well as the eviction parameter. Whilst intuitively, \textit{absorbing to absorbing} states are expressed as a $(1 \times n-k+1)$ vector of zeros with the $(n-k+1)^{th}$ element being $1$. 
+
+With the stochastic matrix, we perform the sum and exponent to derive the probability of a group reaching an absorbing state as:
+\[
+    \sum_{T=1}^{t} (I \theta^{T})_{n-k+1}
+\]
+
+With our given system parameters, if the probability is smaller than $\varepsilon$, then with very high probability, durability is guaranteed. 
+
+\subsubsection{Durability of the outer-code}
+Suppose we have an adversary that has the capability to receive accurate reports on every possible group's membership and possess the ability to forcefully disconnect $\phi$ nodes from the system. The adversary then could force a group to pre-maturely enter an \textit{absorbing state}. 
+
+The purpose of the outer-code is to deter such targetted attacks. More precisely, we ensure that if it does succeed, there is high probability it will not compormise the durability of any data object. 
+
+To draw a upperbound on the attackers success, we assume that it can successfully compromise $\Phi = \phi$ groups or chunks. Given $\Omega$ total data objects, with $K+R$ chunks. The probability of succcess of the attacker is then bounded by: 
+
+\[
+    1-
+    \left(
+    1-\prod_{i=1}^{R}\frac{K+R-i}{\Omega(K+R)-i}
+    \right)^{\binom{\Phi*\mu}{R+1}}
+\]
+Where $\mu$ is the maximum fragments each physical node may hold. Similarly, with the correct system parameters, we can ensure the adversaries probability of success to be negligible, ensuring durability with high probability. 
+
+
+% Typically, the durability of a storage system is analyzed by continuous-time Markov chain (CTMC) model.
+% In a CTMC model system states are enumerated that include all possible numbers of persistent fragments.
+% The system starts from the state with expected replication factor, and an enter-only \textit{dead} state indicates data lost where no sufficient fragments left for recovering.
+% Random processes are defined to transition among states, i.e., it takes a random amount of time to transition from one state to another, distributed exponentially.
+% And finally, the model is used to solve the probability $\textbf{Pr}_{f}(t)$ which is the probability of reaching the \textit{dead} state after $t$ of time.
+% And important metrics such as MTTDL can be derived from it.
+
+% However, for \sys such analysis can be simplified by the inductive observation of the essential epoch change strategy.
+% \sys loses data if any epoch change fails, i.e., the invariant of at least $k + \epsilon$ fragments persist breaks after that epoch change.
+% The sets of responsible peers of different epochs are disjoint \footnotemark{}, so the failure of one epoch change is independent to any other epoch change.
+% Also, every epoch change has the same failure probability, because the number of Byzantine faulty peers of one epoch has no effect on the number of Byzantine faulty peers of the next epoch.
+% Given the fact that in every epoch the number of Byzantine faulty peers follows the same random distribution, so as the failure rate of random failure of honest peers, the failure rate of every epoch change must be the same with all identical inputs.
+% Thus, we can simply calculate the failure probability $p_f$ of single epoch change, and $1 - (1 - p_f)^E$ will be an upper bound of the probability for data lost where $E$ is the maximum epoch number before data goes expired.
+% It is feasible to construct a Markov chain for a single epoch change, but in this sketch of proof, simpler method is enough for inferring a satisfied estimation.
+
+% \footnotetext{Because the system contains limited number of peers, given enough number of epochs, one peer will eventually be responsible for multiple epochs.
+% However, since only a small portion of peers are responsible in each epoch, we can safely assume that with reasonable AFR all peers leave the system before they get selected twice.}
+
+% An epoch change will take at most $T_e = 2T_g + T_r$ time, where $T_g$ is gossip interval and $T_r$ is the upper bound of time to repair.
+% %\sgd{Should we define all these symbol all in once somewhere?}
+% % At the beginning of this interval, there are at least $k + \epsilon = k_p - b = k_p - K/3$ fragments persist, or the epoch change will start even earlier.
+% The epoch change cannot fail as long as both
+% (a) the peers of next epoch can successfully recover the object, i.e. collect $k + \epsilon$ fragments, which is always the case because of
+% (b) by the end of the epoch change, at least $k_p = k + \epsilon + b$ peers of this epoch is still alive, so there are enough honest nodes from this epoch to support nodes of next epoch to recover the object.
+% This means that at most $K - k_p$ peers die in the $T_e$ interval.
+% Given AFR of honest peers, we can derive the probability of over this number of peers dead and cause epoch change fails.
+% Then in turn derive data lost rate during \store and expiration.
 
 %\sgd{Maybe it is also worth to explain how well Bernoulli sampling works (the more total stakes, the more accurate how many stakes are actually selected).}
 
