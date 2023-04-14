@@ -78,9 +78,9 @@ Furthermore, our system has a fixed eviction rate $\Upsilon$, which denotes the 
     \Biggl)\Biggl)
 \end{gather*}
 
-Since this only considers $\forall i,j \in [0, n-k]$, it only concerns \textit{transient} to \textit{transient state} transitions. The first summation considers all the possible valid number honest nodes churned, such that at least $k$ honest nodes remain. The second summation considers the eviction rate; It first considers the amount of churned honest nodes and then decides how many honest nodes can be evicted $min(n-i-k-c,\Upsilon)$. For example, if the amount of honest nodes after churning is $k$, then obviously only byzantine nodes can be evicted if the next state is a transient state. 
+Since this only considers $\forall i,j \in [0, n-k]$, it only concerns \textit{transient} to \textit{transient state} transitions. The first summation considers all the possible valid number honest nodes churned, such that at least $k$ honest nodes remain. The second summation considers the eviction rate; It first considers the amount of honest nodes that can be evicted $min(n-i-k-c,\Upsilon)$. For example, if the amount of honest nodes after churning is $k$, then obviously only byzantine nodes can be evicted if the next state is a transient state. This information is used to calculate how many byzantine nodes will be evicted ($\Upsilon - \upsilon$).
 
-The first fraction thus considers how many byzantine nodes can be evicted. The condition $(n-k-c)\geq \Upsilon$ checks if there exists sufficient nodes to be evicted, and $(j-i+\Upsilon-\upsilon) \geq 0$ considers if the next state can be reached after churning and eviction. The second fraction then considers the probability of adding back exactly $(j-i+\Upsilon-\upsilon)$ byzantine nodes back into the group to acheive the desired transient state. 
+The first fraction thus considers how many byzantine nodes can be evicted. The second fraction then considers the probability of adding back exactly $(j-i+\Upsilon-\upsilon)$ byzantine nodes back into the group to acheive the desired transient state. The condition $(n-k-c)\geq \Upsilon$ checks if there exists sufficient nodes to be evicted, and $(j-i+\Upsilon-\upsilon) \geq 0$ considers if the next state can be reached after churning and eviction. 
 
 Lastly, we consider transitions from \textit{transient} to \textit{absorbing states}:
 
