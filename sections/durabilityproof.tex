@@ -1,12 +1,12 @@
-\subsection{Durability analysis}
+\subsection{Durability of the innercode}
 \subsubsection{Primitives}
 
 Suppose a system with $N$ total nodes. There exists $F$ byzantine nodes, where $F = \frac{N}{3}$ and the number of honest nodes is $N-F$. 
 
-Out of these $N$ nodes, a group of $n$ nodes is selected (without replacement, since only unique identities are considered), at any $T\in \mathbb{Z}$ there needs to be very high probability that:
+Out of these $N$ nodes, a group of $n$ nodes is selected (without replacement, since only unique identities are considered), at any $T\in \mathbb{Z}^{+}$ there needs to be very high probability that:
 \begin{enumerate}
     \item The initial state of $n$ at time $T=0$, there exists at least a certain threshold of honest nodes $k$, with overwhelming probability. Suppose then max number of byzantine nodes are $b = n-k$ 
-    \item Given a churn rate that is expressed with the Poisson distribution, there must still always exist $k$ honest nodes after some time $T=t, t>0$. 
+    \item Given a churn rate that is expressed with the Poisson distribution, there must still always exist $k$ honest nodes after some time $T=t,t\in \mathbb{Z}^{+}$. 
 \end{enumerate}
 
 $N$ and $n$ are parameters to this algorithm, where $k$ would exist as a fixed constant. 
@@ -91,12 +91,12 @@ Lastly, we consider transitions from \textit{transient} to \textit{absorbing sta
     % we consider 3 main cases:
     % 1. We churned too much
     % 2. we churned okay, but evicted too much
-     \forall i\in[0, n-k], j = n-k+1,\\
+     \forall i\in[0, n-k], j = n-k+1, \\
      p_{i,j} = 
      1- \sum_{g = 0}^{n-k} p_{i,g}
 \end{gather}
 
-The probability that the group has entered an absorbing state is then expressed as:
+The probability that a group has entered an absorbing state is then expressed as:
 
 \begin{gather}
     \sum_{T=1}^{t} (\pi P^{T})_{n-k+1}
@@ -104,7 +104,46 @@ The probability that the group has entered an absorbing state is then expressed 
 
 Given enough time, the probability of reaching any state is $1$, therefore, that is to say there is no durability at $T=\infty$. 
 
-However, we can guarantee at some $T=t$, the probability the group has reached an invalid state is still negligable. By extension, it also shows that the probability the group has reached an invalid state for $T=t'|t'\in \mathbb{Z} \wedge t'<t$ is negligable too. 
+However, we can guarantee at some $T=t$, the probability the group has reached an invalid state is still negligable. By extension, it also shows that the probability the group has reached an invalid state for $T=t'|t'\in \mathbb{Z}^{+} \wedge t'<t$ is negligable too. 
 
 
 \subsection{Durability in the event of targetted attacks}
+
+\subsubsection{Primitives}
+Suppose in our system of $\Omega$ data objects, each object is made up of $K+R$ chunks; where only a minimum of $K$ chunks is necessary to reconstuct the original data object. 
+
+We present an adversary that can arbitrarily remove an upperbound of $\phi$ nodes from the system; Effectively churning them pre-maturely.
+Furthermore, the adversary has a complete transparent view on the group composition for every group.
+This begs the question: how many groups can they arbitrarily push into the absorbing state, and what is the probability a data object will be lost with non-negligable odds. We consider a successful attack on a group if the attacker can lead it to an absorbing state, and we consider a sucessful attack on the system if any data objects are lost as the result of the attacker's actions. 
+
+There are two cases to consider, the latter being an extension of the former. 
+
+\subsubsection{Suppose each phyiscal node only holds a single fragment}
+We first present the naive scenario in which each node holds on to a single fragment. That means attacking a single node will at most lead to a single fragment from being lost. Another way to visualize this is that one node can only exist in a single group. 
+
+On average, each group should have an average of $\frac{n}{3}$ honest nodes (per the hypergeometric distribution). This means the attacker will have to attack $\frac{n}{3} - k+1$ nodes on average to lead the group into an absorbing state, or $\Phi= \lfloor\frac{\phi}{\frac{n}{3}-k+1} \rfloor$ groups on average. 
+
+
+However, since the attacker has a perfect view on the state of the system, it does not attack the system randomly. Instead, it can pick the most opportune time to maximize its attack vector. If suppose $\geq \phi$ groups have exactly $k$ honest nodes in their groups the attacker will at worst successfully attack $\Phi  = \phi$ groups. 
+
+Upperbound on the Probability of successfully attacking a data object is thus (suppose $\Phi \geq R+1$) :
+\begin{gather}
+    1-
+    \left(
+    1-\prod_{i=1}^{R}\frac{K+R-i}{\Omega(K+R)-i}
+    \right)^{\binom{\Phi}{R+1}}
+\end{gather}
+
+This is an extension of the birthday attack problem. 
+
+\subsubsection{Suppose each phyiscal node only holds multiple fragment}
+Since we are drawing an upperbound on the attacker's success probability, we simply have to consider the very worst case. 
+If each node can possess $g,g\in \mathbb{Z}^{+}$ fragmemts, attacking a single node might lead to $g$ groups losing a single honest node each. 
+Therefore, we simply change (14) to:
+\begin{gather}
+    1-
+    \left(
+    1-\prod_{i=1}^{R}\frac{K+R-i}{\Omega(K+R)-i}
+    \right)^{\binom{\Phi*g}{R+1}}
+\end{gather}
+This should be the upperbound on the Probability of successfully attacking a data object. 
