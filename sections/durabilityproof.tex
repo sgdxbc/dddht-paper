@@ -53,13 +53,13 @@ $\theta_{i,j}$ denotes the probability a group with $i$ byzantine nodes at $T=t$
 Since we take our group as invalid in perpetuity once its reached an invalid state; These states are referred to as \textit{absorbing states}. Any other state is considered as an \textit{transient states}. Our matrix is only $(n-k+1 \times n-k+1)$ instead of $(n \times n)$. Furthemore, $\theta_{n-k+1,n-k+1} = 1 \wedge \forall g\in[0,n-k], \theta_{n-k+1,g} = 0$. This handles all transitions from \textit{absorbing} to \textit{absorbing states}. 
 
 To construct the remainder of our matrix, we will have to consider the possible state transitions of each originating state. Suppose for some $\lambda(N-F)$ , let $C$ be the random variable denoting the number of honest nodes lost due to the churn rate:
-\begin{gather*}
+\begin{gather}
     Pr(C=c) = \frac{\lambda(N-F)^c e^{-c}}{c!}
-\end{gather*}
+\end{gather}
 
 Furthermore, our system has a fixed eviction rate $\Upsilon$, which denotes the number nodes from all nodes that are selected randomly to be removed from the group. 
 
-\begin{gather*}
+\begin{gather}
     \forall i,j \in [0, n-k],\\
     \theta_{i,j} = 
     \Biggl( 
@@ -76,31 +76,35 @@ Furthermore, our system has a fixed eviction rate $\Upsilon$, which denotes the 
     %now there is a remainder of i-(Upsilon-v) byzantine nodes. 
     %that means we need to find j-(i-(Upsilon-v)) or (j-i+\Upsilon-\upsilon) byzantine nodes
     \Biggl)\Biggl)
-\end{gather*}
+\end{gather}
 
-Since this only considers $\forall i,j \in [0, n-k]$, it only concerns \textit{transient} to \textit{transient state} transitions. The first summation considers all the possible valid number honest nodes churned, such that at least $k$ honest nodes remain. The second summation considers the eviction rate; It first considers the amount of honest nodes that can be evicted $min(n-i-k-c,\Upsilon)$. For example, if the amount of honest nodes after churning is $k$, then obviously only byzantine nodes can be evicted if the next state is a transient state. This information is used to calculate how many byzantine nodes will be evicted ($\Upsilon - \upsilon$).
+Since this only considers $\forall i,j \in [0, n-k]$, it only concerns \textit{transient} to \textit{transient state} transitions. The first summation (8) considers all the possible valid number honest nodes churned, such that at least $k$ honest nodes remain. 
+The second summation (9) considers the eviction rate; It first considers the amount of honest nodes that can be evicted $min(n-i-k-c,\Upsilon)$. For example, if the amount of honest nodes after churning is $k$, then obviously only byzantine nodes can be evicted if the next state is a transient state. This information is used to calculate how many byzantine nodes will be evicted ($\Upsilon - \upsilon$).
 
-The first fraction thus considers how many byzantine nodes can be evicted. The second fraction then considers the probability of adding back exactly $(j-i+\Upsilon-\upsilon)$ byzantine nodes back into the group to acheive the desired transient state. The condition $(n-k-c)\geq \Upsilon$ checks if there exists sufficient nodes to be evicted, and $(j-i+\Upsilon-\upsilon) \geq 0$ considers if the next state can be reached after churning and eviction. 
+The condition in the second summation: $(n-k-c)\geq \Upsilon$ checks if there exists sufficient nodes to be evicted, and $(j-i+\Upsilon-\upsilon) \geq 0$ considers if the next state can be reached after churning and eviction. 
+
+The first fraction in the second summation (9) thus considers how many byzantine nodes can be evicted. The second fraction (10) then considers the probability of adding back exactly $(j-i+\Upsilon-\upsilon)$ byzantine nodes back into the group to acheive the desired transient state. 
 
 Lastly, we consider transitions from \textit{transient} to \textit{absorbing states}:
 
-\begin{gather*}
+\begin{gather}
     % we consider 3 main cases:
     % 1. We churned too much
     % 2. we churned okay, but evicted too much
      \forall i\in[0, n-k], j = n-k+1,\\
      p_{i,j} = 
      1- \sum_{g = 0}^{n-k} p_{i,g}
-\end{gather*}
+\end{gather}
 
 The probability that the group has entered an absorbing state is then expressed as:
 
-\begin{gather*}
+\begin{gather}
     \sum_{T=1}^{t} (\pi P^{T})_{n-k+1}
-\end{gather*}
+\end{gather}
 
 Given enough time, the probability of reaching any state is $1$, therefore, that is to say there is no durability at $T=\infty$. 
 
 However, we can guarantee at some $T=t$, the probability the group has reached an invalid state is still negligable. By extension, it also shows that the probability the group has reached an invalid state for $T=t'|t'\in \mathbb{Z} \wedge t'<t$ is negligable too. 
 
 
+\subsection{Durability in the event of targetted attacks}
