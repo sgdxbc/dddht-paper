@@ -37,8 +37,14 @@ One thing to note is that, if our $N$ shrinks, $Pr(b>n-k)$ actually decreases. T
 
 \begin{lemma}
     \label{lemma 1}
-    For a single data object, the probability that all of the groups injectively responsible for the $K+R$ chunks being durable at $T=t$ can be bounded by: \[1-(1-\sum_{T=1}^{t} (\pi P^{T})_{n-k+1})^{K+R} \leq \varepsilon\] Where $\pi$ is the initial state matrix and $\Theta$ is a stochastic matrix. 
+    For any group, the probability that it still durable after $T=t$ is bounded by:
+    \[
+        \sum_{T=1}^{t} (\pi \Theta^{T})_{n-k+1}
+    \]
+    Where $\pi$ is the initial state matrix and $\Theta$ is a stochastic matrix. 
 \end{lemma}
+
+
 
 We analyze our system as a Continuous-time Markov chain (CMTC). Expressing our initial group state as a $(n-k+1 \times 1)$ probability vector:
 
@@ -104,17 +110,23 @@ Lastly, we consider transitions from \textit{transient} to \textit{absorbing sta
 The probability that a group has entered an absorbing state is then expressed as:
 
 \begin{gather}
-    \sum_{T=1}^{t} (\pi \Theta^{T})_{n-k+1}
+    \sum_{T=1}^{t} (I \Theta^{T})_{n-k+1} \qquad\blacksquare
 \end{gather}
 
 Given enough time, the probability of reaching any state is $1$, therefore, that is to say there is no durability at $T=\infty$. 
 
 However, we can guarantee at some $T=t$, the probability the group has reached an invalid state is still negligable. By extension, it also shows that the probability the group has reached an invalid state for $T=t'|t'\in \mathbb{Z}^{+} \wedge t'<t$ is negligable too. 
 
-Suppose a data object is made up of $K+R$ chunks, the probability of some group/s reaching an  \textit{absorbing} state is:
+
+\begin{lemma}
+    \label{lemma 2}
+    For a single data object, the probability that all of the groups injectively responsible for the $K+R$ chunks being durable at $T=t$ can be bounded by: \[1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R} \leq \varepsilon\] Where $I$ is the initial state matrix and $\Theta$ is a stochastic matrix. 
+\end{lemma}
+
+By simply extending lemma \ref{lemma 1}; Suppose a data object is made up of $K+R$ chunks, the probability of some group/s reaching an  \textit{absorbing} state is:
 
 \begin{gather}
-    1-(1-\sum_{T=1}^{t} (\pi \Theta^{T})_{n-k+1})^{K+R} \leq \varepsilon \qquad\blacksquare
+    1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R} \leq \varepsilon \qquad\blacksquare
 \end{gather}
 
 
@@ -130,14 +142,15 @@ This begs the question: how many groups can they arbitrarily push into the absor
 There are two cases to consider, the latter being an extension of the former. 
 
 \subsubsection{Suppose each phyiscal node only holds a single fragment}
-\begin{lemma} \label{lemma2}
+\begin{lemma} \label{lemma 3}
+    Suppose, each node can hold at most 1 fragments.
     The probability of an attacker successfully attacking a data object is bounded by:
     \[
         1-
-    \left(
-    1-\prod_{i=1}^{R}\frac{K+R-i}{\Omega(K+R)-i}
-    \right)^{\binom{\Phi}{R+1}} \leq \varepsilon
-        \]
+        \left(
+        1-\prod_{i=1}^{R}\frac{K+R-i}{\Omega(K+R)-i}
+        \right)^{\binom{\Phi*\mu}{R+1}}
+    \]
 \end{lemma}
 
 We first present the naive scenario in which each node holds on to a single fragment. That means attacking a single node will at most lead to a single fragment from being lost. Another way to visualize this is that one node can only exist in a single group. 
