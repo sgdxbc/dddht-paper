@@ -455,6 +455,7 @@ By repeatedly invoking $\fn{RepairTimer}()$, the node will eventually receive en
 
 
 \subsubsection{Durability of the inner-code}
+As seen in lemma \ref{lemma 1}
 The durability of our protocol hinges on the invariant that at least $k$ fragments in each group will persist after some bounded time $T$. The number of fragments might vary from time due to innate randomness in the system.
 It is important to note that if a group dips below $k$ fragments, there is no guarantee it will ever recover. These group states are therefore impossible to exit and typically referred to a \textit{absorbing states}, \textit{non-absorbing states} are referred to as \textit{transient states}.
 
