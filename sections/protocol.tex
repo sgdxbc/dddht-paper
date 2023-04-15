@@ -228,10 +228,12 @@ This reduces the search time from linear to constant in the common case.
 Once $\kin$ fragments are retrieved, it uses the inner layer decoding function to reconstruct the chunk.
 Finally, the original object is recovered by applying outer layer decoding on $\kout$ reconstructed chunks.
 Similar to \fn{store}, all fragment retrievals can be done in parallel.
-\lijl{Shall we still introduce the DHT optimization?}
 
-%For each chunk hash, the client first queries the DHT to retrieve a list of fragment pointers.
-%It contacts the pointed nodes and requests for the corresponding fragment.
+As each member node stores a local view of the group membership, clients can optimize $\fn{Query}()$ by requesting membership view from each located peer.
+With this optimization, a client only needs to search for a few fragment hashes in the common case to gather enough member addresses to reconstruct the chunk.
+
+%To further reduce object retrieval latency, a node optionally records its own address and the selection proof into the DHT (with the chunk hash as the key) when being selected to store a fragment.
+%When reconstructing a chunk, the client first queries the DHT to receive a list of member nodes.
 %If the contacted node is still an active member of the chunk group, it also returns its view of other alive group members to the client, who can request for additional fragments.
 %If not enough fragments are collected, the client enters a slow path to linearly search for additional fragments.
 
@@ -464,7 +466,7 @@ It is important to note that if a group dips below $k$ fragments, there is no gu
 As $T\rightarrow\infty$, the probability of a group reaching an \textit{absorbing state} converges to 1. However, we can assert that with some system parameters the groups will reach an absorbing state in $T=t$ steps with an negligible probability $\varepsilon = 2^{-128}$
 
 \begin{lemma}
-    For a single data object, the probability that all of the groups injectively responsible for the $K+R$ chunks being durable at $T=t$ can be bounded by: \[1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R} \leq \varepsilon\] Where $I$ is the initial state matrix and $\Theta$ is a stochastic matrix. 
+    For a single data object, the probability that all of the groups injectively responsible for the $K+R$ chunks being durable at $T=t$ can be bounded by: \[1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R} \leq \varepsilon\] Where $I$ is the initial state matrix and $\Theta$ is a stochastic matrix.
 \end{lemma}
 
 
@@ -478,7 +480,7 @@ With the stochastic matrix, we perform the sum and exponent to derive the probab
     \sum_{T=1}^{t} (I \Theta^{T})_{n-k+1}
 \]
 
-We then consider all chunks (K+R) of a data objects as: 
+We then consider all chunks (K+R) of a data objects as:
 \[
     1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R}
     \]
@@ -502,8 +504,8 @@ The purpose of the outer-code is to deter such targetted attacks. More precisely
     \]
 \end{lemma}
 
-To draw a upperbound on the attackers success, we assume that it can successfully compromise a maximum of $\Phi = \phi$ groups or chunks out of a total $\Omega*(K+R)$ chunks. Where $\Omega$ is the total number of data objects. This upperbound is simply an extension to the birthday attack problem. 
- 
+To draw a upperbound on the attackers success, we assume that it can successfully compromise a maximum of $\Phi = \phi$ groups or chunks out of a total $\Omega*(K+R)$ chunks. Where $\Omega$ is the total number of data objects. This upperbound is simply an extension to the birthday attack problem.
+
 Similarly, with the correct system parameters, we can ensure the adversaries probability of success to be negligible, ensuring durability with high probability.
 
 
