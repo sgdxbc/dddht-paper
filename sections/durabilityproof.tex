@@ -35,6 +35,10 @@ One thing to note is that, if our $N$ shrinks, $Pr(b>n-k)$ actually decreases. T
 
 \subsubsection{Bounded state chunk durability}
 
+\begin{lemma}
+    The probability of a group entering an absorbing state before time $T=t$ can be bounded. 
+\end{lemma}
+
 We analyze our system as a Continuous-time Markov chain (CMTC). Expressing our initial group state as a $(n-k+1 \times 1)$ probability vector:
 
 \begin{gather}
@@ -105,6 +109,12 @@ The probability that a group has entered an absorbing state is then expressed as
 Given enough time, the probability of reaching any state is $1$, therefore, that is to say there is no durability at $T=\infty$. 
 
 However, we can guarantee at some $T=t$, the probability the group has reached an invalid state is still negligable. By extension, it also shows that the probability the group has reached an invalid state for $T=t'|t'\in \mathbb{Z}^{+} \wedge t'<t$ is negligable too. 
+
+Suppose a data object is made up of $K+R$ chunks, the probability of some group/s reaching an  \textit{absorbing} state is:
+
+\begin{gather}
+    1-(1-\sum_{T=1}^{t} (\pi P^{T})_{n-k+1})^{K+R} \leq \varepsilon
+\end{gather}
 
 
 \subsection{Durability in the event of targetted attacks}
