@@ -1,4 +1,4 @@
-This section gives a detailed description of the \sys protocol we overviewed in \autoref{sec:approach}.
+In this section, we elaborate how \sys combines rateless erasure code, verifiable random peer selection, and dual-layer encoding to design a durable decentralized storage system.
 
 \subsection{System Model and Assumptions}
 We consider a decentralized system in which nodes can freely join and leave.
@@ -6,12 +6,11 @@ Each node maintains finite local storage, and the entire set of participants col
 \sys exposes a \textit{synchronous} object storage interface with two API calls: \query and \store.
 \store takes an object and an expiration time, and returns an ID when the object is successfully stored;
 \query takes an object ID and returns the object if it exists in the system.
-%\lijl{Should we clarify that object ID is the hash of the object here?}
-%\sgd{If we do clarify, we can also mention verifiable result by comparing hashes.}
 Objects are immutable --- \sys does not provide an explicit interface to update existing objects.
 Similar to IPFS, \sys uses content addressing, i.e., an object ID uniquely identifies the content of the object stored.
-Issuing a new \store with different object content, therefore, is equivalent to an object update.
+Issuing a new \store with a different object content, therefore, is equivalent to an object update.
 Consistently mapping client objects to \sys issued IDs is out of the scope of the paper.
+Unlike IPFS, object IDs are private to data owners to protect object durability.
 
 \sys guarantees \textit{data durability}.
 Once a \store successfully returns, all subsequent \query{}s for the generated ID return the original object until is object is expired.
@@ -35,6 +34,13 @@ We also make standard cryptography assumptions, i.e., the probability of subvert
 
 \subsection{Design Overview}
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/store}
+    \caption{\sys object store procedure}
+    \label{fig:store}
+\end{figure}
+
 \sys uses two layers of erasure coding to ensure durability of stored objects.
 It first applies a fixed-rate erasure code to encode each object into a set of \emph{encoded chunks}.
 \lijl{Does it matter if we use fixed-rate or rateless code for outer code?}
@@ -49,14 +55,15 @@ At any time $t$ after a \store for object $o$ is completed and until $o$ expires
 An encoded chunk is recoverable if at least $k + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
 \end{invariant}
 
-\paragraph{Chunk repair.}
-Storage device failures and node churns can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
-Similar to prior storage systems, \sys performs \emph{repair} by regenerating new encoding fragments when the number of alive fragments for a chunk drops below a threshold.
-To avoid relying on a centralized trusted service, chunk repair in \sys is fully decentralized.
-Each node in a chunk group periodically sends \emph{persistence proof} of its stored fragments to other peers in the group.
-When repair condition is met, nodes in the chunk group selects new peers who generate and store new encoding fragments of the chunk.
-
 \paragraph{Randomized peer selection.}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/selection}
+    \caption{Randomized peer selection}
+    \label{fig:selection}
+\end{figure}
+
 Peer selection is critical to the safety of \sys.
 If not done carefully, adversaries can collude and claim persistence of enough fragments for a chunk such that less than $k + \epsilon$ fragments are stored on honest nodes.
 Once those adversaries discard their local fragments, the chunk is permanently lost.
@@ -78,6 +85,21 @@ The selection probability is inversely proportional to its distance to the fragm
 The selection proof is unforgeable and verifiable.
 This decentralized process may lead to selection of zero or more than one peers, both of which are easily handled by our storage scheme.
 Randomness of both the candidate set and the peer selection process ensures that every node has equal probability of participating in a chunk group.
+
+\paragraph{Chunk repair.}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/repair}
+    \caption{Chunk repair process}
+    \label{fig:chunkrepair}
+\end{figure}
+
+Storage device failures and node churns can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
+Similar to prior storage systems, \sys performs \emph{repair} by regenerating new encoding fragments when the number of alive fragments for a chunk drops below a threshold.
+To avoid relying on a centralized trusted service, chunk repair in \sys is fully decentralized.
+Each node in a chunk group periodically sends \emph{persistence proof} of its stored fragments to other peers in the group.
+When repair condition is met, nodes in the chunk group selects new peers who generate and store new encoding fragments of the chunk.
 
 \paragraph{Double-layer encoding to tolerate targeted attacks.}
 Fragment repair, unfortunately, reveals node identities of a chunk group.
@@ -205,6 +227,8 @@ Peers below \wl are permanently ignored, while nodes above \wh wait for future g
 \autoref{alg:client} lists the client side protocol.
 Being a decentralized peer-to-peer system, client operations are issued on participating nodes, though they can serve as proxies for light-weight clients.
 We use \emph{clients} to denote nodes that issue client operations.
+
+\lijl{Describe expiration time.}
 
 To store an object, a client uses the outer layer encoding function to generate a set of encoded chunks.
 \lijl{How does client hide the mapping?}
