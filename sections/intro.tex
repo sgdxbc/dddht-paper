@@ -3,7 +3,7 @@ This \emph{decentralization} movement is catalyzed by the growing concern over c
 Following the wild success of the Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum} blockchains, a burgeoning of decentralized services are being deployed, including exchanges~\cite{uniswap}, content delivery network~\cite{meson}, domain name service~\cite{handshake}, messaging~\cite{matrix}, and computation~\cite{dfinity}.
 
 An attractive avenue for decentralization is data storage~\cite{ipfs, filecoin, ar, storj}.
-Compared to their centralized counterparts~\cite{amazon_s3,google_cloudstore,dynamo}, decentralized storage is better positioned to address the issues of data breaches, censorship, content availability, and high storage cost.
+Compared to their centralized counterparts~\cite{amazon_s3, google_cloudstore, dynamo}, decentralized storage is better positioned to address the issues of data breaches, censorship, content availability, and high storage cost.
 We have already seen successful large deployment of decentralized storage systems:
 The InterPlanetary File System (IPFS)~\cite{ipfs} has over 300 thousand active participating peers globally, collectively storing more than 1000 PB of data.
 
@@ -18,22 +18,31 @@ nodes join and leave the system at high churn rate;
 there exists high variance in node performance, reliability, and network conditions;
 adversarial behaviors are prevalent.
 In such open and asynchronous environment, traditional replication, erasure coding, and repair schemes lose their effectiveness in preventing data losses.
-In a recent incident, more than 1600 TiB of data on the Filecoin~\cite{filecoin} network lost all replica copies simultaneously~\cite{filecoin_loss}.
+Recently, more than 1600 TiB of data on the Filecoin~\cite{filecoin} network lost all replica copies simultaneously~\cite{filecoin_loss}.
 
 In this work, we propose a new decentralized object storage system, \sys, to address this durability challenge.
 \sys uses \emph{rateless erasure code} to generate a potentially \emph{infinite} stream of encoding fragments for each data object.
-Compared to conventional maximum distance separable code (MDS), our rateless encoding scheme offers better fault tolerance properties in the highly asynchronous network of a decentralized environment.
+Compared to conventional maximum distance separable code (MDS), a rateless encoding scheme offers better fault tolerance properties in a highly asynchronous network and faulty environment.
 The scheme supports efficient \emph{large code} encoding but with redundancy comparable to MDS codes.
 The large number of fragments improves statistical reliability of the object.
 More importantly, it eschews the need for time-sensitive encoding repair --- an impractical requirement in a decentralized network --- and permits repair at a steady average-rate.
-The rateless property of the scheme also facilitates nodes to perform encoding regeneration \emph{independently}, avoiding frequent costly coordination.
+The rateless property of the scheme also facilitates nodes to perform encoding regeneration \emph{independently}, avoiding costly coordination.
 
-To provide fault tolerate against strong adversaries, \sys applies \emph{verifiable randomness} to implement Kleroterion, a decentralized node selection service.
-Kleroterion uses verifiable random function~\cite{vrf} to determine eligibility of participants to store encoding fragments of an object at a virtual time.
+%implement Kleroterion, a decentralized node selection service.
+%Kleroterion uses verifiable random function~\cite{vrf} to determine eligibility of participants to store encoding fragments of an object at a virtual time.
+To provide fault tolerate against strong adversaries, \sys applies \emph{verifiable randomness} to select randomly distributed nodes to store encoding fragments.
+The procedure avoids centralization by using verifiable random function~\cite{vrf} to determine participant eligibility.
 Selection results are unforgeable and publicly verifiable.
-Randomness and verifiability of the selection outcome ensures that sufficient encoding fragments are stored on honest nodes, even in the presence of active adversarial attacks.
+Randomness and verifiability of the selection outcome ensures that sufficient encoding fragments are stored on honest nodes, even when significant portion of the participants are Byzantine.
+%even in the presence of active adversarial attacks.
 %\lijl{Maybe add homomorphic hashing and other optimizations here, if there is space and time.}
 
+The nature of long-term storage exposes fragment-to-node mapping to adversaries.
+To defend against targeted attacks aiming to erase objects, \sys applies an additional layer of erasure coding.
+This \emph{outer} layer code uses keyed encoding to first encode an object into multiple chunks.
+Critically, the generated chunks appear completely random to adversaries, and the object-to-chunks mapping is private to the client.
+\sys then applies an \emph{inner} layer rateless code to encode each chunk into stream of encoding fragments.
+Our \emph{dual-layer} encoding scheme ensures negligible probability of adversaries attacking sufficient chunks of the same object to compromise durability.
 
 \sys is a practical design.
 We implement \sys on top of libp2p and deploy \sys in more than 5000 nodes across 5 continents on AWS.
