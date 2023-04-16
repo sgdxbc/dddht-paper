@@ -1,11 +1,11 @@
-In this paper, we consider the problem of designing a \emph{durable} object storage system in a fully \emph{decentralized} environment.
-The system provides a simple whole object store and retrieval interface to end users.
-Each object is uniquely identified by an object ID, and its content is an arbitrarily sized blob of binary data.
-The system provides \emph{durability}: Once an object is successfully stored, users is guaranteed to retrieve the object with its original content until it is explicitly deleted.
+We consider the problem of designing a \emph{durable} object storage system in a fully \emph{decentralized} environment.
+The system provides a simple object store and retrieval interface to end users.
+Each object contains a blob of binary data with arbitrary size.
+The system provides \emph{durability}: Once an object is successfully stored, users are guaranteed to retrieve the object with its original content until it expires.
 Objects are \emph{immutable}, i.e., users cannot modify the content of an object after it is stored.
 The system presents a \emph{flat view} of all objects; it does not offer explicit object hierarchies such as those in a file system.
-Objects are searched by their ID, equivalent to a primary key.
-The system does not support secondary keys or other types of complex relational queries.
+%Objects are searched by their ID, equivalent to a primary key.
+%The system does not support secondary keys or other types of complex relational queries.
 It serves as a base persistent storage layer where higher-level functionalities, such as files and relational databases, can be built atop.
 
 Performance is not a key design metric of the system.
@@ -18,28 +18,28 @@ There is no central entity to manage or administer the system.
 The network is \emph{permissionless}, i.e., anyone can join the network without any authorization required.
 Each participating node has some local storage for storing data, as well as network access to the wide area network.
 There is, however, no requirement on the type, speed, or quality of their physical storage and network devices.
-The participating nodes follow a decentralized protocol to collectively implement the durable storage interface.
+%The participating nodes follow a decentralized protocol to collectively implement the durable storage interface.
 Participants can be either \emph{honest} or \emph{adversarial}.
-Honest nodes follow the system protocol exactly, while adversarial nodes can deviate arbitrarily from the protocol.
+Honest nodes follow the protocol exactly, while adversarial nodes can deviate arbitrarily from the protocol.
 Adversaries may also actively collude and attack the system.
 
 \paragraph{Prior distributed storage systems.}
 There is a long line of work on centrally managed distributed storage systems~\cite{ceph,gfs,bigtable,dynamo,liquid}.
 These systems commonly divide objects into equal-sized chunks, and deploy a large pool of nodes to store those chunks.
-A potentially dedicated set of nodes are responsible for maintaining and processing storage metadata.
+A dedicated set of nodes are responsible for maintaining and processing storage metadata.
 It is also common to use a centralized consensus services such as Chubby~\cite{chubby} to manage configurations and other critical system states.
 
 At the deployment scale of these storage systems, failures of storage devices, servers, racks, clusters, and even entire data centers are frequent events.
 To guarantee data durability and availability, replication techniques such as primary-backup~\cite{pb} and state machine replication~\cite{smr} are commonly deployed.
 However, replication introduces large redundancy, negatively impacting the overall storage efficiency.
-To reduce storage redundancy without compromising data reliability, modern distributed storage systems are increasingly applying erasure coding~\cite{google_storage,was,hitchhiker,xor}.
+To reduce storage redundancy without compromising data reliability, modern storage systems are increasingly applying erasure coding~\cite{google_storage,was,hitchhiker,xor}.
 In particular, maximum distance separable (MDS) codes, e.g., Reed-Solomon code~\cite{reed-solomon}, are a common choice.
 Being centrally managed, the system administrator defines \emph{placement groups}.
 Each erasure code strip (including the special case --- replicas of an object) is mapped to one placement group.
 To reduce the risk of data losses, placement groups are chosen to minimize correlated failures, where factors such as failure domains and annualized failure rate (AFR) of the storage devices~\cite{pacemaker,tiger} are usually considered.
 
 These systems, however, only consider crash failures of individual components.
-All participants of the system are under a single, protected administrative domain, so the system does not need to tolerate Byzantine failures~\cite{bft}.
+All participants of the system are under a single, protected administrative domain, so there is no need to tolerate Byzantine failures~\cite{bft}.
 
 \paragraph{State of the art decentralized storage.}
 With the popularization of peer-to-peer file sharing network in the late 90s, designing storage and file systems from a network of decentralized, untrusted computers was an active research topic at the time.
