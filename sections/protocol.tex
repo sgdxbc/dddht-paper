@@ -358,7 +358,7 @@ When new members are located, \wh is updated according to the following invarian
 \lijl{Extra members for more lazy repair?}
 A corollary is that \wh may drop when new peers are added to the membership.
 %We, however, do not remove peers beyond the updated \wh from the view; those peers effectively serve as extra redundancy, and this approach reduces unnecessary repairs due to view divergence.
-If the number of alive peers in the membership windows drops below $R$, the procedure extends \wh to add new members into the group.
+If the number of alive peers in the membership windows drops below $R$, the procedure extends \wh to add new members into the group, until membership size is restored.
 
 To detect failures in a chunk group, group members periodically broadcast fragment persistence claims to other peers in the group ($\fn{HeartbeatTimer}()$).
 The persistence claim includes the fragment index within the encoding stream and the selection proof.
@@ -431,33 +431,38 @@ The \wl increment interval is set to approximately the average churn rate of the
 \end{algorithm}
 
 The core of \sys centers around a \emph{decentralized} repair protocol that ensures the durability of encoded chunks.
-As listed in \autoref{alg:repair}, when a node detects that repair is necessary for a chunk, it calculates the next fragment hash in the encoding stream as marked by \wh.
-If the node's local view includes extra redundancy at \wh, the repair process can be skipped.
-It then invokes $\fn{Locate}()$ to find the responsible peers for the fragment, and sends them a \mtype{RepairRequest} message.
-The message includes the chunk hash, the repair fragment hash and its index in the stream, as well as the node's local membership view.
+Repairing an encoded chunk involves locating new peers to store additional fragments, until healthy group size is restored.
+Each node performs repair independently according to their local view, without explicit consensus.
+Temporary network asynchrony may result in over-repair, i.e., chunk group exceeding $R$.
+This, however, does not impact protocol safety, and the membership protocol eventually synchronize the membership view across peers.
+
+%As listed in \autoref{alg:repair}, when a node detects that repair is necessary for a chunk, it calculates the next fragment hash in the encoding stream as marked by \wh.
+%If the node's local view includes extra redundancy at \wh, the repair process can be skipped.
+As listed in \autoref{alg:repair}, to install a new fragment for the group, the repairing node invokes $\fn{Locate}()$ to find responsible peers for the fragment, and sends them a \mtype{RepairRequest} message.
+%The message includes the chunk hash, the repair fragment hash and its index in the stream, as well as the node's local membership view.
+The message includes the sender's local membership view to assist bootstrapping.
+%Upon receiving a \mtype{RepairRequest}, the node verifies that the fragment hash is correct, and that it is responsible for the fragment.
+%\lijl{Probably also need to check requester is a legitimate peer?}
+%The later can be checked by invoking $\fn{SelectionProof}()$.
+Upon receiving a \mtype{RepairRequest}, the node immediately responds if it already stores the fragment.
+Otherwise, it merges the incoming view with its local membership, joins the group, and starts the repair process.
+Specifically, it requests fragments from each group member in its view.
+%Each request includes its selection proof for verification.
+Once the node receives $k_{inner}$ or more encoding fragments, it uses the inner decoding function to recover the original chunk, then applies the encoding function to construct its responsible fragment.
+Note that the node may not find enough fragments initially due to incomplete membership view or network asynchrony.
+%Subsequent \mtype{RepairRequest}{}s from other peers initiating repair will update the membership view through $\fn{MergeView}()$.
+$\fn{MembershipTimer}()$ ensures that the node eventually finds sufficient alive members to complete the repair process.
+%By repeatedly invoking $\fn{RepairTimer}()$, the node will eventually receive enough fragments to complete the repair process.
 
 \lijl{Randomized timer to minimize incast.}
-\lijl{Cache chunk to reduce repair traffic.}
 
-Upon receiving a \mtype{RepairRequest}, the node verifies that the fragment hash is correct, and that it is responsible for the fragment.
-\lijl{Probably also need to check requester is a legitimate peer?}
-The later can be checked by invoking $\fn{SelectionProof}()$.
-It then merges the incoming view with its local chunk membership, adding in peers who have correct selection proofs.
-The node then starts the repair process.
-Specifically, it requests fragments from each group member in its local view.
-Each request includes its selection proof for verification.
-Once the node receives $k_{inner}$ or more encoding fragments, it uses the inner decoding function to recover the original chunk, then applies the rateless encoding function to construct its responsible fragment, completing the repair process.
-Note that the node may not find enough fragments initially due to incomplete membership view or network asynchrony.
-Subsequent \mtype{RepairRequest}{}s from other peers initiating repair will update the membership view through $\fn{MergeView}()$.
-The node also periodically runs $\fn{MembershipTimer}()$ to find new peers that are alive.
-By repeatedly invoking $\fn{RepairTimer}()$, the node will eventually receive enough fragments to complete the repair process.
-
+The above procedure transmits at least $k_{inner}$ fragments to repair a single fragment, resulting in a minimum repair amplification of $k_{inner}$.
+To reduce repair traffic, each node optionally caches the original chunk for a limited time.
+Upon requested by a new peer, the node sends its chunk copy if still available, and the requesting peer can immediately construct the fragment without any further \mtype{RepairRequest}.
 
 \subsection{Correctness}
-\mh{added the lemma and rephrased some stuff, please let me know what you think}
 
 \subsubsection{Durability of the inner-code}
-
 
 The durability of our protocol hinges on the invariant that at least $k$ fragments in each group will still persist after some bounded time $T$. The resultant number of persistent fragments might vary from time due to the innate randomness of the system.
 
