@@ -31,7 +31,8 @@ This system replicates each object on 3 randomly selected peers, and performs re
 Such replication scheme is commonly employed in data center settings, and we use it as a baseline to compare to our decentralized scheme.
 
 \begin{figure}
-    \addgraph{repair}
+    \addgraph{churn-repair}
+    \addgraph{object-repair}
     \caption{Repair traffic over different number of objects and AFR. The number behind entropy indicate how many repair hits booster peers' cache.}
     \label{fig:repair}
 \end{figure}
@@ -56,7 +57,7 @@ This demonstrates that \sys responds well to the change of the system's average 
 Another implication is that \sys scales well with an increase in AFT, i.e., the overhead per node failure remains constant.
 
 \begin{figure}
-    \addgraph{time}
+    \addgraph{time-alive}
     \caption{Raw capacity and repairing traffic over time. EntropyF is a variant of entropy with $K = 2.2k$ and $k_p = 1.6k$ to show the overhead of tolerating more faulty nodes.}
     \label{fig:time}
 \end{figure}
@@ -77,6 +78,7 @@ Compared to the default parameter, object repairs happen more frequently, but st
 
 \begin{figure}
     \addgraph{faulty-lost}
+    \addgraph{targeted-lost}
     \caption{Number of lost objects (out of 1000) in the presence of faulty peers.}
     \label{fig:faulty}
 \end{figure}
@@ -121,7 +123,7 @@ The node performs sanity check to make sure the object is properly retrieved.
 \paragraph{Latency Results.}
 
 \begin{figure}
-    \addgraph{latency}
+    \addgraph{put-get}
     \caption{Latency of \store and \query operation in a world-wide deployment. Entropy, Ceph and Kademlia operate with 64MiB data objects while Entropy-1GB operate with 1GiB data objects.
     EntropyL-1GiB is a variant that finalize \store when received $k_p$ gossip messages.
     Dashed line and dotted line represent average latency of Ceph's replicated pool and erasure coding pool repectively}
