@@ -192,10 +192,12 @@ Public keys are assumed to be known by all nodes in the system.
 A SHA256 hash of the public key is used as the node ID~\cite{kademlia}.
 This ensures that node IDs are randomly distributed on the hash ring.
 Each node stores a set of encoding fragments.
-For each stored fragment, the node maintains a local view of the alive peers in the constituent chunk group.
+For each stored fragment, it maintains a local view of the alive peers in the constituent chunk group.
 We define a constant $R$ to denote the threshold chunk group size.
+\lijl{Explain how to calculate $R$.}
 Repair is triggered when group size drops below $R$.
-We also define two variables, \wl and \wh, to mark the encoding index window of the inner erasure code.
+Since the inner rateless code generates an infinite stream of encoding symbols, each encoding index maps to a unique fragment, and by extension, a set of responsible nodes.
+We define two variables, \wl and \wh, to delineate the current encoding index \emph{window} of the chunk group.
 Only peers within the encoding window are considered \emph{active}.
 Peers below \wl are permanently ignored, while nodes above \wh wait for future peer selection.
 
@@ -255,7 +257,6 @@ We use \emph{clients} to denote nodes that issue client operations.
 \lijl{Discuss secrets in the outer layer code.}
 
 To store an object, a client uses the outer layer encoding function to generate a set of encoded chunks.
-\lijl{How does client hide the mapping?}
 For each chunk, the client picks a randomized genesis time $t$ in the past, and derives the initial chunk $\wl$ based on $t$ and the current time.
 Time randomization reduces timing correlation among chunks of the same object, minimizing effectiveness of targeted attacks.
 The client then applies the inner layer erasure code to output a stream of fragments and stores $R$ of them at responsible peers, starting from $\wl$.
