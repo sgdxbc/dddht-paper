@@ -17,8 +17,8 @@ Unlike IPFS, object IDs are private to data owners to protect object from target
 A direct implication of the invariant is that once a \store successfully returns, all subsequent \query{}s for the returned ID output the original object until expiration.
 
 \begin{invariant}
-At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $k_{outer}$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
-An encoded chunk is recoverable if at least $k_{inner} + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
+At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $\kout$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
+An encoded chunk is recoverable if at least $\kin + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
 \end{invariant}
 
 %Once a \store successfully returns, all subsequent \query{}s for the generated ID return the original object until is object is expired.
@@ -78,7 +78,7 @@ The client then stores $R$ encoding fragments, where $R$ is large enough to ensu
 \begin{figure}
     \centering
     \includegraphics[width=0.9\linewidth]{figures/selection}
-    \caption{Randomized peer selection.}
+    \caption{Randomized peer selection}
     \label{fig:selection}
 \end{figure}
 
@@ -125,7 +125,7 @@ New group members pull fragments from existing peers (step 3), decode the origin
 
 \paragraph{Object retrieval}
 
-To retrieve an object, a client needs to recover $k_{outer}$ distinct encoded chunks, each of which requires reading $k_{inner} + \epsilon$ encoding fragments.
+To retrieve an object, a client needs to recover $\kout$ distinct encoded chunks, each of which requires reading $\kin + \epsilon$ encoding fragments.
 Lacking a centralized metadata service, locating fragments is more challenging in \sys given the dynamic nature of chunk group membership.
 \sys leverages determinism of the rateless erasure code and verifiable membership to address the issue.
 From a chunk hash (which is part of the object ID), the client reconstructs the stream of encoding fragment hash using homomorphic hashing~\cite{homo_hash}.
@@ -146,56 +146,58 @@ To reduce fragment search time, \sys nodes can optionally record their identitie
 
 \lijl{Describe somewhere that we are using a stake system, each staked identity stores a fixed amount of data, and so the total number of nodes is fixed}
 
-\begin{figure}
-    \begin{mdframed}[style=protocol]
-        \textbf{\sys node:} \\
-        State:
-        \begin{itemize}
-            \setlength\itemsep{0em}
-            \item \textit{sk}: secret key of the node
-            \item \textit{ID}: SHA256 hash of the node public key
-            \item \textit{store}: local storage of encoding fragments. Indexed by chunk hash
-        \end{itemize}
-        Per-stored-fragment state:
-        \begin{itemize}
-            \setlength\itemsep{0em}
-            \item \textit{index}: coding index of \textit{frag}
-            \item \textit{group}: local view of chunk group membership
-            \item \wh: highest coding index of active members
-            \item \wl: lowest coding index of active members
-        \end{itemize}
-        Constants:
-        \begin{itemize}
-            \setlength\itemsep{0em}
-            \item \kout: number of distinct chunks to recover an object using outer layer encoding
-            \item \kin: number of distinct fragments to recover a chunk using inner layer encoding
-            \item $R$: threshold of alive encoding fragments in a chunk group to start repair
-        \end{itemize}
-        %Utility Functions:
-        %\begin{itemize}
-        %    \setlength\itemsep{0em}
-        %    \item $\fn{Hash}(in)$: output a cryptographic hash of $in$
-        %    \item $\fn{OuterEncode}(\var{data})$: encode $data$ into a set of encoded chunks using outer erasure code
-        %    \item $\fn{OuterDecode}(\set{..})$: decode data from a set of encoded chunks using outer erasure code
-        %    \item $\fn{InnerEncode}(\var{data}, i)$: generate the $i$th encoding fragment of $data$ using inner erasure code
-        %    \item $\fn{InnerEncodeHash}(\var{hash}, i)$: from data $hash$, generate the hash of the $i$th fragment
-        %    \item $\fn{InnerDecode}(\set{..})$: decode data from a set of encoded fragments using inner erasure code
-        %\end{itemize}
-    \end{mdframed}
-    \caption{Local state and constants maintained on each \sys node}
-    \label{fig:node-state}
-\end{figure}
+%\begin{figure}
+%    \begin{mdframed}[style=protocol]
+%        \textbf{\sys node:} \\
+%        State:
+%        \begin{itemize}
+%            \setlength\itemsep{0em}
+%            \item \textit{sk}: secret key of the node
+%            \item \textit{ID}: SHA256 hash of the node public key
+%            \item \textit{store}: local storage of encoding fragments. Indexed by chunk hash
+%        \end{itemize}
+%        Per-stored-fragment state:
+%        \begin{itemize}
+%            \setlength\itemsep{0em}
+%            \item \textit{index}: coding index of \textit{frag}
+%            \item \textit{group}: local view of chunk group membership
+%            \item \wh: highest coding index of active members
+%            \item \wl: lowest coding index of active members
+%        \end{itemize}
+%        Constants:
+%        \begin{itemize}
+%            \setlength\itemsep{0em}
+%            \item \kout: number of distinct chunks to recover an object using outer layer encoding
+%            \item \kin: number of distinct fragments to recover a chunk using inner layer encoding
+%            \item $R$: threshold of alive encoding fragments in a chunk group to start repair
+%        \end{itemize}
+%        %Utility Functions:
+%        %\begin{itemize}
+%        %    \setlength\itemsep{0em}
+%        %    \item $\fn{Hash}(in)$: output a cryptographic hash of $in$
+%        %    \item $\fn{OuterEncode}(\var{data})$: encode $data$ into a set of encoded chunks using outer erasure code
+%        %    \item $\fn{OuterDecode}(\set{..})$: decode data from a set of encoded chunks using outer erasure code
+%        %    \item $\fn{InnerEncode}(\var{data}, i)$: generate the $i$th encoding fragment of $data$ using inner erasure code
+%        %    \item $\fn{InnerEncodeHash}(\var{hash}, i)$: from data $hash$, generate the hash of the $i$th fragment
+%        %    \item $\fn{InnerDecode}(\set{..})$: decode data from a set of encoded fragments using inner erasure code
+%        %\end{itemize}
+%    \end{mdframed}
+%    \caption{Local state and constants maintained on each \sys node}
+%    \label{fig:node-state}
+%\end{figure}
 
-\autoref{fig:node-state} shows the local state maintained by each \sys node.
-Each node generates a (\textit{sk}, \textit{pk}) key pair, and keeps the secret key \textit{sk} locally.
+%\autoref{fig:node-state} shows the local state maintained by each \sys node.
+Each \sys node generates a (\textit{sk}, \textit{pk}) key pair, and keeps the secret key \textit{sk} locally.
 Public keys are assumed to be known by all nodes in the system.
 A SHA256 hash of the public key is used as the node ID~\cite{kademlia}.
 This ensures that node IDs are randomly distributed on the hash ring.
 Each node stores a set of encoding fragments.
-For each fragment, the node maintains a view of the alive peers in the constituent chunk group.
-\wl and \wh defines the encoding index window of the rateless erasure code.
+For each stored fragment, the node maintains a local view of the alive peers in the constituent chunk group.
+We define a constant $R$ to denote the threshold chunk group size.
+Repair is triggered when group size drops below $R$.
+We also define two variables, \wl and \wh, to mark the encoding index window of the inner erasure code.
 Only peers within the encoding window are considered \emph{active}.
-Peers below \wl are permanently ignored, while nodes above \wh wait for future group selection.
+Peers below \wl are permanently ignored, while nodes above \wh wait for future peer selection.
 
 \subsubsection{\sys Client Protocol}
 
@@ -520,10 +522,10 @@ It is important to note that if a group dips below $k$ fragments, it might never
 As $T\rightarrow\infty$, the probability a group reaches an \textit{absorbing state} converges to 1. However, we can assert that with some system parameters the groups will reach an absorbing state in $T=t$ steps with an negligible probability.
 
 \begin{lemma}
-    For a single data object, the probability that all groups injectively responsible for $K+R$ chunks, being durable at $T=t$ can be bounded by: 
+    For a single data object, the probability that all groups injectively responsible for $K+R$ chunks, being durable at $T=t$ can be bounded by:
     \begin{gather}
-        1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R} 
-    \end{gather} 
+        1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R}
+    \end{gather}
     Where $I$ is the initial state matrix and $\Theta$ is a stochastic matrix.
 \end{lemma}
 
@@ -532,7 +534,7 @@ In the CMTC model, we first express the a set of initial states of our system an
 
 We then constuct a $(n-k+1 \times n-k+1)$ stochastic matrix $\Theta = (\theta_{i,j})$ representing the transition probabilities of one state to another. Where the rows represent the starting states and the columns representing the transitioned state. Where \textit{transient to transient} states and \textit{transient to absorbing} states are a function of the churn rate as well as an eviction parameter. Whilst intuitively, \textit{absorbing to absorbing} states are expressed as a $(1 \times n-k+1)$ vector of zeros with the $(n-k+1)^{th}$ element being $1$.
 
-With the stochastic matrix, we perform the sum and exponent to derive the probability any group of a data object reaching an absorbing state at $T=t$ as (1). 
+With the stochastic matrix, we perform the sum and exponent to derive the probability any group of a data object reaching an absorbing state at $T=t$ as (1).
 
 With our given system parameters, if the probability is negligable ($\leq 2^{-128}$), durability for the whole data object is guaranteed within $T=t$.
 
