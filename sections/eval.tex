@@ -1,21 +1,24 @@
 We use two types of experiments to evaluate \sys: discrete event simulation and physical deployment on geo-distributed EC2 virtual machines.
-Unless otherwise specified, we use $k = 64$ for the rateless erasure code in \sys, and a persistence parameter $k_p$ of $1.2k$.
-The total number of nodes selected in each epoch, $K$, is set to $2k$.
+Unless otherwise specified, we use $\kin = 32, R = 80$ for the inner code in \sys. 
+The outer code is accomplished with rateless erasure code that generate chunk with random indexes.
+The $\kout = 8$ and client generates 10 chunks.
 %By default k = 64, persistence parameter $k_p = 1.2k$, select rate $K = 2k$
 %\sgd{This description assumes single-stack nodes.}
-In our physical deployment, \store operations return only when $1.6k$ persistence proofs are received through gossip.
-This safeguard policy improves system stability without introducing significant overhead.
+% In our physical deployment, \store operations return only when $1.6k$ persistence proofs are received through gossip.
+% This safeguard policy improves system stability without introducing significant overhead.
 
 When evaluating physical deployments, we compare \sys to two other systems.
 Firstly, an IPFS-like decentralized storage system that uses Kademlia DHT to store publisher record.
-We only slightly modified IPFS in the following way: When storing an object, we transfer the object to a random peer instead of storing locally.
-Note that IPFS (and our modified version) by default only stores a single copy of the object, therefore offering no durability guarantee.
-Second, we also evaluate against the Ceph~\cite{ceph} distributed storage system.
+% We only slightly modified IPFS in the following way: When storing an object, we transfer the object to a random peer instead of storing locally.
+% Note that IPFS (and our modified version) by default only stores a single copy of the object, therefore offering no durability guarantee.
+% Second, we also evaluate against the Ceph~\cite{ceph} distributed storage system.
+The system directly utilizes \texttt{PUT\_RECORD} to store the data. 
+The replication factor is set to 3 which gives a similar redundancy compare to \sys which is 3.125.
 
 \subsection{Simulations}
 
 We first use discrete event simulation to evaluate the repair overhead and fault tolerance guarantees of \sys.
-We simulate a network of 10K nodes.
+We simulate a network of 100K nodes.
 For simplicity, we parametrize one annualized failure rate (AFR) for all nodes.
 Node failures follow a Poisson distribution according to the AFR.
 Each node periodically gossips until it fails.
@@ -101,8 +104,8 @@ Using the default parameter, \sys can tolerate around the targeted 33\% faulty n
 %In practice, it could be parallelized and improve \store performance.
 
 Next, we evaluate \sys using our real implementation.
-We deploy 1000 -- 5000 \sys nodes on Amazon EC2 in 5 AWS zones (us-west, ap-southeast, eu-central, sa-east, af-south) across 5 continents.
-All nodes run on c5a.24xlarge instances with 96 vCPU, 192GiB of memory, and a network bandwidth of 25GBps.
+We deploy 10000 \sys nodes on Amazon EC2 in 5 AWS zones (us-west, ap-southeast, eu-central, sa-east, af-south) across 5 continents.
+We launch 5 r5.8xlarge instances with 32 vCPU and 384GiB of memory in each zone, and run 400 peers on each instance.
 
 As mentioned earlier, we implemented a IPFS-like decentralized storage system using Kademlia DHT as a comparison system.
 This Kademlia-based system serves as a state-of-the-art decentralized storage system.
