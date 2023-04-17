@@ -2,6 +2,7 @@ SHELL=/bin/bash
 
 LATEX := ./bin/latexrun --color auto -W no-overfull -W no-citation
 PAPER := paper
+SUPPL := suppl
 
 TEX := $(shell find ./ -type f -name "*.tex")
 CLS := $(shell find ./ -type f -name "*.cls" -o -name "*.sty")
@@ -11,7 +12,7 @@ PAPER_DEPS := $(TEX) $(CLS) $(BIB)
 
 .PHONY: all clean
 
-all: $(PAPER).pdf
+all: $(PAPER).pdf $(SUPPL).pdf
 
 %.pdf: $(PAPER_DEPS)
 	@rm -f $@
