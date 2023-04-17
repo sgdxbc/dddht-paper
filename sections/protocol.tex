@@ -8,13 +8,20 @@ Each node maintains finite local storage, and the entire set of participants col
 \query takes an object ID and returns the object if it exists in the system.
 Objects are immutable --- \sys does not provide an explicit interface to update existing objects.
 Similar to IPFS, \sys uses content addressing, i.e., an object ID uniquely identifies the content of the object stored.
-Issuing a new \store with a different object content, therefore, is equivalent to an object update.
-Consistently mapping client objects to \sys issued IDs is out of the scope of the paper.
-Unlike IPFS, object IDs are private to data owners to protect object durability.
+Issuing a new \store with a different object content therefore, is equivalent to an object update.
+Mapping client objects to \sys issued IDs is out of the scope of the paper.
+Unlike IPFS, object IDs are private to data owners to protect object from targeted attacks.
 
-\sys guarantees \textit{data durability}.
-Once a \store successfully returns, all subsequent \query{}s for the generated ID return the original object until is object is expired.
-As \sys does not support explicit object update, our data durability definition directly implies linearizability~\cite{linearizability} of client \query{}s and \store{}s.
+\sys guarantees the following \emph{data durability} invariant.
+A direct implication of the invariant is that once a \store successfully returns, all subsequent \query{}s for the returned ID output the original object until expiration.
+
+\begin{invariant}
+At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $k$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
+An encoded chunk is recoverable if at least $k + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
+\end{invariant}
+
+%Once a \store successfully returns, all subsequent \query{}s for the generated ID return the original object until is object is expired.
+%As \sys does not support explicit object update, our data durability definition directly implies linearizability~\cite{linearizability} of client \query{}s and \store{}s.
 
 We assume two types of failures that relate to data losses -- storage device failures and Byzantine failures.
 Storage device failures lead to unrecoverable data loss of the entire or part of a device.
@@ -48,12 +55,7 @@ It first applies a fixed-rate erasure code to encode each object into a set of \
 For each chunk, \sys then uses a publicly-known rateless erasure code to generate an infinite stream of \emph{encoding fragments}.
 The encoding fragments for a chunk are stored on a dynamic set of \sys nodes, collectively termed a chunk group.
 As introduced in \autoref{sec:approach:code}, an encoded chunk can be reconstructed from any $k + \epsilon$ distinct encoding fragments with overwhelmingly high probability, and any $k$ distinct encoded chunks can recover the original object.
-To guarantee data durability, \sys enforces the following invariant: \lijl{should we use different k for each definition}
-
-\begin{invariant}
-At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $k$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
-An encoded chunk is recoverable if at least $k + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
-\end{invariant}
+%To guarantee data durability, \sys enforces the following invariant: \lijl{should we use different k for each definition}
 
 \paragraph{Randomized peer selection.}
 
