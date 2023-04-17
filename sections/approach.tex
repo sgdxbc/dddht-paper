@@ -124,7 +124,7 @@ This is in contrast to prior work~\cite{algorand} that uses VRF to select consor
 In \sys, we take a different approach to defending targeted attacks, by adding another layer of erasure coding.
 For each stored object, \sys first applies a \emph{keyed} erasure coding function with a small $(n, k, r)$ parameter to produce a set of encoded chunks.
 Critically, this \emph{outer layer} encoding ensures that each generated chunk is indistinguishable from random to an external party, and the mapping between chunks to an object is \emph{private} to the client applying the coding.
-Each chunk is then stored as a stream encoding fragments using the \emph{inner layer} fountain code (\autoref{sec:approach:code}) to ensure persistence.
+Each chunk is then stored as a stream of encoding fragments using the \emph{inner layer} fountain code (\autoref{sec:approach:code}) to ensure persistence.
 As every chunk appears random to adversaries, targeted attacks can do no better than compromising randomly selected chunks in the system.
 With enough objects in the system, the chance of simultaneously attacking more than $r$ chunks ($r$ here is the redundancy of the outer code) of a particular object becomes negligible.
 As such, the client (who privately knows the mapping) can recover the original object with overwhelming probability.
