@@ -126,7 +126,8 @@ The node performs sanity check to make sure the object is properly retrieved.
 \paragraph{Latency Results.}
 
 \begin{figure}
-    \addgraph{put-get}
+    \addgraph{put-get-outer}
+    \addgraph{put-get-inner}
     \caption{Latency of \store and \query operation in a world-wide deployment. Entropy, Ceph and Kademlia operate with 64MiB data objects while Entropy-1GB operate with 1GiB data objects.
     EntropyL-1GiB is a variant that finalize \store when received $k_p$ gossip messages.
     Dashed line and dotted line represent average latency of Ceph's replicated pool and erasure coding pool repectively}
