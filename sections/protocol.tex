@@ -3,6 +3,7 @@ In this section, we elaborate how \sys combines rateless erasure code, verifiabl
 \subsection{System Model and Assumptions}
 We consider a decentralized system in which nodes can freely join and leave.
 Each node maintains finite local storage, and the entire set of participants collectively implements a storage system.
+\lijl{Discuss stake and storage-per-node here.}
 \sys exposes a \textit{synchronous} object storage interface with two API calls: \query and \store.
 \store takes an object and an expiration time, and returns an ID when the object is successfully stored;
 \query takes an object ID and returns the object if it exists in the system.
@@ -16,8 +17,8 @@ Unlike IPFS, object IDs are private to data owners to protect object from target
 A direct implication of the invariant is that once a \store successfully returns, all subsequent \query{}s for the returned ID output the original object until expiration.
 
 \begin{invariant}
-At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $k$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
-An encoded chunk is recoverable if at least $k + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
+At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $k_{outer}$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
+An encoded chunk is recoverable if at least $k_{inner} + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
 \end{invariant}
 
 %Once a \store successfully returns, all subsequent \query{}s for the generated ID return the original object until is object is expired.
@@ -34,59 +35,76 @@ We consider a strong Byzantine fault model in which adversaries can collude with
 We, however, assume a stake-based system, and that adversaries do not possess more than $1/3$ of the system stakes in aggregate, a standard assumption made in proof-of-stake protocols.
 Note that using stake is not an inherent part of the protocol.
 \sys only leverages stake to defend against strong Sybil attacks; other approaches such as proof-of-work or permissioned settings can also be applied.
-We also assume that adversaries have enough computational power to launch targeted attacks (e.g., DDoS attack) on \XXX \% of the nodes in the system.
-These attacks can partition the victims from the network during the attack period.
-
+We also assume that adversaries have enough computational power to launch targeted attacks (e.g., DDoS attack) on a small percentage of nodes in the system.
+%These attacks can partition the victims from the network during the attack period.
 We also make standard cryptography assumptions, i.e., the probability of subverting cryptographic hash functions or public-key cryptography algorithms we used in the protocol is negligible.
 
 \subsection{Design Overview}
 
+%\lijl{Does it matter if we use fixed-rate or rateless code for outer code?}
+%\sgd{A fixed-rate code will generate finite enumerable fixed-content fragments, which could be used to trace data object by attackers.}
+
 \begin{figure}
     \centering
     \includegraphics[width=0.9\linewidth]{figures/store}
-    \caption{\sys object store procedure}
+    \caption{\sys object store procedure.
+    Client first applies an outer-layer erasure code to generate a set of encoded chunks.
+    Each chunk is then encoded into a stream of fragments using a rateless code.
+    A selection procedure assigns each fragment to randomly chosen nodes in the system.}
     \label{fig:store}
 \end{figure}
 
-\sys uses two layers of erasure coding to ensure durability of stored objects.
-It first applies a fixed-rate erasure code to encode each object into a set of \emph{encoded chunks}.
-\lijl{Does it matter if we use fixed-rate or rateless code for outer code?}
-\sgd{A fixed-rate code will generate finite enumerable fixed-content fragments, which could be used to trace data object by attackers.}
-For each chunk, \sys then uses a publicly-known rateless erasure code to generate an infinite stream of \emph{encoding fragments}.
-The encoding fragments for a chunk are stored on a dynamic set of \sys nodes, collectively termed a chunk group.
-As introduced in \autoref{sec:approach:code}, an encoded chunk can be reconstructed from any $k + \epsilon$ distinct encoding fragments with overwhelmingly high probability, and any $k$ distinct encoded chunks can recover the original object.
-%To guarantee data durability, \sys enforces the following invariant: \lijl{should we use different k for each definition}
+As shown in \autoref{fig:store}, \sys uses two layers of erasure coding to ensure object durability.
+When storing an object, clients first apply a keyed outer-layer erasure code to generate a set of \emph{encoded chunks}.
+The encoding process is \emph{irreversible}: External parties can infer the mapping between encoded chunks and the object with negligible probability, even when they know the object content.
+This can be done either by encrypting the object using a secrete key, or by using a rateless code with randomly chosen symbol indices.
+For each chunk, \sys uses a publicly-known rateless erasure code to generate a stream of \emph{encoding fragments}.
+The client then stores $R$ encoding fragments, where $R$ is large enough to ensure \emph{recoverability} of the chunk, at randomly selected nodes in the system.
+
+%The encoding fragments for a chunk are stored on a dynamic set of \sys nodes, collectively termed a chunk group.
+%As introduced in \autoref{sec:approach:code}, an encoded chunk can be reconstructed from any $k + \epsilon$ distinct encoding fragments with overwhelmingly high probability, and any $k$ distinct encoded chunks can recover the original object.
+
+%Fragment repair, unfortunately, reveals node identities of a chunk group.
+%Adversaries can launch targeted attacks to the entire group which breaks recoverability of the chunk.
+%\sys leverages the \emph{irreversibility} property of the outer-layer erasure coding to tolerate such attacks.
+%Specifically, when encoding an object to a set of chunks, the client never reveals the membership of the set.
+%It either keeps the hash of each chunk as a secret, or reconstructs the hashes upon object retrieval using homomorphic hashing schemes~\cite{homo_hash}.
+%\sys nodes, including the adversaries, can only observe identities of individual encoded chunks but are incapable of identifying which chunks belong to the same object.
+%Consequently, adversaries can not do better than launching targeted attacks to a small random selection of chunks in the system.
+%With a limited attack capability (\XXX\% of the nodes), \sys only requires low redundancy for its outer-layer erasure coding to ensure that enough encoded chunks can be retrieved to reconstruct the original object.
 
 \paragraph{Randomized peer selection.}
 
 \begin{figure}
     \centering
     \includegraphics[width=0.9\linewidth]{figures/selection}
-    \caption{Randomized peer selection}
+    \caption{Randomized peer selection.}
     \label{fig:selection}
 \end{figure}
 
-Peer selection is critical to the safety of \sys.
-If not done carefully, adversaries can collude and claim persistence of enough fragments for a chunk such that less than $k + \epsilon$ fragments are stored on honest nodes.
-Once those adversaries discard their local fragments, the chunk is permanently lost.
+%Peer selection is critical to the safety of \sys.
+%If not done carefully, adversaries can collude and claim persistence of enough fragments for a chunk such that less than $k + \epsilon$ fragments are stored on honest nodes.
+%Once those adversaries discard their local fragments, the chunk is permanently lost.
 
-\sys implements a decentralized peer selection protocol with verifiable randomness to address the issue.
+Randomly selecting nodes to store fragments is critical to the safety of \sys.
+To that end, \sys designs a \emph{decentralized} selection protocol with verifiable randomness, as shown in \autoref{fig:selection}.
 %The protocol leverages two sources of randomness: a cryptographic hash of the fragment and randomness from a verifiable random function (VRF).
-When selecting peers to store the next fragment, nodes in the group use a cryptographic hash of the fragment to locate candidates on a distributed hash table (DHT)~\cite{chash,chord,kademlia}.
-The \emph{candidate set} includes nodes whose IDs are close to the fragment hash on the DHT hash ring.
+To choose responsible nodes for a fragment, \sys first uses a cryptographic hash of the fragment to locate candidates on a distributed hash table (DHT)~\cite{chash,chord,kademlia}.
+The \emph{candidate set} includes nodes who are in proximity to the  fragment hash on the hash ring.
 \sys ensures randomness of the candidate sets through two mechanisms.
 First, nodes are randomly distributed on the hash ring by generating IDs using a cryptographic hash of their public key~\cite{kademlia}.
-Secondly, property of rateless coding implies that each fragment in the encoding sequence, and by extension its candidate set, is randomly distributed on the ring.
-Note that \sys does not require group peers to reach consensus on the candidate set.
-Each peer can independently derive the \emph{same} fragment hash and locate an approximation of the set.
+Second, property of rateless coding implies that each fragment in the symbol sequence, and by extension its candidate set, is randomly distributed on the ring.
+Note that \sys does not require consensus on the candidate set; each node can independently derive the \emph{same} fragment hash and locate an approximation of the set.
 
-We impose two restrictions on peer selection from a candidate set: The selection process is fully decentralized, and the selection result is publicly verifiable.
-\sys applies verifiable random function (VRF) to address both challenges.
-Upon request, a node in the candidate set independently runs a publicly known VRF to generate a selection proof.
-The selection probability is inversely proportional to its distance to the fragment on the hash ring.
-The selection proof is unforgeable and verifiable.
-This decentralized process may lead to selection of zero or more than one peers, both of which are easily handled by our storage scheme.
-Randomness of both the candidate set and the peer selection process ensures that every node has equal probability of participating in a chunk group.
+%We impose two restrictions on peer selection from a candidate set: The selection process is fully decentralized, and the selection result is publicly verifiable.
+%\sys applies verifiable random function (VRF) to address both challenges.
+Each node in the candidate set independently feeds the fragment hash to a publicly-known VRF to generate a random hash and a proof.
+Selection outcome is derived from the generated hash, the node ID, and the fragment hash, with the selection probability inversely proportional to the hash distance from the fragment.
+The selected nodes present their VRF outputs as a selection proof, which can be publicly verified by any participant of the system.
+
+%This decentralized process may lead to selection of zero or more than one peers, both of which are easily handled by our storage scheme.
+%The selection proof is unforgeable and verifiable.
+%Randomness of both the candidate set and the peer selection process ensures that every node has equal probability of participating in a chunk group.
 
 \paragraph{Chunk repair.}
 
@@ -98,30 +116,31 @@ Randomness of both the candidate set and the peer selection process ensures that
 \end{figure}
 
 Storage device failures and node churns can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
-Similar to prior storage systems, \sys performs \emph{repair} by regenerating new encoding fragments when the number of alive fragments for a chunk drops below a threshold.
-To avoid relying on a centralized trusted service, chunk repair in \sys is fully decentralized.
-Each node in a chunk group periodically sends \emph{persistence proof} of its stored fragments to other peers in the group.
-When repair condition is met, nodes in the chunk group selects new peers who generate and store new encoding fragments of the chunk.
+Similar to prior storage systems, \sys performs \emph{repair} by regenerating new encoding fragments when the number of alive fragments drops below a threshold.
+Chunk repair in \sys is fully decentralized, as shown in \autoref{fig:repair}.
+Nodes storing encoding fragments for the same chunk form a \emph{chunk group}.
+Chunk group members periodically broadcast persistence claims of their stored fragments to other peers in the group (step 1).
+When repair condition is met, group members perform randomized peer selection to locate new members to replenish the group (step 2).
+New group members pull fragments from existing peers (step 3), decode the original chunk, and generate new encoding fragments using our rateless code.
 
-\paragraph{Double-layer encoding to tolerate targeted attacks.}
-Fragment repair, unfortunately, reveals node identities of a chunk group.
-Adversaries can launch targeted attacks to the entire group which breaks recoverability of the chunk.
-\sys leverages the \emph{irreversibility} property of the outer-layer erasure coding to tolerate such attacks.
-Specifically, when encoding an object to a set of chunks, the client never reveals the membership of the set.
-It either keeps the hash of each chunk as a secret, or reconstructs the hashes upon object retrieval using homomorphic hashing schemes~\cite{homo_hash}.
-\sys nodes, including the adversaries, can only observe identities of individual encoded chunks but are incapable of identifying which chunks belong to the same object.
-Consequently, adversaries can not do better than launching targeted attacks to a small random selection of chunks in the system.
-With a limited attack capability (\XXX\% of the nodes), \sys only requires low redundancy for its outer-layer erasure coding to ensure that enough encoded chunks can be retrieved to reconstruct the original object.
+\paragraph{Object retrieval}
 
-\paragraph{Retrieving objects.}
-To retrieve an object, a client needs to recover $k$ of its chunks, each of which requires reading $k + \epsilon$ distinct encoded fragments.
-Locating alive encoded fragments for a chunk is more challenging in \sys given the dynamic nature of chunk group membership.
-To facilitate object lookup, \sys nodes register a \emph{fragment pointer} in the DHT (using chunk hash as the key) when storing a new fragment, and deletes the pointer when the fragment is garbage collected.
-To reconstruct a chunk, the requesting node queries the DHT to retrieve $k + \epsilon$ distinct pointers and fetches the respective encoding fragments.
-Fragment pointer registration, however, is only best-effort.
-If less than $k + \epsilon$ pointers for a chunk are found in the DHT, \sys applies another level of indirection.
-Since \sys nodes monitor fragment persistence of other peers in a group, chunk group membership can be retrieved by contacting just a few nodes in the group.
-In the worst case where no fragment pointer is found, the requesting node either performs a linear search of the encoding fragment stream, or disseminates a chunk query request using a gossip protocol.
+To retrieve an object, a client needs to recover $k_{outer}$ distinct encoded chunks, each of which requires reading $k_{inner} + \epsilon$ encoding fragments.
+Lacking a centralized metadata service, locating fragments is more challenging in \sys given the dynamic nature of chunk group membership.
+\sys leverages determinism of the rateless erasure code and verifiable membership to address the issue.
+From a chunk hash (which is part of the object ID), the client reconstructs the stream of encoding fragment hash using homomorphic hashing~\cite{homo_hash}.
+It then applies the same peer selection protocol to locate nodes who are responsible for storing the fragments.
+To reduce fragment search time, \sys nodes can optionally record their identities to the DHT when storing a fragment, an approach similar to the publisher record in IPFS.
+
+%To retrieve an object, a client needs to recover $k$ of its chunks, each of which requires reading $k + \epsilon$ distinct encoded fragments.
+%Locating alive encoded fragments for a chunk is more challenging in \sys given the dynamic nature of chunk group membership.
+%To facilitate object lookup, \sys nodes register a \emph{fragment pointer} in the DHT (using chunk hash as the key) when storing a new fragment, and deletes the pointer when the fragment is garbage collected.
+%To reconstruct a chunk, the requesting node queries the DHT to retrieve $k + \epsilon$ distinct pointers and fetches the respective encoding fragments.
+%Fragment pointer registration, however, is only best-effort.
+%If less than $k + \epsilon$ pointers for a chunk are found in the DHT, \sys applies another level of indirection.
+%Since \sys nodes monitor fragment persistence of other peers in a group, chunk group membership can be retrieved by contacting just a few nodes in the group.
+%In the worst case where no fragment pointer is found, the requesting node either performs a linear search of the encoding fragment stream, or disseminates a chunk query request using a gossip protocol.
+
 
 \subsection{Protocol Details}
 
@@ -231,6 +250,7 @@ Being a decentralized peer-to-peer system, client operations are issued on parti
 We use \emph{clients} to denote nodes that issue client operations.
 
 \lijl{Describe expiration time.}
+\lijl{Discuss secrets in the outer layer code.}
 
 To store an object, a client uses the outer layer encoding function to generate a set of encoded chunks.
 \lijl{How does client hide the mapping?}
@@ -316,6 +336,8 @@ The VRF outputs a random hash $r$ and a proof $\pi$.
 Properties of VRF ensure that $r$ is uniformly distributed between $0$ and $2^{hashlen}-1$.
 By comparing $r$ to a fraction of the total hash space inverse exponential to the distance metric, the selection probability drops exponentially with each additional node closer to the fragment hash.
 \lijl{We need to empirically verify the likelihood of finding a responsible peer for a fragment.}
+
+%This decentralized process may lead to selection of zero or more than one peers, both of which are easily handled by our storage scheme.
 
 Once the caller receives a selection proof, it inputs the random hash $r$, the proof $\pi$, the fragment hash, and the public key of the prover to the $\fn{VerifyVRF}$ function.
 The function verifies that the random hash is properly generated by the prover using the same fragment hash.
