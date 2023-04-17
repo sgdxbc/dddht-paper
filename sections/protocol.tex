@@ -495,10 +495,14 @@ The durability of each group can be analyzed by a continuous-time Markov chain (
 
 It is important to note that if a group dips below $k$ fragments, it might never recover. These group states are therefore impossible transition out of and typically referred to as \textit{absorbing states}, \textit{non-absorbing states} are referred to as \textit{transient states}.
 
-As $T\rightarrow\infty$, the probability a group reaches an \textit{absorbing state} converges to 1. However, we can assert that with some system parameters the groups will reach an absorbing state in $T=t$ steps with an negligible probability $\varepsilon = 2^{-128}$
+As $T\rightarrow\infty$, the probability a group reaches an \textit{absorbing state} converges to 1. However, we can assert that with some system parameters the groups will reach an absorbing state in $T=t$ steps with an negligible probability.
 
 \begin{lemma}
-    For a single data object, the probability that all groups injectively responsible for $K+R$ chunks, being durable at $T=t$ can be bounded by: \[1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R} \leq \varepsilon\] Where $I$ is the initial state matrix and $\Theta$ is a stochastic matrix.
+    For a single data object, the probability that all groups injectively responsible for $K+R$ chunks, being durable at $T=t$ can be bounded by: 
+    \begin{gather}
+        1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R} 
+    \end{gather} 
+    Where $I$ is the initial state matrix and $\Theta$ is a stochastic matrix.
 \end{lemma}
 
 
@@ -506,12 +510,9 @@ In the CMTC model, we first express the a set of initial states of our system an
 
 We then constuct a $(n-k+1 \times n-k+1)$ stochastic matrix $\Theta = (\theta_{i,j})$ representing the transition probabilities of one state to another. Where the rows represent the starting states and the columns representing the transitioned state. Where \textit{transient to transient} states and \textit{transient to absorbing} states are a function of the churn rate as well as an eviction parameter. Whilst intuitively, \textit{absorbing to absorbing} states are expressed as a $(1 \times n-k+1)$ vector of zeros with the $(n-k+1)^{th}$ element being $1$.
 
-With the stochastic matrix, we perform the sum and exponent to derive the probability any group of a data object reaching an absorbing state at $T=t$ as:
-\[
-    1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R}
-\]
+With the stochastic matrix, we perform the sum and exponent to derive the probability any group of a data object reaching an absorbing state at $T=t$ as (1). 
 
-With our given system parameters, if the probability is smaller than $\varepsilon$, then with very high probability, durability for the whole data object is guaranteed within $T=t$.
+With our given system parameters, if the probability is negligable, durability for the whole data object is guaranteed within $T=t$.
 
 \subsubsection{Durability of the outer-code}
 
