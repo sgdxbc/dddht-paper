@@ -487,23 +487,22 @@ Upon requested by a new peer, the node sends its chunk copy if still available, 
 
 \subsubsection{Durability of the inner-code}
 
-The durability of our protocol hinges on the invariant that at least $k$ fragments in each group will still persist after some bounded time $T$. The resultant number of persistent fragments might vary from time due to the innate randomness of the system.
+The durability of our protocol hinges on the invariant that at least $k$ fragments in each group will persist after some bounded time $T$. The resultant number of persistent fragments varies from time due to the innate randomness of the system.
 
-The durability of our groups can be analyzed by utilizing a continuous-time Markov chain (CMTC) model.
+The durability of each group can be analyzed by a continuous-time Markov chain (CMTC) model.
 
-It is important to note that if a group dips below $k$ fragments, there is no guarantee it will ever recover. These group states are therefore impossible to exit and typically referred to a \textit{absorbing states}, \textit{non-absorbing states} are referred to as \textit{transient states}.
+It is important to note that if a group dips below $k$ fragments, it might never recover. These group states are therefore impossible transition out of and typically referred to as \textit{absorbing states}, \textit{non-absorbing states} are referred to as \textit{transient states}.
 
-As $T\rightarrow\infty$, the probability of a group reaching an \textit{absorbing state} converges to 1. However, we can assert that with some system parameters the groups will reach an absorbing state in $T=t$ steps with an negligible probability $\varepsilon = 2^{-128}$
+As $T\rightarrow\infty$, the probability a group reaches an \textit{absorbing state} converges to 1. However, we can assert that with some system parameters the groups will reach an absorbing state in $T=t$ steps with an negligible probability $\varepsilon = 2^{-128}$
 
 \begin{lemma}
-    For a single data object, the probability that all of the groups injectively responsible for the $K+R$ chunks being durable at $T=t$ can be bounded by: \[1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R} \leq \varepsilon\] Where $I$ is the initial state matrix and $\Theta$ is a stochastic matrix.
+    For a single data object, the probability that all groups injectively responsible for $K+R$ chunks, being durable at $T=t$ can be bounded by: \[1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R} \leq \varepsilon\] Where $I$ is the initial state matrix and $\Theta$ is a stochastic matrix.
 \end{lemma}
 
 
+In the CMTC model, we first express the a set of initial states of our system and the probabilities associated with those states as a $(n-k+1 \times 1)$ initial probability vector $I$. Since our group identities must be unique, $I$ can be constructed utilizing the hypergeometric distribution PMF.
 
-In the CMTC model, we first express the a set of initial states of our system and the probabilities associated with those states as a $(n-k+1 \times 1)$ initial probability vector $I$. Since our group identities must be unique, we can construct the initial probabilty vector utilizing the hypergeometric distribution.
-
-We then constuct a $(n-k+1 \times n-k+1)$ stochastic matrix $\Theta = (\theta_{i,j})$ representing the transition probabilities of one state to another. Where the rows represent the starting states and the columns representing the transitioned state. Where \textit{transient to transient} states and \textit{transient to absorbing} states are a function of the churn rate as well as the eviction parameter. Whilst intuitively, \textit{absorbing to absorbing} states are expressed as a $(1 \times n-k+1)$ vector of zeros with the $(n-k+1)^{th}$ element being $1$.
+We then constuct a $(n-k+1 \times n-k+1)$ stochastic matrix $\Theta = (\theta_{i,j})$ representing the transition probabilities of one state to another. Where the rows represent the starting states and the columns representing the transitioned state. Where \textit{transient to transient} states and \textit{transient to absorbing} states are a function of the churn rate as well as an eviction parameter. Whilst intuitively, \textit{absorbing to absorbing} states are expressed as a $(1 \times n-k+1)$ vector of zeros with the $(n-k+1)^{th}$ element being $1$.
 
 With the stochastic matrix, we perform the sum and exponent to derive the probability of a group reaching an absorbing state at $T=t$ as:
 \[
@@ -515,11 +514,11 @@ We then consider all chunks (K+R) of a data objects as:
     1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R}
     \]
 
-With our given system parameters, if the probability is smaller than $\varepsilon$, then with very high probability, durability for the whole data object is guaranteed at $T=t$.
+With our given system parameters, if the probability is smaller than $\varepsilon$, then with very high probability, durability for the whole data object is guaranteed within $T=t$.
 
 \subsubsection{Durability of the outer-code}
 
-Suppose we have an adversary that has the capability to receive accurate reports on every possible group's membership and possess the ability to forcefully disconnect $\phi$ nodes from the system. The adversary then could force a group to pre-maturely enter an \textit{absorbing state}.
+Suppose we have an adversary that has the capability to receive accurate reports on every possible group's membership and possess the ability to forcefully disconnect $\phi$ nodes from the system. The adversary could thus force a group to pre-maturely enter an \textit{absorbing state}.
 
 The purpose of the outer-code is to deter such targetted attacks. More precisely, we ensure that if it does succeed, there is high probability it will not compormise the durability of any data object.
 
