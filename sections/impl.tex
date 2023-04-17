@@ -1,27 +1,26 @@
-Our implementation is based on libp2p-rust. \sgd{cite}
-The transport layer is based on TCP, equipped with a multiplex protocol to reuse connection to peers. 
-The secure layer negotiates using Noise protocol framework \cite{noise}, and the encryption channel is established with 25519 DH functions, ChaChaPoly cipher functions and SHA256 hash function.
+We implement \sys atop the open-source libp2p-rust library~\cite{libp2p}.
+We use TCP as the transport layer and apply a multiplex protocol to reuse connection to peers.
+The security layer comprises the Noise protocol framework~\cite{noise} for negotiation, and encryption channels established using 25519 DH, ChaChaPoly cipher, and SHA256 hash functions.
 
-The implementation uses libp2p's \texttt{identify} protocol to exchange peer's information, e.g., public key and listening addresses.
-The DHT operations are performed with libp2p's \texttt{kademlia} protocol.
-We also leverage the protocol to bootstrap the peers.
-Some DHT operations like \texttt{FIND\_CLOSEST} and \texttt{STORE\_RECORD} are iteratively performance and has logarithm overhead relative to network scale.
-As the result, if too many operations are issued concurrently, they map impact the whole system and the operations' tail latencies may increase dramatically.
-As the result, we throttle the number of concurrent DHT operations according to average message latency.
+Our implementation uses libp2p's \texttt{identify} protocol to exchange peer information, e.g., public key and listening addresses.
+libp2p's \texttt{kademlia} serves as our DHT, and we leverage the same protocol to bootstrap the peers.
+Certain DHT operations, such as \texttt{FIND\_CLOSEST} and \texttt{STORE\_RECORD}, require logarithmic steps in the size of the  network.
+Consequently, performing an unbounded number of DHT operations in parallel would negatively impact the system performance.
+We therefore throttle the number of concurrently issued DHT operations based on average message latency.
 
-We implement the protocol described in section \ref{sec:protocol} with libp2p's \texttt{request-response} protocol.
-Notably, for certain message types like repair request, there's no according response message by definition.
-To conform with libp2p's requirement a dummy response is sent.
-The messages are serialized with Protocol Buffers, following libp2p's convention.
+Request processing listed in \autoref{sec:protocol} are implemented using the \texttt{request-response} protocol in libp2p.
+Notably, certain message types like \mtype{RepairRequest} require no responses by definition.
+To conform with libp2p, a dummy response is sent.
+All messages are serialized using Protocol Buffers~\cite{protobuf}.
 
-The rateless erasure coding implementation uses wirehair \cite{wirehair}, an $O(1)$ time fountain code implementation.
-The coding has extremely high throughput as shown in \sgd{ref microbench}, and it is expected to recover the original message with $k + 0.02$ fragments.
+We use wirehair \cite{wirehair}, an $O(1)$ time fountain code implementation, as our rateless erasure code.
+Wirehair not only attains high performance, it can also recover the original data with an expected $k + 0.02$ fragments.
 
-The client sends fragments for more than $\kout$ indexes for \texttt{PUT} operation. 
-Because it is possible to have some indexes not select any peer successfully.
-Also, the peer selection relays on iterative DHT operations, which makes its tail latency suboptimal.
-By sending extra fragments and wait for the first $\kout$, and \texttt{PUT} can be finished in a much more bounded time.
-The extra fragments will be garbage collected soon automatically by the protocol.
+Our implementation attempts more than $R$ encoding indexes for each \texttt{PUT} operation, in anticipation of unsuccessful peer selection for some indices.
+This approach brings additional latency benefit.
+%Also, the peer selection relays on iterative DHT operations, which makes its tail latency suboptimal.
+Given the long tail latency distribution of DHT operations, by sending extra fragments and waiting for the first $R$, latency of \texttt{PUT} becomes more predictable.
+The extra fragments are later garbage collected by the protocol.
 
 %\paragraph{Select parameters.}
 %A fixed $B$ is given such that at most $BN$ nodes are faulty where $N$ is the total number of nodes.
