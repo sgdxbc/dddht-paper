@@ -511,6 +511,8 @@ To reduce repair traffic, each node optionally caches the original chunk for a l
 Upon requested by a new peer, the node sends its chunk copy if still available, and the requesting peer can immediately construct the fragment without any further \mtype{RepairRequest}.
 
 \subsection{Correctness}
+We now sketch the proof of correctness for \sys.
+Refer to the supplementary material for a full, detailed proof.
 
 \subsubsection{Durability of the inner-code}
 
