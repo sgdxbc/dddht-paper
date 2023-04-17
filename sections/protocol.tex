@@ -523,12 +523,13 @@ The purpose of the outer-code is to deter such targetted attacks. More precisely
 \begin{lemma}
     Suppose, each node can hold at most $\mu$ fragments.
     The probability of an attacker successfully attacking a data object is bounded by:
-    \[
+    \begin {gather}
         1-
         \left(
         1-\prod_{i=1}^{R}\frac{K+R-i}{\Omega(K+R)-i}
         \right)^{\binom{\Phi*\mu}{R+1}}
-    \]
+    \end{gather}
+
 \end{lemma}
 
 To draw a upperbound on the attackers success, we assume that it can successfully compromise a maximum of $\Phi = \phi$ groups or chunks out of a total $\Omega*(K+R)$ chunks. Where $\Omega$ is the total number of data objects. This upperbound is simply an extension to the birthday attack problem.
