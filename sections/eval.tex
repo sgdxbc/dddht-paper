@@ -96,7 +96,8 @@ As expected, the configuration with higher redundancy (and therefore a higher th
 \begin{figure}
     \addgraph{faulty-lost}
     \addgraph{targeted-lost}
-    \caption{Number of lost objects (out of 1000) in the presence of faulty peers.}
+    \caption{Percentage of lost objects in the presence of Byzantine faulty peers (top plot) and targeted attacks (bottom plot).
+    \sys runs with three inner and outer code configurations respectively for the two simulations.}
     \label{fig:faulty}
 \end{figure}
 
@@ -104,11 +105,17 @@ As expected, the configuration with higher redundancy (and therefore a higher th
 To evaluate how well \sys tolerates adversaries, we simulate a network with Byzantine faulty nodes.
 Byzantine nodes participate correctly in all \sys protocols; however, they do not store any encoding fragment.
 A data object is consider permanently lost when less than $\kout$ of its encoded chunks are irrecoverable (for \sys) or no replicas are left (for the replicated system).
-The top subplot of \autoref{fig:faulty} shows the number of lost objects in a one-year trace with a total of \XXX data objects.
+The top subplot of \autoref{fig:faulty} shows the percentage of lost objects in a one-year trace.
 This simulation validates that a simple replication system does not tolerance strong adversaries: The baseline system loses all of its objects when less than 5\% of the nodes are faulty.
 On the other hand, \sys can tolerate a significant fraction of faulty nodes without losing data.
-The degree of tolerance depends on the parameters.
+The degree of tolerance depends on the inner code parameters.
 Using the default parameter, \sys can tolerate around the targeted 33\% faulty nodes, while a more conservative configuration can improve tolerance further at the expense of increased redundancy.
+
+We also evaluate \sys{}'s tolerance against targeted adversaries, and show the object lost rate in the lower subplot of \autoref{fig:faulty}.
+Once again, the baseline replication system shows weak fault tolerance, losing all objects when less than 2\% of the nodes were attacked.
+In contrast, our outer layer coding approach effectively defends against targeted adversaries.
+With a (14, 8) coding configuration, no object is lost until more than 20\% of the nodes are being attacked.
+
 
 \subsection{Global Deployment}
 
