@@ -180,3 +180,28 @@ Actually, SHA256 hash computation is the major source of the additional latency 
 %The good support provided by the library not only make operations blazing fast, but also makes it feasible to regularly recover tons of whole objects among the peers without worrying about performance overhead.
 
 %Future work. Monitor cpu usage and network bandwidth usage.
+
+
+\begin{figure}
+    \addgraph{coding-time-outer}
+    \addgraph{coding-time-inner}
+    \caption{CPU time for client to encode and decode a data object, and for group member to repair a chunk.}
+    \label{fig:coding-time}
+\end{figure}
+
+\begin{figure}
+    \addgraph{coding-traffic}
+    \addgraph{coding-cpu}
+    \caption{Total traffic and CPU time spent for running different protocols in certain long term.}
+    \label{fig:coding-time}
+\end{figure}
+
+The long term evaluation runs the system in a "fast forward" fashion for 10 minutes.
+In the first 2 minutes, a data object is stored into the system similar to latency evaluation.
+Then, each node randomly churns a peer with Possion-distributed random interval, and the average interval is 10 second.
+This effectively models a decentralized system with churn rate 7884.
+DHT's ping interval and re-publication interval are adjusted accordingly to ensure the peer discovery can make use of relatively up-to-date information.
+In \sys, the data object will be repaired many times, and in Kademlia the data object will be re-replicated for many times.
+Finally, we accumulated the total outbound traffic and the CPU time from each peer at the end of the 10 minutes period.
+We also measured the result of an idle system that does not store any data, only maintain DHT information and regular heartbeat.
+All data shows in the figure has been subtracted by this baseline.
