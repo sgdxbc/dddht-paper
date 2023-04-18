@@ -187,13 +187,22 @@ By implementing the DHT record optimization, \query latency of \sys remains cons
 
 %Future work. Monitor cpu usage and network bandwidth usage.
 
+\paragraph{Microbenchmarks}
 
 \begin{figure}
     \addgraph{coding-time-outer}
     \addgraph{coding-time-inner}
-    \caption{CPU time for client to encode and decode a data object, and for group member to repair a chunk.}
+    \caption{Micro-benchmarks showing the utilized CPU time for clients to encode and decode a data object (top plot), and for repairing a fragment in a chunk group.}
     \label{fig:coding-time}
 \end{figure}
+
+Lastly, we run microbenchmarks to evaluate the performance of object encoding and decoding.
+In the first experiment, we run a single client who applies both the outer layer and inner layer erasure code to encodes a 1 GB object into fragments.
+Then, the client takes the generated fragments, and uses the decoding function in both erasure codes to recover the original object.
+Lastly, we set up one peer node to generate a fragment from $\kin$ existing fragments.
+As shown in \autoref{fig:coding-time}, the time to encode and decode a large object is relatively stable across various coding parameters.
+A direct implication of this result is that the latency increase in \autoref{fig:latency} is caused by DHT operations, not object encoding/decoding.
+Chunk repair incurs significantly less CPU overhead, as it only involves the inner code.
 
 %\begin{figure}
 %    \addgraph{coding-traffic}
@@ -202,12 +211,12 @@ By implementing the DHT record optimization, \query latency of \sys remains cons
 %    \label{fig:coding-time}
 %\end{figure}
 
-The long term evaluation runs the system in a "fast forward" fashion for 10 minutes.
-In the first 2 minutes, a data object is stored into the system similar to latency evaluation.
-Then, each node randomly churns a peer with Possion-distributed random interval, and the average interval is 10 second.
-This effectively models a decentralized system with churn rate 7884.
-DHT's ping interval and re-publication interval are adjusted accordingly to ensure the peer discovery can make use of relatively up-to-date information.
-In \sys, the data object will be repaired many times, and in Kademlia the data object will be re-replicated for many times.
-Finally, we accumulated the total outbound traffic and the CPU time from each peer at the end of the 10 minutes period.
-We also measured the result of an idle system that does not store any data, only maintain DHT information and regular heartbeat.
-All data shows in the figure has been subtracted by this baseline.
+%The long term evaluation runs the system in a "fast forward" fashion for 10 minutes.
+%In the first 2 minutes, a data object is stored into the system similar to latency evaluation.
+%Then, each node randomly churns a peer with Possion-distributed random interval, and the average interval is 10 second.
+%This effectively models a decentralized system with churn rate 7884.
+%DHT's ping interval and re-publication interval are adjusted accordingly to ensure the peer discovery can make use of relatively up-to-date information.
+%In \sys, the data object will be repaired many times, and in Kademlia the data object will be re-replicated for many times.
+%Finally, we accumulated the total outbound traffic and the CPU time from each peer at the end of the 10 minutes period.
+%We also measured the result of an idle system that does not store any data, only maintain DHT information and regular heartbeat.
+%All data shows in the figure has been subtracted by this baseline.
