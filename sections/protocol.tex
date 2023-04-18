@@ -353,58 +353,11 @@ To derive the ID of the candidate, $\fn{NodeID}()$ calculates a SHA256 hash of i
 \subsubsection{Chunk Group Maintenance}
 \label{sec:protocol:detail:group}
 
-\begin{algorithm}[t]
-    \begin{algorithmic}[1]
-        \Procedure{MembershipTimer}{}
-            \State $\fn{UpdateGroup}$
-            \State $\fn{RepairChunk}$
-        \EndProcedure
-        \Procedure{HeartbeatTimer}{}
-            \State $\var{fhash} \gets \fn{Hash}(\var{frag})$
-            \State $\langle r, \pi, \_ \rangle \gets \fn{SelectionProof}(\var{fhash})$
-            \ForAll{$\var{n} \in \var{group}$}
-                \State $\fn{Send}(\msg{HeartBeat}{\var{index, \langle r, \pi \rangle}})$
-            \EndFor
-        \EndProcedure
-        \Procedure{RecvHeartBeat}{$i, \langle r, \pi \rangle$}
-            \If{$i \notin \set{\wl .. \wh}$}
-                \State \Return
-            \EndIf
-            \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
-            \If{$\fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{sender})$}
-                \State insert sender into $\var{group}$
-                \State $\fn{UpdateGroup}$
-            \EndIf
-        \EndProcedure
-        \Procedure{UpdateGroup}{}
-            \State $\var{group'} \gets \set{}, i \gets \wl$
-            \While{$i \leq \wh$}
-                \State $\var{nodes_i} \gets \set{n \in \var{group} \mid n\textrm{'s fragment index} = i}$
-                \State $\var{fhash_i} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
-                \State increment $i$
-                \If{$n \in \var{nodes_i}$ is alive and closest to $\var{fhash_i}$}
-                    \State insert $n$ into $\var{group'}$
-                \EndIf
-                \If{$|\var{group'}| = R$}
-                    \State break
-                \EndIf
-            \EndWhile
-            \State $\var{group} \gets \var{group'}$
-            \State $\wh \gets i - 1$
-        \EndProcedure
-        \Procedure{UpdateWaterLTimer}{}
-            \State increment $\wl$
-        \EndProcedure
-    \end{algorithmic}
-    \caption{Procedures to maintain group membership}
-    \label{alg:membership}
-\end{algorithm}
-
 For each stored fragment, a node maintains a local view of the current chunk group membership (the $\var{group}$ state in \autoref{fig:node-state}).
 The inaugural group peers receive the membership from the client issuing the \store (\autoref{alg:client}).
 However, a node may fail to receive client issued membership.
 Temporary network asynchrony can also lead to divergence in membership views across peers.
-To handle such cases, each peer periodically calls $\fn{MembershipTimer}()$ (\autoref{alg:membership}) to \emph{eventually} synchronize on membership views.
+To handle such cases, each peer periodically calls $\fn{MembershipTimer}()$ to \emph{eventually} synchronize on membership views.
 The procedure linearly search the fragment hash stream from \wl to \wh, and for each missing member, it attempts to locate a new responsible peer that either already stores the fragment, or it instructs the peer to build the fragment.
 Fragment construction is elaborated in \autoref{sec:protocol:detail:repair}.
 When new members are located, \wh is updated according to the following invariant: the number of unique fragments between \wl and \wh is at most $R$.
@@ -431,58 +384,6 @@ The \wl increment interval is set to approximately the average churn rate of the
 \subsubsection{Repairing Encoded Chunks}
 \label{sec:protocol:detail:repair}
 
-\begin{algorithm}
-    \begin{algorithmic}[1]
-        \Procedure{RepairChunk}{}
-            \State $i \gets \wl, \var{nr} \gets 0$
-            \ForAll{$i \in \set{\wl .. \wh}$}
-                \If{$\nexists n \in \var{group}: n.\var{index} = i$}
-                    \If{$\fn{RepairFrag}(i)$}
-                        \State increment $\var{nr}$
-                    \EndIf
-                \EndIf
-            \EndFor
-            \While{$\var{nr} < R - |group|$}
-                \State increment $\wh$
-                \If{$\fn{RepairFrag}(\wh)$}
-                    \State increment $\var{nr}$
-                \EndIf
-            \EndWhile
-            \If{not holding $\var{frag}$}
-                \State $\var{rfrags} \gets \set{}$
-                \While{$|\var{rfrags} < \kin|$}
-                    \State wait $\msg{RepairResponse}{frag, \langle r, \pi \rangle}$
-                    \State $\var{fh} \gets \fn{Hash}(frag)$
-                    \If{$\fn{VerifySelection}(\var{fh}, r, \pi, \var{pk}_{sender})$}
-                        \State insert $\var{frag}$ into $\var{rfrags}$
-                        \State insert sender into $\var{group}$
-                    \EndIf
-                \EndWhile
-                \State $\var{frag} \gets \fn{InnerDecode}(rfrags)$
-            \EndIf
-        \EndProcedure
-        \Procedure{RepairFrag}{$\var{i}$}
-            \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
-            \State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
-            \ForAll{$n \in \var{nodes}$}
-                \State send $\msg{RepairRequest}{i}$ to $n$
-            \EndFor
-            \State \Return $\var{nodes} \ne \set{}$
-        \EndProcedure
-        \Procedure{RecvRepairRequest}{$\var{i}$}
-            \If{holding $\var{frag}$ for $\var{chash}$}
-                \State $\var{fhash} \gets \fn{Hash}(\var{frag})$
-                \State $\langle r, \pi, \_ \rangle \gets \fn{SelectionProof}(\var{fhash})$
-                \State respond with $\msg{RepairResponse}{frag, \langle r, \pi \rangle}$
-            \Else
-                \State start $\fn{MembershipTimer}$ if not yet started
-            \EndIf
-        \EndProcedure
-    \end{algorithmic}
-    \caption{Protocol to repair encoded chunk \sgd{Constructing/Reconstructing}}
-    \label{alg:repair}
-\end{algorithm}
-
 The core of \sys centers around a \emph{decentralized} repair protocol that ensures the durability of encoded chunks.
 Repairing an encoded chunk involves locating new peers to store additional fragments, until healthy group size is restored.
 Each node performs repair independently according to their local view, without explicit consensus.
@@ -491,7 +392,7 @@ This, however, does not impact protocol safety, and the membership protocol even
 
 %As listed in \autoref{alg:repair}, when a node detects that repair is necessary for a chunk, it calculates the next fragment hash in the encoding stream as marked by \wh.
 %If the node's local view includes extra redundancy at \wh, the repair process can be skipped.
-As listed in \autoref{alg:repair}, to install a new fragment for the group, the repairing node invokes $\fn{Locate}()$ to find responsible peers for the fragment, and sends them a \mtype{RepairRequest} message.
+To install a new fragment for the group, the repairing node invokes $\fn{Locate}()$ to find responsible peers for the fragment, and sends them a \mtype{RepairRequest} message.
 %The message includes the chunk hash, the repair fragment hash and its index in the stream, as well as the node's local membership view.
 The message includes the sender's local membership view to assist bootstrapping.
 %Upon receiving a \mtype{RepairRequest}, the node verifies that the fragment hash is correct, and that it is responsible for the fragment.
