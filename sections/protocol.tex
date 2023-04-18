@@ -353,7 +353,8 @@ To derive the ID of the candidate, $\fn{NodeID}()$ calculates a SHA256 hash of i
 \subsubsection{Chunk Group Maintenance}
 \label{sec:protocol:detail:group}
 
-For each stored fragment, a node maintains a local view of the current chunk group membership (the $\var{group}$ state in \autoref{fig:node-state}).
+For each stored fragment, a node maintains a local view of the current chunk group membership.
+% (the $\var{group}$ state in \autoref{fig:node-state}).
 The inaugural group peers receive the membership from the client issuing the \store (\autoref{alg:client}).
 However, a node may fail to receive client issued membership.
 Temporary network asynchrony can also lead to divergence in membership views across peers.
