@@ -1,63 +1,71 @@
 We use two types of experiments to evaluate \sys: discrete event simulation and physical deployment on geo-distributed EC2 virtual machines.
-Unless otherwise specified, we use $\kin = 32, R = 80$ for the inner code in \sys. 
-The outer code is accomplished with rateless erasure code that generate chunk with random indexes.
-The $\kout = 8$ and client generates 10 chunks.
+Unless otherwise specified, we use $\kin = 32, R = 80$ for the inner code.
+We implement the outer code using rateless erasure code with randomly generated indices.
+Unless otherwise specified, $\kout = 8$ and client generates 10 chunks for each object.
 %By default k = 64, persistence parameter $k_p = 1.2k$, select rate $K = 2k$
 %\sgd{This description assumes single-stack nodes.}
 % In our physical deployment, \store operations return only when $1.6k$ persistence proofs are received through gossip.
 % This safeguard policy improves system stability without introducing significant overhead.
 
-When evaluating physical deployments, we compare \sys to two other systems.
-Firstly, an IPFS-like decentralized storage system that uses Kademlia DHT to store publisher record.
+When evaluating physical deployments, we compare \sys to an IPFS-like decentralized storage system that uses Kademlia DHT to store publisher record.
+The system directly uses DHT \texttt{PUT\_RECORD} to store object data.
+We set the replication factor for this IPFS-like system to 3, so that the redundancy level is similar to \sys{}'s 3.125.
+
 % We only slightly modified IPFS in the following way: When storing an object, we transfer the object to a random peer instead of storing locally.
 % Note that IPFS (and our modified version) by default only stores a single copy of the object, therefore offering no durability guarantee.
 % Second, we also evaluate against the Ceph~\cite{ceph} distributed storage system.
-The system directly utilizes \texttt{PUT\_RECORD} to store the data. 
-The replication factor is set to 3 which gives a similar redundancy compare to \sys which is 3.125.
 
 \subsection{Simulations}
 
 We first use discrete event simulation to evaluate the repair overhead and fault tolerance guarantees of \sys.
-We simulate a network of 100K nodes.
-For simplicity, we parametrize one annualized failure rate (AFR) for all nodes.
-Node failures follow a Poisson distribution according to the AFR.
-Each node periodically gossips until it fails.
+The simulated network contains a total of 100K nodes.
+For simplicity, we parametrize one churn rate for all nodes.
+Node failures (including permanently leaving the system) follow a Poisson distribution according to the churn.
+%Each node periodically gossips until it fails.
 %Then after gossip timeout, next responsible peers will notice and may choose to start to repair.
 We use data object size as the basic unit for repair traffic.
-The overall storage capacity which \sys occupied is also recorded.
+The overall storage capacity which \sys occupies is also recorded.
 %Notice redundancy reduction is not simulated, so the redundancy is more than result from deployed environment.
 We run each simulation 10 times with different seed values and take the average.
 
-Besides \sys, we also simulate a Ceph-like replicated storage.
-This system replicates each object on 3 randomly selected peers, and performs repair immediately after one of the replicas fails.
+Besides \sys, we also simulate a Ceph-like replicated storage system.
+This system replicates each object on 3 randomly selected peers, and performs object repair immediately after one of the replicas fails.
 %This is similar to datacenter-level distributed storage.
-Such replication scheme is commonly employed in data center settings, and we use it as a baseline to compare to our decentralized scheme.
+Such replication scheme is commonly employed in data center settings, and we use it as a baseline to compare to our decentralized protocol.
 
 \begin{figure}
     \addgraph{churn-repair}
     \addgraph{object-repair}
-    \caption{Repair traffic over different number of objects and AFR. The number behind entropy indicate how many repair hits booster peers' cache.}
+    \caption{Repair traffic over increasing number of objects and churn rate.
+    The subscript number indicates duration in hours until the chunk cache is cleared.}
     \label{fig:repair}
 \end{figure}
 
 \paragraph{Repair traffic.}
-We first simulate how much encoding repair traffic \sys generates, and compare it to the baseline replication approach.
-We record the total number of repairing in the first year.
-\autoref{fig:repair} shows the total repair traffic (in units of data object sizes) in the first year.
-The different lines of \sys indicate the percentage of nodes that regenerate encoding fragment using the booster optimization (\autoref{sec:protocol:optimization}).
-Repair traffic for \sys increases linearly with the total number of data objects.
-When booster peers cache object perfectly, every repair only transfers $1/k$ of data object size, so the overall repair traffic is comparable to the replicated system.
-However, when booster hit rate decreases, there is a sudden jump in the repair traffic due to the high ``cache miss'' penalty.
-Concretely, repair traffic increases by 16.6x hit rate drops from 100\% to 75\%.
-Beyond that, repair traffic only doubled from 75\% hit rate to 50\%, and doubled again when the booster optimization is turned off.
-This demonstrates that our booster optimization is effective.
-As such, incentives should be provided to encourage booster nodes to cache for a longer time to reduce repair traffic.
+We first simulate how much fragment repair traffic \sys generates, and compare it to the baseline replication approach.
+%We record the total number of repairing in the first year.
+\autoref{fig:repair} shows the total repair traffic (in units of data object sizes) incurred in the first year of system deployment.
+As discussed in \autoref{sec:protocol:detail:repair}, \sys nodes can optionally cache chunk data to reduce repair traffic.
+We therefore also simulate \sys with varying chunk cache expiration time in hours.
+%The different lines of \sys indicate the percentage of nodes that regenerate encoding fragment using the booster optimization.
+As expected, repair traffic for \sys and the baseline system both increase linearly with increasing number of data objects.
+\sys pays a higher repair cost compared to the baseline, as constructing a new fragment requires transmitting $\kin$ existing fragments.
+By hitting the chunk cache, repair traffic for each fragment is reduced by $\kin$ times, making it comparable to the replication system.
+%When booster peers cache object perfectly, every repair only transfers $1/k$ of data object size, so the overall repair traffic is comparable to the replicated system.
+%However, when booster hit rate decreases, there is a sudden jump in the repair traffic due to the high ``cache miss'' penalty.
+Concretely, repair traffic is decreased by \XXX when the cache duration increases from \XXX to \XXX.
+%Beyond that, repair traffic only doubled from 75\% hit rate to 50\%, and doubled again when the booster optimization is turned off.
+This demonstrates that our chunk cache optimization is effective.
+As such, incentives should be provided to encourage nodes to cache for a longer time to reduce repair traffic.
 Fortunately, as shown later, most repairs finish quickly, so a short caching period can lead to good overall cache hit rate.
 
-\autoref{fig:repair} shows total repair traffic in the first year with increasing AFR.
-In both \sys and the replicated system, repair traffic grows linearly with AFR.
-This demonstrates that \sys responds well to the change of the system's average AFR.
-Another implication is that \sys scales well with an increase in AFT, i.e., the overhead per node failure remains constant.
+\autoref{fig:repair} also shows total repair traffic in the first year with increasing node churn rate.
+In both \sys and the replicated system, repair traffic grows at the same rate with increasing churn.
+This is expected as higher churn results in more frequent repair.
+The result demonstrates that \sys responds well to the change in the system's average churn rate.
+Another implication is that \sys scales well with an increase in churn, i.e., the overhead per node failure remains constant.
+As with the previous experiment, longer chunk cache effectively reduces the repair traffic.
+The drop in repair traffic at high churn is caused by more frequent cache refreshes.
 
 \begin{figure}
     \addgraph{time-alive}
