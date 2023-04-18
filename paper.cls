@@ -24,7 +24,6 @@
 \LoadClass[sigplan,10pt]{acmart}
 \renewcommand\footnotetextcopyrightpermission[1]{}
 \settopmatter{printfolios=true}
-\pagestyle{plain}
 \else
 \LoadClass[letterpaper,twocolumn,10pt]{article}
 \RequirePackage{usenix-2020-09}
