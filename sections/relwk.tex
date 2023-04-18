@@ -1,6 +1,6 @@
 \paragraph{Distributed Storage Systems}
 As mentioned in \autoref{sec:background}, our work is related to a long line of research and production systems in distributed storage~\cite{ceph,gfs,bigtable,dynamo,liquid,amazon_s3,amazon_glacier,google_storage,google_cloudstore,google_coldline}.
-Unlike \sys, all these systems are centrally managed by a single administrative entity, and all participants are assumed to be non-Byzantine.
+Unlike \sys, all those systems are centrally managed by a single administrative entity, and all participants are assumed to be non-Byzantine.
 Our object store interface is similar to Amazon S3~\cite{amazon_s3} and Google Cloud Storage~\cite{google_cloudstore}.
 Many prior systems deploy a centralized service to manage storage metadata~\cite{gfs,bigtable}, while metadata management is fully decentralized in \sys.
 Dynamo~\cite{dynamo} uses consistent hashing~\cite{chash} to assign keys to nodes, similar to our DHT-based approach.
