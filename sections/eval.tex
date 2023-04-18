@@ -130,10 +130,9 @@ We launch 5 r5.8xlarge instances with 32 vCPU and 384GiB of memory in each zone,
 
 As mentioned earlier, we implemented an IPFS-like decentralized storage system using Kademlia DHT as a comparison system.
 %This Kademlia-based system serves as a state-of-the-art decentralized storage baseline.
-Kademlia by default does not store data object, only metadata.
-We therefore extend Kademlia to make the comparison fair.
-When issuing \store, the client pushes the object to a random peer in the network.
-The peer then claims as the object provider by updating the publisher record in DHT.
+We directly use Kademlia's \texttt{PUT\_RECORD} interface to store the data object, and set the replication factor to 3 to make a comparable redundancy compare to \sys.
+The data object is splited into $\kin \cdot \kout$ records and the plain content is stored.
+This makes the storing perfectly load balanced across the system.
 Note that erasure coding, unfortunately, cannot be easily adapted into Kademlia.
 %We also deployed a Ceph cluster with one replication pool and one erasure coding pool, all with the stock configuration.
 %The cluster contains 5 servers, one in each region.
