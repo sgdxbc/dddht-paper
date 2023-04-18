@@ -40,7 +40,7 @@ Randomness and verifiability of the selection outcome ensures that sufficient en
 The nature of long-term storage exposes fragment-to-node mapping to adversaries.
 To defend against targeted attacks aiming to erase objects, \sys applies an additional layer of erasure coding.
 This \emph{outer} layer code uses keyed encoding to first encode an object into multiple chunks.
-Critically, the generated chunks appear completely random to adversaries, and the object-to-chunks mapping is private to the client. \mh{Does private to the client imply client does not know? Would it more sense to say: " Critically, object to chunk mapping is opaque and random to adversaries, but transparent to the client"}
+Critically, object to chunk mapping is opaque and indistinguishable to adversaries, but transparent to the client
 \sys then applies an \emph{inner} layer rateless code to encode each chunk into stream of encoding fragments.
 Our \emph{dual-layer} encoding scheme ensures negligible probability of adversaries attacking sufficient chunks of the same object to compromise durability.
 

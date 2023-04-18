@@ -125,7 +125,7 @@ Unfortunately, symbol storage and periodic repairs reveal the identities of hone
 This is in contrast to prior work~\cite{algorand} that uses VRF to select consortium for a single round of consensus.
 In \sys, we take a different approach to defending targeted attacks, by adding another layer of erasure coding.
 For each stored object, \sys first applies a \emph{keyed} erasure coding function with a small $(n, k, r)$ parameter to produce a set of encoded chunks.
-Critically, this \emph{outer layer} encoding ensures that each generated chunk is indistinguishable from another chunk to an external party, and the mapping between chunks to an object is \emph{private} to the client applying the coding. \mh{Similar comment in regards to intro, "private" seems to imply client doesnt know it}
+Critically, this \emph{outer layer} encoding ensures that each generated chunk is indistinguishable from another chunk to an external party, and the mapping between chunks to an object is only known to the client generating the encoding. 
 Each chunk is then stored as a stream of encoding fragments using the \emph{inner layer} fountain code (\autoref{sec:approach:code}) to ensure persistence.
 As every chunk appears indistinguishable to adversaries, targeted attacks can do no better than compromising randomly selected chunks in the system.
 With enough objects in the system, the chance of simultaneously attacking more than $r$ chunks ($r$ here is the redundancy of the outer code) of a particular object becomes negligible.

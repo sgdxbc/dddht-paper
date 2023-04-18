@@ -16,7 +16,6 @@ Unlike IPFS, object IDs are private to data owners to protect object from target
 \sys guarantees the following \emph{data durability} invariant.
 A direct implication of the invariant is that once a \store successfully returns, all subsequent \query{}s for the returned ID output the original object until expiration.
 
-\mh{small comment, o looks like 0}
 \begin{invariant}
 At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $\kout$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
 An encoded chunk is recoverable if at least $\kin + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
@@ -58,8 +57,7 @@ We also make standard cryptography assumptions, i.e., the probability of subvert
 As shown in \autoref{fig:store}, \sys uses two layers of erasure coding to ensure object durability.
 When storing an object, clients first apply a keyed outer-layer erasure code to generate a set of \emph{encoded chunks}.
 The encoding process is \emph{irreversible}: Even when external parties know the object content, they can only infer the mapping between encoded chunks and the object with negligible probability.
-\mh{"this" refers to the encoding process right?}
-This can be done either by encrypting the object using a secret key, or by using a rateless code with randomly chosen symbol indices.
+The encoding process can be done either by encrypting the object using a secret key, or by using a rateless code with randomly chosen symbol indices.
 For each chunk, \sys uses a publicly-known rateless erasure code to generate a stream of \emph{encoding fragments}.
 The client then stores $R$ encoding fragments, where $R$ is large enough to ensure \emph{recoverability} of the chunk, at randomly selected nodes in the system.
 
