@@ -16,6 +16,7 @@ Unlike IPFS, object IDs are private to data owners to protect object from target
 \sys guarantees the following \emph{data durability} invariant.
 A direct implication of the invariant is that once a \store successfully returns, all subsequent \query{}s for the returned ID output the original object until expiration.
 
+\mh{small comment, o looks like 0}
 \begin{invariant}
 At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $\kout$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
 An encoded chunk is recoverable if at least $\kin + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
@@ -56,8 +57,9 @@ We also make standard cryptography assumptions, i.e., the probability of subvert
 
 As shown in \autoref{fig:store}, \sys uses two layers of erasure coding to ensure object durability.
 When storing an object, clients first apply a keyed outer-layer erasure code to generate a set of \emph{encoded chunks}.
-The encoding process is \emph{irreversible}: External parties can infer the mapping between encoded chunks and the object with negligible probability, even when they know the object content.
-This can be done either by encrypting the object using a secrete key, or by using a rateless code with randomly chosen symbol indices.
+The encoding process is \emph{irreversible}: Even when external parties know the object content, they can only infer the mapping between encoded chunks and the object with negligible probability.
+\mh{"this" refers to the encoding process right?}
+This can be done either by encrypting the object using a secret key, or by using a rateless code with randomly chosen symbol indices.
 For each chunk, \sys uses a publicly-known rateless erasure code to generate a stream of \emph{encoding fragments}.
 The client then stores $R$ encoding fragments, where $R$ is large enough to ensure \emph{recoverability} of the chunk, at randomly selected nodes in the system.
 
@@ -118,6 +120,7 @@ The selected nodes present their VRF outputs as a selection proof, which can be 
 Storage device failures and node churns can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
 Similar to prior storage systems, \sys performs \emph{repair} by regenerating new encoding fragments when the number of alive fragments drops below a threshold.
 Chunk repair in \sys is fully decentralized, as shown in \autoref{fig:repair}.
+\mh{Not sure why this shows as figure 4 for me}
 Nodes storing encoding fragments for the same chunk form a \emph{chunk group}.
 Chunk group members periodically broadcast persistence claims of their stored fragments to other peers in the group (step 1).
 When repair condition is met, group members perform randomized peer selection to locate new members to replenish the group (step 2).
