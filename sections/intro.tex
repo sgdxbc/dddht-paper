@@ -45,8 +45,9 @@ Critically, object to chunk mapping is opaque and indistinguishable to adversari
 Our \emph{dual-layer} encoding scheme ensures negligible probability of adversaries attacking sufficient chunks of the same object to compromise durability.
 
 \sys is of a practical design.
-We implement \sys on top of libp2p and deploy \sys in more than 5000 nodes across 5 continents on AWS.
-\sys shows good performance in both simulation and deployment evaluations.
-It achieves similar repair traffic overhead compared to a distributed replicated storage when sufficient caching is available.
-Repair overhead per failure remains constant even when nodes fail more frequently.
-\sys performs data object \store and \query with 1.6x-3.1x lower latency compare to existing decentralized storage, while achieving similar scalability over thousands of peers.
+We implement \sys on top of libp2p and deploy \sys on 10,000 nodes across 5 continents on AWS.
+\sys shows good performance in both large-scale simulation and physical deployments.
+It achieves comparable repair traffic overhead when comparing to a baseline distributed replicated storage system.
+Critically, \sys significantly improves fault tolerance to Byzantine participants and targeted adversaries compared to the baseline.
+Even when using a coding scheme with small redundancy level, \sys guarantees data durability with more than 33\% Byzantine participants, and more than 10\% of the nodes under targeted attacks.
+%\sys performs data object \store and \query with 1.6x-3.1x lower latency compare to existing decentralized storage, while achieving similar scalability over thousands of peers.
