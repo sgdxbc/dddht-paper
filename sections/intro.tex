@@ -44,7 +44,7 @@ Critically, the generated chunks appear completely random to adversaries, and th
 \sys then applies an \emph{inner} layer rateless code to encode each chunk into stream of encoding fragments.
 Our \emph{dual-layer} encoding scheme ensures negligible probability of adversaries attacking sufficient chunks of the same object to compromise durability.
 
-\sys is a practical design.
+\sys is of a practical design.
 We implement \sys on top of libp2p and deploy \sys in more than 5000 nodes across 5 continents on AWS.
 \sys shows good performance in both simulation and deployment evaluations.
 It achieves similar repair traffic overhead compared to a distributed replicated storage when sufficient caching is available.

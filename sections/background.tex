@@ -1,6 +1,6 @@
 We consider the problem of designing a \emph{durable} object storage system in a fully \emph{decentralized} environment.
 The system provides a simple object store and retrieval interface to end users.
-Each object contains a blob of binary data with arbitrary size.
+Each object contains a blob of binary data of arbitrary size.
 The system provides \emph{durability}: Once an object is successfully stored, users are guaranteed to retrieve the object with its original content until it expires.
 Objects are \emph{immutable}, i.e., users cannot modify the content of an object after it is stored.
 The system presents a \emph{flat view} of all objects; it does not offer explicit object hierarchies such as those in a file system.
@@ -54,7 +54,7 @@ One recent successful example is IPFS~\cite{ipfs}, a widely deployed decentraliz
 IPFS divides user files into uniquely identified chunks.
 File metadata is represented as a Merkle Directed Acyclic Graph (DAG)~\cite{merkle_dag} constructed from the constituent file chunks.
 IPFS uses content addressing through Kademlia~\cite{kademlia}, a distributed hash table (DHT)~\cite{chash,chord}.
-Peers storing a file chunk announces a publisher record which maps the chunk to the peer identifier, by writing to the DHT.
+By writing to the DHT, peers storing a file chunk announce a publisher record which maps the chunk to the peer identifier.
 The DHT replicates the publisher record to peers in proximity in the hash space and handles peer failures through gossip.
 Retrieving a file involves querying the DHT for the publisher records and the address of the publishers for each file chunk.
 IPFS, however, does not offer any file durability guarantee.
