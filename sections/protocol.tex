@@ -119,8 +119,7 @@ The selected nodes present their VRF outputs as a selection proof, which can be 
 
 Storage device failures and node churns can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
 Similar to prior storage systems, \sys performs \emph{repair} by regenerating new encoding fragments when the number of alive fragments drops below a threshold.
-Chunk repair in \sys is fully decentralized, as shown in \autoref{fig:repair}.
-\mh{Not sure why this shows as figure 4 for me}
+Chunk repair in \sys is fully decentralized, as shown in \autoref{fig:chunkrepair}.
 Nodes storing encoding fragments for the same chunk form a \emph{chunk group}.
 Chunk group members periodically broadcast persistence claims of their stored fragments to other peers in the group (step 1).
 When repair condition is met, group members perform randomized peer selection to locate new members to replenish the group (step 2).
