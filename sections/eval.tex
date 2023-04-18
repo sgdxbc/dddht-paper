@@ -54,7 +54,7 @@ As expected, repair traffic for \sys and the baseline system both increase linea
 By hitting the chunk cache, repair traffic for each fragment is reduced by $\kin$ times, making it comparable to the replication system.
 %When booster peers cache object perfectly, every repair only transfers $1/k$ of data object size, so the overall repair traffic is comparable to the replicated system.
 %However, when booster hit rate decreases, there is a sudden jump in the repair traffic due to the high ``cache miss'' penalty.
-Concretely, repair traffic is decreased by \XXX when the cache duration increases from \XXX to \XXX.
+Concretely, repair traffic is decreased by 6X when the cache duration increases to 48 hours.
 %Beyond that, repair traffic only doubled from 75\% hit rate to 50\%, and doubled again when the booster optimization is turned off.
 This demonstrates that our chunk cache optimization is effective.
 As such, incentives should be provided to encourage nodes to cache for a longer time to reduce repair traffic.

@@ -355,7 +355,7 @@ For each stored fragment, a node maintains a local view of the current chunk gro
 The inaugural group peers receive the membership from the client issuing the \store (\autoref{alg:client}).
 However, a node may fail to receive client issued membership.
 Temporary network asynchrony can also lead to divergence in membership views across peers.
-To handle such cases, each peer periodically calls $\fn{MembershipTimer}()$ to \emph{eventually} synchronize on membership views.
+To handle such cases, each peer periodically calls $\fn{MembershipTimer}()$ (pseudocode in supplementary material) to \emph{eventually} synchronize on membership views.
 The procedure linearly search the fragment hash stream from \wl to \wh, and for each missing member, it attempts to locate a new responsible peer that either already stores the fragment, or it instructs the peer to build the fragment.
 Fragment construction is elaborated in \autoref{sec:protocol:detail:repair}.
 When new members are located, \wh is updated according to the following invariant: the number of unique fragments between \wl and \wh is at most $R$.
@@ -390,6 +390,7 @@ This, however, does not impact protocol safety, and the membership protocol even
 
 %As listed in \autoref{alg:repair}, when a node detects that repair is necessary for a chunk, it calculates the next fragment hash in the encoding stream as marked by \wh.
 %If the node's local view includes extra redundancy at \wh, the repair process can be skipped.
+We show the repair procedure pseudocode in the supplementary material.
 To install a new fragment for the group, the repairing node invokes $\fn{Locate}()$ to find responsible peers for the fragment, and sends them a \mtype{RepairRequest} message.
 %The message includes the chunk hash, the repair fragment hash and its index in the stream, as well as the node's local membership view.
 The message includes the sender's local membership view to assist bootstrapping.
