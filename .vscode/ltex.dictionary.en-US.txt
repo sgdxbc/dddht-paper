@@ -39,3 +39,5 @@ geo-distributed
 IPFS-like
 Ceph-like
 Kademlia-based
+Guangda
+Jialin
