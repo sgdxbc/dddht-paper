@@ -68,11 +68,18 @@
 \bibliography{paper}
 
 \ifarxiv
+
+\clearpage
 \appendix
-\section{Durability Proof}
-\input{sections/durabilityproof}
+
 \section{Additional Protocol Details}
+\label{sec:proto-more}
 \input{sections/proto-more.tex}
+
+\section{Durability Proof}
+\label{sec:proof}
+\input{sections/durabilityproof}
+
 \fi
 
 \end{document}
