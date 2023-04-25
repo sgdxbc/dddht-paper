@@ -9,7 +9,11 @@
 \newcommand{\sgd}[1]{\editorial{cyan}{sgd: #1}}
 \newcommand{\mh}[1]{\editorial{green}{mh: #1}}
 
+\ifarxiv
+\newcommand{\sys}{V\textsc{ault}\xspace}
+\else
 \newcommand{\sys}{E\textsc{ntropy}\xspace}
+\fi
 
 \newcommand{\query}{\textsc{query}\xspace}
 \newcommand{\store}{\textsc{store}\xspace}

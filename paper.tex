@@ -1,10 +1,32 @@
-\documentclass[acm,workingdraft]{paper}
+\documentclass[acm,arxiv]{paper}
 
 \begin{document}
 
+\ifarxiv
+\title{\sys: Decentralized Storage Made Durable}
+\else
 \title{\sys: Durable Decentralized Storage Using Rateless Erasure Code and Verifiable Randomization}
+\fi
 
+\ifarxiv
+\author{Guangda Sun}
+\affiliation{
+    \institution{National University of Singapore}
+    \country{}}
+\email{sung@comp.nus.edu.sg}
+\author{Michael Hu Yiqing}
+\affiliation{
+    \institution{National University of Singapore}
+    \country{}}
+\email{hmichael@nus.edu.sg}
+\author{Jialin Li}
+\affiliation{
+    \institution{National University of Singapore}
+    \country{}}
+\email{lijl@comp.nus.edu.sg}
+\else
 \author{\small Anonymous Submission \#255}
+\fi
 
 \input{sections/abstract}
 
@@ -45,7 +67,12 @@
 
 \bibliography{paper}
 
-%\appendix
-%\section{Draft for durability proof}
-%\input{sections/durabilityproof}
+\ifarxiv
+\appendix
+\section{Durability Proof}
+\input{sections/durabilityproof}
+\section{Additional Protocol Details}
+\input{sections/proto-more.tex}
+\fi
+
 \end{document}

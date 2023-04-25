@@ -3,13 +3,21 @@
 
 \newif\ifacm
 \newif\ifdraft
+\newif\ifarxiv
+
+\DeclareOption{arxiv}{
+    \draftfalse
+    \arxivtrue
+}
 
 \DeclareOption{workingdraft}{
     \drafttrue
+    \arxivfalse
 }
 
 \DeclareOption{final}{
     \draftfalse
+    \arxivfalse
 }
 
 \DeclareOption{acm}{\acmtrue}
