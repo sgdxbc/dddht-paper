@@ -1,3 +1,5 @@
 .latex.out/
-/*.pdf
+arxiv/
+*.pdf
 paper-diff*.tex
+arxiv.tar.gz
