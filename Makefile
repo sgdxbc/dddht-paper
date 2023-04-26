@@ -7,14 +7,15 @@ SUPPL := suppl
 TEX := $(shell find ./ -type f -name "*.tex")
 CLS := $(shell find ./ -type f -name "*.cls" -o -name "*.sty")
 BIB := $(shell find ./ -type f -name "*.bib")
+FIG := $(shell find ./figures/ -type f -name "*.pdf") $(shell find ./graphs/ -type f -name "*.pdf")
 
-PAPER_DEPS := $(TEX) $(CLS) $(BIB)
+PAPER_DEPS := $(TEX) $(CLS) $(BIB) $(FIG)
 
 .PHONY: all clean
 
 all: $(PAPER).pdf $(SUPPL).pdf
 
-%.pdf: $(PAPER_DEPS)
+$(PAPER).pdf $(SUPPL).pdf: $(PAPER_DEPS)
 	@rm -f $@
 	$(LATEX) $(addsuffix .tex, $(basename $@)) -O .latex.out -o $@
 

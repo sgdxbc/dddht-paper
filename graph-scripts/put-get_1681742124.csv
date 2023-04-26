@@ -1,0 +1,3 @@
+protocol,chunk_k,chunk_n,fragment_k,fragment_n,op,latency
+kademlia,8,10,16,40,put,44.955067
+kademlia,8,10,16,40,get,6.444877
