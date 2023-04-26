@@ -21,11 +21,13 @@
 }
 
 \DeclareOption{acm}{\acmtrue}
+
 \DeclareOption*{
     \ifacm\PassOptionsToClass{\CurrentOption}{acmart}\else
     \PassOptionsToClass{\CurrentOption}{article}
     \fi
 }
+
 \ProcessOptions
 
 \ifacm
