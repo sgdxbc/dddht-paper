@@ -2,8 +2,6 @@ In this section, we list additional pseudocode for the \sys protocols described 
 \autoref{alg:membership} shows the pseudocode for membership maintenance as introduced in \autoref{sec:protocol:detail:group}.
 \autoref{alg:repair} includes procedures for repairing chunk fragments as discussed in \autoref{sec:protocol:detail:repair}.
 
-\pagebreak
-
 \begin{algorithm}[t]
     \begin{algorithmic}[1]
         \Procedure{MembershipTimer}{}
@@ -17,17 +15,6 @@ In this section, we list additional pseudocode for the \sys protocols described 
                 \State $\fn{Send}(\msg{HeartBeat}{\var{index, \langle r, \pi \rangle}})$
             \EndFor
         \EndProcedure
-
-%     \end{algorithmic}
-%     \caption{Procedures to maintain group membership}
-%     \label{alg:membership}
-% \end{algorithm}
-
-
-%         \begin{algorithm*}[b]
-%             \begin{algorithmic}[1]
-
-
         \Procedure{RecvHeartBeat}{$i, \langle r, \pi \rangle$}
             \If{$i \notin \set{\wl .. \wh}$}
                 \State \Return
@@ -38,7 +25,6 @@ In this section, we list additional pseudocode for the \sys protocols described 
                 \State $\fn{UpdateGroup}$
             \EndIf
         \EndProcedure
-        
         \Procedure{UpdateGroup}{}
             \State $\var{group'} \gets \set{}, i \gets \wl$
             \While{$i \leq \wh$}
@@ -62,8 +48,6 @@ In this section, we list additional pseudocode for the \sys protocols described 
     \caption{Procedures to maintain group membership}
     \label{alg:membership}
 \end{algorithm}
-
-\pagebreak
 
 \begin{algorithm}
     \begin{algorithmic}[1]
