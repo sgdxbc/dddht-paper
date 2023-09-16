@@ -59,11 +59,18 @@
 \RequirePackage{braket}
 \RequirePackage{tikz}
 \RequirePackage{amsthm}
+\RequirePackage{amsmath}
 
 \hypersetup{linkcolor=blue}
 
 \theoremstyle{definition}
 \newtheorem{invariant}{Invariant}
+
+\ifacm
+\else
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\fi
 
 \def\Snospace~{\S{}}
 % Autoref

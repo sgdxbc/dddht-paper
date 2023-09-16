@@ -1,4 +1,4 @@
-\documentclass[acm,arxiv]{paper}
+\documentclass[workingdraft]{paper}
 
 \begin{document}
 
@@ -35,13 +35,20 @@
     \country{}}
 \email{lijl@comp.nus.edu.sg}
 \else
-\author{\small Anonymous Submission \#255}
+\author{\small Anonymous Submission \#1356}
 \fi
 
+\ifacm
 \input{sections/abstract}
+\fi
 
 \maketitle
 \pagestyle{plain}
+
+\ifacm
+\else
+\input{sections/abstract}
+\fi
 
 \section{Introduction}
 \label{sec:intro}
