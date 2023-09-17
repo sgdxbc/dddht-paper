@@ -4,8 +4,6 @@ Each object contains a blob of binary data of arbitrary size.
 The system provides \emph{durability}: Once an object is successfully stored, users are guaranteed to retrieve the object with its original content until it expires.
 Objects are \emph{immutable}, i.e., users cannot modify the content of an object after it is stored.
 The system presents a \emph{flat view} of all objects; it does not offer explicit object hierarchies such as those in a file system.
-%Objects are searched by their ID, equivalent to a primary key.
-%The system does not support secondary keys or other types of complex relational queries.
 It serves as a base persistent storage layer where higher-level functionalities, such as files and relational databases, can be built atop.
 
 Performance is not a key design metric of the system.
@@ -18,10 +16,15 @@ There is no central entity to manage or administer the system.
 The network is \emph{permissionless}, i.e., anyone can join the network without any authorization required.
 Each participating node has some local storage for storing data, as well as network access to the wide area network.
 There is, however, no requirement on the type, speed, or quality of their physical storage and network devices.
-%The participating nodes follow a decentralized protocol to collectively implement the durable storage interface.
 Participants can be either \emph{honest} or \emph{adversarial}.
 Honest nodes follow the protocol exactly, while adversarial nodes can deviate arbitrarily from the protocol.
 Adversaries may also actively collude and attack the system.
+
+Our target environment demands stronger fault tolerance.
+Besides adversarial behaviors, a decentralized network can have higher churn rate than that of a centralized setting.
+For instance, a recent study of IPFS~\cite{ipfs} reveals that 87.6\% of session uptime is under 8 hours and only 2.5\% of them exceed 24 hours;
+another study~\cite{bitcoin_churn} shows similar churn rate in the Bitcoin network.
+The storage system needs to ensure data durability even when nodes fail and depart at such high rate.
 
 \paragraph{Prior distributed storage systems.}
 There is a long line of work on centrally managed distributed storage systems~\cite{ceph,gfs,bigtable,dynamo,liquid}.
@@ -63,5 +66,3 @@ To store a file chunk, peers deposit tokens to the network.
 During the lifetime of the chunk, other peers in the network issue cryptographic challenges to the node prove its storage of the chunk content.
 The challenge can only be solved if the chunk is stored for the time duration.
 Unsuccessful proofs result in slashing of the token deposit, disincentivizing nodes to lose stored data.
-
-%Arweave~\cite{ar}
