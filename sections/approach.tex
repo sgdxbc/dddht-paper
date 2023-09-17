@@ -97,11 +97,9 @@ Simply increasing the redundancy to tolerate Byzantine behaviors limits the effe
 For instance, at the fault tolerance level we are targeting ($1/3$ Byzantine participants), storing symbols of each object on $\frac{N}{3} + k + \epsilon$ distinct nodes can ensure durability.
 Unfortunately, under such naive approach, the overall storage capacity will not scale beyond a few times that of an individual node.
 
-
 In \sys, we leverage \textit{randomness} to tolerate Byzantine participants without sacrificing capacity.
-By uniform randomly selecting nodes to store encoding symbols for an object, each having an approximately $\frac{1}{3}$ chance of being Byzantine.
-Consequently, \sys only needs to pay a $0.5$ redundancy penalty~\footnote{Suppose the based fountain code generates $n$ symbols, each stored on a unique node. By storing $1.5n$ symbols on distinct nodes, even when $\frac{1}{3}$ of the nodes are Byzantine, $n$ symbols are still stored on honest nodes.} over the base fountain code for Byzantine fault tolerance.
-This extra redundancy is independent of $N$, implying that the effective storage capacity scales linearly with increasing system size, a desirable property for storage systems.
+By uniform randomly selecting nodes to store encoding symbols for an object, each chosen node has a $\frac{1}{3}$ independent probability of being Byzantine.
+Consequently, the redundancy to ensure at least $k + \epsilon$ selected nodes are honest is \emph{independent} of $N$\footnote{The redundancy calculation can be found in \ifarxiv \autoref{sec:proof}\else the supplementary material.}, implying that the effective storage capacity scales \emph{linearly} with increasing system size, a desirable property for storage systems.
 Note that our model does not rule out strong adversaries generating new identities --- proof of stake (PoS) is used to defend against arbitrary Sybil attacks.
 
 We avoid relying on a centralized, trusted entity to provide this random selection service.
@@ -125,7 +123,7 @@ Unfortunately, symbol storage and periodic repairs reveal the identities of hone
 This is in contrast to prior work~\cite{algorand} that uses VRF to select consortium for a single round of consensus.
 In \sys, we take a different approach to defending targeted attacks, by adding another layer of erasure coding.
 For each stored object, \sys first applies a \emph{keyed} erasure coding function with a small $(n, k, r)$ parameter to produce a set of encoded chunks.
-Critically, this \emph{outer layer} encoding ensures that each generated chunk is indistinguishable from another chunk to an external party, and the mapping between chunks to an object is only known to the client generating the encoding. 
+Critically, this \emph{outer layer} encoding ensures that each generated chunk is indistinguishable from another chunk to an external party, and the mapping between chunks to an object is only known to the client generating the encoding.
 Each chunk is then stored as a stream of encoding fragments using the \emph{inner layer} fountain code (\autoref{sec:approach:code}) to ensure persistence.
 As every chunk appears indistinguishable to adversaries, targeted attacks can do no better than compromising randomly selected chunks in the system.
 With enough objects in the system, the chance of simultaneously attacking more than $r$ chunks ($r$ here is the redundancy of the outer code) of a particular object becomes negligible.
