@@ -46,3 +46,5 @@ Yiqing
 Fu
 Constella
 Advaita
+Solana
+Arbitrum
