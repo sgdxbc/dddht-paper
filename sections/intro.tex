@@ -12,16 +12,14 @@ Ethereum, for instance, holds account records that are worth more than \$233 bil
 Non-fungible tokens (NFT) listed on blockchains such as Solana~\cite{solana}, Polygon~\cite{polygon}, and Arbitrum~\cite{arbitrum} are already worth tens of billions of dollars~\cite{nft_stats} and quickly growing.
 These high-value data cannot be stored on centralized systems due to anti-censorship requirements; neither can they be stored on best-effort P2P solutions like BitTorrent~\cite{bittorrent} and IPFS, as any data loss will have high financial implications.
 
-To handle frequent server and device failures in large distributed deployments, replication~\cite{smr,pb,pbft} and erasure coding~\cite{reed-solomon} techniques have become an integral part of these systems.
-Both techniques use \emph{redundancy} to tolerate failures of individual components, an effective approach when enough copies or encoding symbols survive.
-They therefore work well in a centralized deployment, where central operators have full control over the infrastructure, failure domains, and placement groups with minimum correlated failures.
-
-A decentralized deployment model presents fundamental challenges to the durability guarantees of a storage system.
-There is no central authority to manage the behavior and trustworthiness of the participants;
+Decentralization presents fundamental challenges to the durability guarantees of a storage system.
+To handle data loss caused by failures, redundancy-based approaches such as replication~\cite{smr,pb,pbft} and erasure coding~\cite{reed-solomon} are commonly used.
+These solutions work well in a centralized deployment, where operators have full control over the infrastructure, failure domains, and placement groups with minimum correlated failures.
+A decentralized system, on the contrary, has no central authority to manage the behavior and trustworthiness of the participants;
 nodes join and leave the system at high churn rate;
 there exists high variance in node performance, reliability, and network conditions;
 adversarial behaviors are prevalent.
-In such open and asynchronous environment, traditional replication, erasure coding, and repair schemes lose their effectiveness in preventing data losses.
+In such open and asynchronous environment, traditional redundancy schemes lose their effectiveness in preventing data losses.
 Recently, more than 1600 TiB of data on the Filecoin~\cite{filecoin} network lost all replica copies simultaneously~\cite{filecoin_loss}.
 
 In this work, we propose a new decentralized object storage system, \sys, to address this durability challenge.
@@ -32,14 +30,11 @@ The large number of fragments improves statistical reliability of the object.
 More importantly, it eschews the need for time-sensitive encoding repair --- an impractical requirement in a decentralized network --- and permits repair at a steady average-rate.
 The rateless property of the scheme also facilitates nodes to perform encoding regeneration \emph{independently}, avoiding costly coordination.
 
-%implement Kleroterion, a decentralized node selection service.
-%Kleroterion uses verifiable random function~\cite{vrf} to determine eligibility of participants to store encoding fragments of an object at a virtual time.
 To provide fault tolerate against strong adversaries, \sys applies \emph{verifiable randomness} to select randomly distributed nodes to store encoding fragments.
 The procedure avoids centralization by using verifiable random function~\cite{vrf} to determine participant eligibility.
 Selection results are unforgeable and publicly verifiable.
-Randomness and verifiability of the selection outcome ensures that sufficient encoding fragments are stored on honest nodes, even when significant portion of the participants are Byzantine.
-%even in the presence of active adversarial attacks.
-%\lijl{Maybe add homomorphic hashing and other optimizations here, if there is space and time.}
+Randomness and verifiability of the selection outcome ensures that sufficient encoding fragments are stored on honest nodes, even when significant portion of the participants are adversarial.
+\lijl{Maybe add homomorphic hashing and other optimizations here.}
 
 The nature of long-term storage exposes fragment-to-node mapping to adversaries.
 To defend against targeted attacks aiming to erase objects, \sys applies an additional layer of erasure coding.
@@ -55,3 +50,4 @@ It achieves comparable repair traffic overhead when comparing to a baseline dist
 Critically, \sys significantly improves fault tolerance to Byzantine participants and targeted adversaries compared to the baseline.
 Even when using a coding scheme with small redundancy level, \sys guarantees data durability with more than 33\% Byzantine participants, and more than 10\% of the nodes under targeted attacks.
 %\sys performs data object \store and \query with 1.6x-3.1x lower latency compare to existing decentralized storage, while achieving similar scalability over thousands of peers.
+\lijl{Update evaluation results}
