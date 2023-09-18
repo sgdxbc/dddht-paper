@@ -83,6 +83,7 @@
 \def\lemautorefname{Lemma}
 \def\defnautorefname{Definition}
 \def\algorithmautorefname{Algorithm}
+\def\invariantautorefname{Invariant}
 
 \algnewcommand\algorithmicswitch{\textbf{switch}}
 \algnewcommand\algorithmiccase{\textbf{case}}
