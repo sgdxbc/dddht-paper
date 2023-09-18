@@ -220,3 +220,16 @@ Chunk repair incurs significantly less CPU overhead, as it only involves the inn
 %Finally, we accumulated the total outbound traffic and the CPU time from each peer at the end of the 10 minutes period.
 %We also measured the result of an idle system that does not store any data, only maintain DHT information and regular heartbeat.
 %All data shows in the figure has been subtracted by this baseline.
+
+\subsection{Discussion}
+
+\lijl{We can include this discussion in the submission if there is space.}
+
+As our evaluation results have shown, \sys incurs higher performance overhead and management complexity compared to centralized deployments and prior best-effort systems.
+However, we believe there exists inherent trade-offs between performance and security guarantees (e.g., anti-censorship and strong adversary tolerance).
+As we demonstrated earlier (\autoref{sec:intro} and \autoref{sec:background}), these properties are more critical than performance for our target deployment scenarios.
+
+We also note that \sys is not the only decentralized system that pays this price.
+Both Bitcoin and Ethereum require around one hour to confirm a transaction.
+And it has been proved that the long confirmation time is critical to their safety guarantees in a permissionless setting.
+Algorand~\cite{algorand} takes 13 message steps to commit in the presence of adversaries, and relies on randomized peer selection for security.
