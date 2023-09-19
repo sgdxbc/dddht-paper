@@ -4,6 +4,7 @@
 \newif\ifacm
 \newif\ifdraft
 \newif\ifarxiv
+\newif\ifspace
 
 \DeclareOption{arxiv}{
     \draftfalse
