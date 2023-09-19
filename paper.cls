@@ -5,6 +5,7 @@
 \newif\ifdraft
 \newif\ifarxiv
 \newif\ifspace
+\newif\ifapx
 
 \DeclareOption{arxiv}{
     \draftfalse
@@ -22,6 +23,7 @@
 }
 
 \DeclareOption{acm}{\acmtrue}
+\DeclareOption{apx}{\apxtrue}
 
 \DeclareOption*{
     \ifacm\PassOptionsToClass{\CurrentOption}{acmart}\else
@@ -60,7 +62,12 @@
 \RequirePackage{braket}
 \RequirePackage{tikz}
 \RequirePackage{amsthm}
+\ifacm
+\else
 \RequirePackage{amsmath}
+\RequirePackage{amssymb}
+\fi
+
 
 \hypersetup{linkcolor=blue}
 

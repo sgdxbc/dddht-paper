@@ -99,7 +99,7 @@ Unfortunately, under such naive approach, the overall storage capacity will not 
 
 In \sys, we leverage \textit{randomness} to tolerate Byzantine participants without sacrificing capacity.
 By uniform randomly selecting nodes to store encoding symbols for an object, each chosen node has a $\frac{1}{3}$ independent probability of being Byzantine.
-Consequently, the redundancy to ensure at least $k + \epsilon$ selected nodes are honest is \emph{independent} of $N$\footnote{The redundancy calculation can be found in \ifarxiv \autoref{sec:proof}\else the supplementary material.}, implying that the effective storage capacity scales \emph{linearly} with increasing system size, a desirable property for storage systems.
+Consequently, the redundancy to ensure at least $k + \epsilon$ selected nodes are honest is \emph{independent} of $N$\footnote{The redundancy calculation can be found in \ifapx \autoref{sec:proof}\else the supplementary material.\fi}, implying that the effective storage capacity scales \emph{linearly} with increasing system size, a desirable property for storage systems.
 Note that our model does not rule out strong adversaries generating new identities --- proof of stake (PoS) is used to defend against arbitrary Sybil attacks.
 
 We avoid relying on a centralized, trusted entity to provide this random selection service.
