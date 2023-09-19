@@ -61,8 +61,13 @@ By writing to the DHT, peers storing a file chunk announce a publisher record wh
 The DHT replicates the publisher record to peers in proximity in the hash space and handles peer failures through gossip.
 Retrieving a file involves querying the DHT for the publisher records and the address of the publishers for each file chunk.
 IPFS, however, does not offer any file durability guarantee.
+File content in IPFS is only stored in the original file publishers;
+the protocol has no explicit redundancy mechanism to enforce file content durability.
+
+\ifspace
 Filecoin~\cite{filecoin} addresses this issue using an incentive-based approach called Proof-of-Storage~\cite{fc_pos}.
 To store a file chunk, peers deposit tokens to the network.
 During the lifetime of the chunk, other peers in the network issue cryptographic challenges to the node prove its storage of the chunk content.
 The challenge can only be solved if the chunk is stored for the time duration.
 Unsuccessful proofs result in slashing of the token deposit, disincentivizing nodes to lose stored data.
+\fi
