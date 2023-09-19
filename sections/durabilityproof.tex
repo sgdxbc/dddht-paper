@@ -11,12 +11,12 @@ Out of these $N$ nodes, a group of $n$ nodes is selected (without replacement, s
 
 $N$ and $n$ are parameters to this algorithm, where $k$ would exist as a fixed constant. 
 
-\subsubsection{Intitial chunk state durability}
+\subsubsection{Initial chunk state durability}
 
 We say a state is valid if $Pr(b>n-k) < \varepsilon = 2^{-128}$. Since we know that group selection is expressed with the hypergeometric distribution, there are two way to show this:
 \begin{enumerate}
     \item Utilizing the generalized hypergeometric function or summation of PMF to derive the CDF. 
-    \item Utilizing chebyshev's inequality to draw a bound. 
+    \item Utilizing Chebyshev's inequality to draw a bound. 
 \end{enumerate}
 
 
@@ -25,11 +25,11 @@ We say a state is valid if $Pr(b>n-k) < \varepsilon = 2^{-128}$. Since we know t
     \leq 
     \frac{n\frac{F}{N}\frac{N-F}{N}\frac{N-n}{N-1}}{(n(1+\frac{F}{N})-k)^2} \\
     \leq 
-    \frac{n(N-n)}{(4n-3k)^2(N-1)} |_{F=\frac{N}{3}}\\
+    \frac{2n(N-n)}{9(n(\frac{2}{3})-k)^2(N-1)}  |_{F=\frac{N}{3}}\\
     \leq \varepsilon
 \end{gather}
 
-However, Although the intitial state might be valid, we cannot say future states will be. The validity of any state at $T=t$ is evaluated in the next section. 
+However, Although the initial state might be valid, we cannot say future states will be. The validity of any state at $T=t$ is evaluated in the next section. 
 
 One thing to note is that, if our $N$ shrinks, $Pr(b>n-k)$ actually decreases. This can be seen in $(1)$, as $N$ decreases, each summation step increases slightly, making the inverse of the probability sum smaller. 
 
@@ -58,10 +58,10 @@ We analyze our system as a Continuous-time Markov chain (CMTC). Expressing our i
     Pr(B = b) = \frac{\binom{F}{b}\binom{N-F}{n-b}}{\binom{N}{n}}
 \end{gather}
 
-We express the probability of reaching any state $T=t$ as $t$ exponentiations of a $(n-k+1 \times n-k+1)$ stochastic matrix $\Theta = (\theta_{i,j})$ on this intitial probability vector.
+We express the probability of reaching any state $T=t$ as $t$ exponentiations of a $(n-k+1 \times n-k+1)$ stochastic matrix $\Theta = (\theta_{i,j})$ on this initial probability vector.
 $\theta_{i,j}$ denotes the probability a group with $i$ byzantine nodes at $T=t$ will have $j$ byzantine nodes at $T=t+1$. 
 
-Since we take our group as invalid in perpetuity once its reached an invalid state; These states are referred to as \textit{absorbing states}. Any other state is considered as an \textit{transient states}. Our matrix is only $(n-k+1 \times n-k+1)$ instead of $(n \times n)$. Furthemore, $\theta_{n-k+1,n-k+1} = 1 \wedge \forall g\in[0,n-k], \theta_{n-k+1,g} = 0$. This handles all transitions from \textit{absorbing} to \textit{absorbing states}. 
+Since we take our group as invalid in perpetuity once it has reached an invalid state; These states are referred to as \textit{absorbing states}. Any other state is considered as an \textit{transient states}. Our matrix is only $(n-k+1 \times n-k+1)$ instead of $(n \times n)$. Furthermore, $\theta_{n-k+1,n-k+1} = 1 \wedge \forall g\in[0,n-k], \theta_{n-k+1,g} = 0$. This handles all transitions from \textit{absorbing} to \textit{absorbing states}. 
 
 To construct the remainder of our matrix, we will have to consider the possible state transitions of each originating state. Suppose for some $\lambda(N-F)$ , let $C$ be the random variable denoting the number of honest nodes lost due to the churn rate:
 \begin{gather}
@@ -94,7 +94,7 @@ The second summation (9) considers the eviction rate; It first considers the amo
 
 The condition in the second summation: $(n-k-c)\geq \Upsilon$ checks if there exists sufficient nodes to be evicted, and $(j-i+\Upsilon-\upsilon) \geq 0$ considers if the next state can be reached after churning and eviction. 
 
-The first fraction in the second summation (9) thus considers how many byzantine nodes can be evicted. The second fraction (10) then considers the probability of adding back exactly $(j-i+\Upsilon-\upsilon)$ byzantine nodes back into the group to acheive the desired transient state. 
+The first fraction in the second summation (9) thus considers how many byzantine nodes can be evicted. The second fraction (10) then considers the probability of adding back exactly $(j-i+\Upsilon-\upsilon)$ byzantine nodes back into the group to achieve the desired transient state. 
 
 Lastly, we consider transitions from \textit{transient} to \textit{absorbing states}:
 
@@ -115,12 +115,12 @@ The probability that a group has entered an absorbing state is then expressed as
 
 Given enough time, the probability of reaching any state is $1$, therefore, that is to say there is no durability at $T=\infty$. 
 
-However, we can guarantee at some $T=t$, the probability the group has reached an invalid state is still negligable. By extension, it also shows that the probability the group has reached an invalid state for $T=t'|t'\in \mathbb{Z}^{+} \wedge t'<t$ is negligable too. 
+However, we can guarantee at some $T=t$, the probability the group has reached an invalid state is still negligible. By extension, it also shows that the probability the group has reached an invalid state for $T=t'|t'\in \mathbb{Z}^{+} \wedge t'<t$ is negligible too. 
 
 
 \begin{lemma}
     \label{lemma 2}
-    For a single data object, the probability that all of the groups injectively responsible for the $K+R$ chunks being durable at $T=t$ can be bounded by: \[1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R} \leq \varepsilon\] Where $I$ is the initial state matrix and $\Theta$ is a stochastic matrix. 
+    For a single data object, the probability that all groups injectively responsible for the $K+R$ chunks being durable at $T=t$ can be bounded by: \[1-(1-\sum_{T=1}^{t} (I \Theta^{T})_{n-k+1})^{K+R} \leq \varepsilon\] Where $I$ is the initial state matrix and $\Theta$ is a stochastic matrix. 
 \end{lemma}
 
 By simply extending lemma \ref{lemma 1}; Suppose a data object is made up of $K+R$ chunks, the probability of some group/s reaching an  \textit{absorbing} state is:
@@ -130,18 +130,18 @@ By simply extending lemma \ref{lemma 1}; Suppose a data object is made up of $K+
 \end{gather}
 
 
-\subsection{Durability in the event of targetted attacks}
+\subsection{Durability in the event of targeted attacks}
 
 \subsubsection{Primitives}
-Suppose in our system of $\Omega$ data objects, each object is made up of $K+R$ chunks; where only a minimum of $K$ chunks is necessary to reconstuct the original data object. $R$ thus represents the redundancy.
+Suppose in our system of $\Omega$ data objects, each object is made up of $K+R$ chunks; where only a minimum of $K$ chunks is necessary to reconstruct the original data object. $R$ thus represents the redundancy.
 
 We present an adversary that can arbitrarily remove an upperbound of $\phi$ nodes from the system; Effectively churning them pre-maturely.
 Furthermore, the adversary has a complete transparent view on the group composition for every group.
-This begs the question: how many groups can they arbitrarily push into the absorbing state, and what is the probability a data object will be lost with non-negligable odds. We consider a successful attack on a group if the attacker can lead it to an absorbing state, and we consider a sucessful attack on the system if any data objects are lost as the result of the attacker's actions. 
+This begs the question: how many groups can they arbitrarily push into the absorbing state, and what is the probability a data object will be lost with non-negligible odds. We consider a successful attack on a group if the attacker can lead it to an absorbing state, and we consider a successful attack on the system if any data objects are lost as the result of the attacker's actions. 
 
 There are two cases to consider, the latter being an extension of the former. 
 
-\subsubsection{Suppose each phyiscal node only holds a single fragment}
+\subsubsection{Suppose each physical node only holds a single fragment}
 \begin{lemma} \label{lemma 3}
     Suppose, each node can hold at most 1 fragments.
     The probability of an attacker successfully attacking a data object is bounded by:
@@ -171,9 +171,9 @@ Upperbound on the Probability of successfully attacking a data object is thus (s
 
 This is an extension of the birthday attack problem. 
 
-\subsubsection{Suppose each phyiscal node only holds multiple fragment}
+\subsubsection{Suppose each physical node only holds multiple fragment}
 Since we are drawing an upperbound on the attacker's success probability, we simply have to consider the very worst case. 
-If each node can possess $g,g\in \mathbb{Z}^{+}$ fragmemts, attacking a single node might lead to $g$ groups losing a single honest node each. 
+If each node can possess $g,g\in \mathbb{Z}^{+}$ fragments, attacking a single node might lead to $g$ groups losing a single honest node each. 
 Therefore, we simply change (15) to:
 \begin{gather}
     1-
