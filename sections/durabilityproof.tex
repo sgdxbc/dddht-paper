@@ -16,16 +16,14 @@ $N$ and $n$ are parameters to this algorithm, where $k$ would exist as a fixed c
 We say a state is valid if $Pr(b>n-k) < \varepsilon = 2^{-128}$. Since we know that group selection is expressed with the hypergeometric distribution, there are two way to show this:
 \begin{enumerate}
     \item Utilizing the generalized hypergeometric function or summation of PMF to derive the CDF. 
-    \item Utilizing Chebyshev's inequality to draw a bound. 
+    \item Utilizing Hoeffding's Inequality~\cite{Hoeffding1963ProbabilityIF} to draw a bound.
 \end{enumerate}
 
 
 \begin{gather}
     P(b > n-k) = 1- \sum_{i=0}^{n-k}\frac{\binom{\frac{N}{3}}{i}\binom{\frac{2N}{3}}{n-i}}{\binom{N}{n}} \\
     \leq 
-    \frac{n\frac{F}{N}\frac{N-F}{N}\frac{N-n}{N-1}}{(n(1+\frac{F}{N})-k)^2} \\
-    \leq 
-    \frac{2n(N-n)}{9(n(\frac{2}{3})-k)^2(N-1)}  |_{F=\frac{N}{3}}\\
+    e^{-2(\frac{2}{3}-\frac{k}{n})^2} \\
     \leq \varepsilon
 \end{gather}
 
@@ -46,7 +44,7 @@ One thing to note is that, if our $N$ shrinks, $Pr(b>n-k)$ actually decreases. T
 
 
 
-We analyze our system as a Continuous-time Markov chain (CMTC). Expressing our initial group state as a $(n-k+1 \times 1)$ probability vector:
+We analyze our system as a Continuous-time Markov chain (CTMC). Expressing our initial group state as a $(n-k+1 \times 1)$ probability vector:
 
 \begin{gather}
     I = \begin{pmatrix}
