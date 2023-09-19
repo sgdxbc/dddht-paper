@@ -13,7 +13,7 @@ $N$ and $n$ are parameters to this algorithm, where $k$ would exist as a fixed c
 
 \subsubsection{Initial chunk state durability}
 
-We say a state is valid if $Pr(b>n-k) < \varepsilon = 2^{-128}$. Since we know that group selection is expressed with the hypergeometric distribution, there are two way to show this:
+We say a state is valid if $Pr(b>n-k) < \varepsilon = 2^{-\lambda}$. Since we know that group selection is expressed with the hypergeometric distribution, there are two way to show this:
 \begin{enumerate}
     \item Utilizing the generalized hypergeometric function or summation of PMF to derive the CDF. 
     \item Utilizing Hoeffding's Inequality~\cite{Hoeffding1963ProbabilityIF} to draw a bound.
@@ -23,7 +23,7 @@ We say a state is valid if $Pr(b>n-k) < \varepsilon = 2^{-128}$. Since we know t
 \begin{gather}
     P(b > n-k) = 1- \sum_{i=0}^{n-k}\frac{\binom{\frac{N}{3}}{i}\binom{\frac{2N}{3}}{n-i}}{\binom{N}{n}} \\
     \leq 
-    e^{-2(\frac{2}{3}-\frac{k}{n})^2} \\
+    e^{-2(\frac{2}{3}-\frac{k}{n})^{2}n} \\
     \leq \varepsilon
 \end{gather}
 
