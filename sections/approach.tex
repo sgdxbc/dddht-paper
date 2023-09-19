@@ -114,6 +114,10 @@ The ``winning'' hash values serves as \textit{unforgeable tokens} to store encod
 The infinite sequence of fountain code encoding symbols is used as a publicly-known random seed to the VRF function, ensuring that the selected nodes are randomly distributed in the system.
 %Given that fountain code produces an infinite stream of encoding symbol each with a random value, our decentralized selection scheme ensures that the chosen nodes storing the symbols for an object are randomly distributed.
 
+Randomization has been applied by prior systems, such as RAMCloud~\cite{ramcloud} and HDFS~\cite{hdfs}.
+These systems, however, perform \emph{centralized} random replica selection on master nodes --- an approach that fails to work in our target environment.
+By combining VRF and rateless code, our solution enables fully decentralized random peer selection and ensures adversaries have no power to influence selection results.
+
 \subsection{Dual-Layer Erasure Coding to Defend Targeted Adversaries}
 \label{sec:approach:dualencode}
 
