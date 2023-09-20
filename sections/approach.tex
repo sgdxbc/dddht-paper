@@ -131,8 +131,9 @@ Critically, this \emph{outer layer} encoding ensures that each generated chunk i
 Each chunk is then stored as a stream of encoding fragments using the \emph{inner layer} fountain code (\autoref{sec:approach:code}) to ensure persistence.
 As every chunk appears indistinguishable to adversaries, targeted attacks can do no better than compromising randomly selected chunks in the system.
 With enough objects in the system, the chance of simultaneously attacking more than $r$ chunks ($r$ here is the redundancy of the outer code) of a particular object becomes negligible.
-As such, only the client (who knows the implict object to chunk mapping) can recover the original object with overwhelming probability.
+As such, only the client (who knows the implicit object to chunk mapping) can recover the original object with overwhelming probability.
 
+% Obsolete Content
 \iffalse
 
 %Through a procedure termed Kleroterion~\footnote{Kleroterion was a randomization machine used in ancient Athens to select council members from citizens.}.
