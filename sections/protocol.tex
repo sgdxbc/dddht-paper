@@ -1,4 +1,4 @@
-In this section, we elaborate how \sys combines rateless erasure code, verifiable random peer selection, and dual-layer encoding to design a durable decentralized storage system.
+In this section, we elaborate how \sys combines rateless erasure code and verifiable random peer selection to design a durable decentralized storage system.
 
 \subsection{System Model and Assumptions}
 We consider a decentralized system in which nodes can freely join and leave.
@@ -15,9 +15,11 @@ Unlike IPFS, object IDs are private to data owners to protect object from target
 
 \sys guarantees the following \emph{data durability} invariant.
 A direct implication of the invariant is that once a \store successfully returns, all subsequent \query{}s for the returned ID output the original object until expiration.
+We use \emph{outer code} to denote the rateless code that a client applies to an object to generate the encoding chunks.
+Each chunk is applied another rateless code when storing, referred to as the \emph{inner code}.
 
 \begin{invariant}
-At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $\kout$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
+At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $\kout + \epsilon$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
 An encoded chunk is recoverable if at least $\kin + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
 \label{inv:safety}
 \end{invariant}
@@ -32,10 +34,11 @@ A node exhibiting Byzantine failure can deviate arbitrarily from the protocol, i
 For other types of node failures that are recoverable such as crashes or power failures, we treat them as transient faults.
 Permanent node failures are equivalent to nodes leaving the system.
 
-\sys uses a distributed hash table (DHT)~\cite{chash,chord,kademlia}, but mainly only for its routing and peer lookup functionality.
-We make weak assumptions about the DHT: a DHT lookup is best-effort, i.e., it returns peers closest to a hash value on the ring with high probability.
-Some \sys optimizations store metadata in the DHT, but only for performance.
-The protocol always guarantees safety (\autoref{inv:safety}) even when DHT loses data or returns wrong data.
+\sys uses a distributed hash table (DHT)~\cite{chash,chord,kademlia}, but mainly for its routing and peer lookup functionality.
+We make weak assumptions about the DHT.
+A DHT lookup is best-effort, i.e., it returns peers closest to a hash value on the ring with high probability.
+%Some \sys optimizations store metadata in the DHT, but only for performance.
+%The protocol always guarantees safety (\autoref{inv:safety}) even when DHT loses data or returns wrong data.
 
 We consider a strong Byzantine fault model in which adversaries can collude with each other and generate arbitrary node identities.
 We, however, assume a stake-based system, and that adversaries do not possess more than $1/3$ of the system stakes in aggregate, a standard assumption made in proof-of-stake protocols.
