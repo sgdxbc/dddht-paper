@@ -1,22 +1,21 @@
 Why is it hard to guarantee data durability in a decentralized storage system?
 In this section, we analyze key challenges faced by existing systems to prevent data losses in an open, permissionless environment.
-We then present our approach of using rateless fountain code, verifiable randomness, and dual-layer encoding to tackle the durability challenge.
+We then present our approach of combining rateless erasure code and verifiable randomness to tackle the durability challenge.
 
-\subsection{The Durability Challenge in Decentralized Storage}
+\subsection{The Decentralized Durability Challenge}
 \label{sec:approach:challenge}
 
 How to maintain data durability in the presence of server and device failures?
-The de facto standard approach is data replication and erasure coding.
-It is well-studied how \textit{redundancy} can mask failures -- including Byzantine ones -- of individual components and ensure data availability.
-The approach is particularly effective in centralized settings, in which system participants and failure distributions are managed by a single entity.
-For instance, the central administrator can control node/device selection such that out of the $n$ nodes storing a data object, at most $n-r$, where $r$ is the level of redundancy, of them can fail.
-\lijl{Add placement group discussion here.}
+The standard approach is data replication and erasure coding.
+It is well-studied how \emph{redundancy} can mask failures -- including Byzantine ones -- of individual components.
+The approach is particularly effective in centralized settings, where system participants and failure distributions are managed by a single entity.
+For instance, the central administrator have full control over placement groups such that out of the $n$ nodes storing a data object, at most $n-r$, where $r$ is the level of redundancy, of them may fail concurrently.
 
 The formula changes completely in an open, decentralized system.
 Nodes are free to join and leave the system at any time.
 There is no centralized control over who are the participants and their trustworthiness.
-In these systems, adversarial behaviors are the \textit{common case}, not the exception.
-Adversaries might also have strong attacking power.
+In these systems, adversarial behaviors are the \emph{common case}, not the exception.
+Adversaries might also possess strong attacking power.
 They can partition regions of the network using BGP poisoning or distributed denial-of-service (DDoS);
 they can collude with each other and compromise honest nodes;
 they can create and change identities in a highly dynamic fashion.
@@ -27,17 +26,17 @@ once they locate more than $n-r$ nodes responsible for an object, they can also 
 Data durability is immediately violated under these attack scenarios.
 
 Existing blockchain systems face similar attack vectors.
-However, decentralized storage systems are particularly vulnerable, given their scale and redundancy constraints.
+Decentralized storage, however, are particularly vulnerable, given their scale and redundancy constraints.
 In large scale deployments, the size of the system, which can reach beyond 100K nodes~\cite{ipfs}, easily overwhelms the replication factor of each storage object, which is typically below 20~\cite{kademlia}.
-This is in contrast to a blockchain, in which chain data is replicated on every participant.
-Similar to traditional distributed storage, minimizing redundancy is a key metric to improve the overall storage efficiency.
+This is in contrast to a blockchain, in which on-chain data is replicated on every participant.
+Similar to distributed storage, minimizing redundancy is a key metric to improve the overall storage efficiency.
 With smaller redundancy, effectiveness of adversarial attacks grows exponentially, even when the adversaries account for a small percentage of the entire system.
 
 Another challenge faced by open, decentralized systems is that consensus and coordination are \emph{costly}.
-To safely confirm a transaction, the Bitcoin network requires a confirmation latency of around one hour;
+To safely confirm a transaction, Bitcoin requires a confirmation latency of around one hour;
 even the faster Ethereum network incurs a finality latency of over 12 seconds.
-Besides latency, both networks also suffers low consensus throughput -- 7 transaction per second (TPS) for Bitcoin and 20 TPS for Ethereum -- as well as high transaction fees.
-Decentralized Storage designs that rely on frequent consensus are impractical in such settings.
+Besides latency, both networks also suffers low consensus throughput -- 7 transaction per second (TPS) for Bitcoin and 20 TPS for Ethereum -- and high transaction fees.
+Decentralized storage designs that rely on frequent consensus are impractical in such settings.
 
 %\sgd{Maybe go into related work, or omitted.}
 %\paragraph{Purely incentive-based approaches.} Filecoin and Arweave.
@@ -52,7 +51,7 @@ Decentralized Storage designs that rely on frequent consensus are impractical in
 %    \item Unexpected breach of the rules already happen, e.g. most data on Filecoin is garbage \sgd{really?}.
 %\end{itemize}
 
-\subsection{The Case for Using Fountain Code}
+\subsection{The Case for Using Rateless Code}
 \label{sec:approach:code}
 
 Fountain codes are a family of erasure codes that have two special properties.
