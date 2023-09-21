@@ -2,8 +2,8 @@ We consider the problem of designing a \emph{durable} object storage system in a
 The system provides a simple object store and retrieval interface to end users.
 Each object contains a blob of binary data of arbitrary size.
 The system provides \emph{durability}: Once an object is successfully stored, users are guaranteed to retrieve the object with its original content until it expires.
-Objects are \emph{immutable}, i.e., users cannot modify the content of an object after it is stored.
-The system presents a \emph{flat view} of all objects; it does not offer explicit object hierarchies such as those in a file system.
+Objects are \emph{immutable}, i.e., users cannot modify an object after it is stored.
+The system presents a \emph{flat view} of all objects; it does not offer explicit hierarchies such as those in a file system.
 It serves as a base persistent storage layer where higher-level functionalities, such as files and relational databases, can be built atop.
 
 Performance is not a key design metric of the system.
@@ -15,10 +15,10 @@ The deployment model mirrors existing permissionless blockchain systems such as 
 There is no central entity to manage or administer the system.
 The network is \emph{permissionless}, i.e., anyone can join the network without any authorization required.
 Each participating node has some local storage for storing data, as well as network access to the wide area network.
-There is, however, no requirement on the type, speed, or quality of their physical storage and network devices.
+There is, however, no requirement on the type, speed, or quality of their physical storage or network devices.
 Participants can be either \emph{honest} or \emph{adversarial}.
 Honest nodes follow the protocol exactly, while adversarial nodes can deviate arbitrarily from the protocol.
-Adversaries may also actively collude and attack the system.
+Adversaries may also collude and attack the system.
 
 Our target environment demands stronger fault tolerance.
 Besides adversarial behaviors, a decentralized network can have higher churn rate than that of a centralized setting.
@@ -30,26 +30,26 @@ The storage system needs to ensure data durability even when nodes fail and depa
 There is a long line of work on centrally managed distributed storage systems~\cite{ceph,gfs,bigtable,dynamo,liquid}.
 These systems commonly divide objects into equal-sized chunks, and deploy a large pool of nodes to store those chunks.
 A dedicated set of nodes are responsible for maintaining and processing storage metadata.
-It is also common to use a centralized consensus services such as Chubby~\cite{chubby} to manage configurations and other critical system states.
+It is also common to use a centralized consensus service such as Chubby~\cite{chubby} to manage configurations and other critical system states.
 
-At the deployment scale of these storage systems, failures of storage devices, servers, racks, clusters, and even entire data centers are frequent events.
+At the deployment scale of these systems, failures of storage devices, servers, racks, clusters, and even entire data centers are frequent events.
 To guarantee data durability and availability, replication techniques such as primary-backup~\cite{pb} and state machine replication~\cite{smr} are commonly deployed.
 However, replication introduces large redundancy, negatively impacting the overall storage efficiency.
-To reduce storage redundancy without compromising data reliability, modern storage systems are increasingly applying erasure coding~\cite{google_storage,was,hitchhiker,xor}.
+To reduce storage redundancy without compromising data reliability, modern storage systems apply erasure coding~\cite{google_storage,was,hitchhiker,xor}.
 In particular, maximum distance separable (MDS) codes, e.g., Reed-Solomon code~\cite{reed-solomon}, are a common choice.
 Being centrally managed, the system administrator defines \emph{placement groups}.
-Each erasure code strip (including the special case --- replicas of an object) is mapped to one placement group.
+Each erasure code strip (or replicas of an object) is mapped to one placement group.
 To reduce the risk of data losses, placement groups are chosen to minimize correlated failures, where factors such as failure domains and annualized failure rate (AFR) of the storage devices~\cite{pacemaker,tiger} are usually considered.
 
 These systems, however, only consider crash failures of individual components.
-All participants of the system are under a single, protected administrative domain, so there is no need to tolerate Byzantine failures~\cite{bft}.
+All participants of the system are under a single, protected administrative domain, so there is no requirement to tolerate Byzantine failures~\cite{bft}.
 
 \paragraph{State of the art decentralized storage.}
-With the popularization of peer-to-peer file sharing network in the late 90s, designing storage and file systems from a network of decentralized, untrusted computers was an active research topic at the time.
+With the popularization of peer-to-peer file sharing networks in the late 90s, designing storage and file systems from a network of decentralized, untrusted computers was an active research topic at the time.
 Representative work during this period of time include xFS~\cite{xfs}, Farsite~\cite{farsite}, and OceanStore~\cite{oceanstore}.
-Departing from a centralized design, handling unreliable and malicious participants is a key design goal of these systems.
-To provide data availability and consistency in the presence of Byzantine failures, they apply BFT replicated state machine protocols~\cite{pbft} to replicate file data and metadata to groups of servers.
-BFT protocols, however, require less than $1/3$ of the nodes in a replication group to be Byzantine faulty.
+Departing from centralized deployment, handling unreliable and malicious participants is a key design goal.
+To provide data availability and consistency in the presence of Byzantine failures, they apply BFT protocols~\cite{pbft} to replicate file data and metadata to groups of servers.
+BFT protocols, however, require less than $1/3$ of the replication group to be Byzantine faulty.
 These solutions often sidestep the issue and sometimes rely on centralized, trusted certification authorities~\cite{farsite}, equivalent to a permissioned setting.
 
 Recently, there has been renewed interest in decentralized storage, following the success of blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
@@ -61,7 +61,7 @@ By writing to the DHT, peers storing a file chunk announce a publisher record wh
 The DHT replicates the publisher record to peers in proximity in the hash space and handles peer failures through gossip.
 Retrieving a file involves querying the DHT for the publisher records and the address of the publishers for each file chunk.
 IPFS, however, does not offer any file durability guarantee.
-File content in IPFS is only stored in the original file publishers;
+File content in IPFS is only stored on the original file publishers;
 the protocol has no explicit redundancy mechanism to enforce file content durability.
 
 \ifspace
