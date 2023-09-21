@@ -54,35 +54,55 @@ Decentralized storage designs that rely on frequent consensus are impractical in
 \subsection{The Case for Using Rateless Code}
 \label{sec:approach:code}
 
-Fountain codes are a family of erasure codes that have two special properties.
-Firstly, fountain codes are rateless.
-They generate a potentially \emph{infinite sequence} of encoding symbols from $k$ source blocks.
+Rateless codes are a family of erasure codes that have two special properties.
+Firstly, a rateless code generates an \emph{infinite sequence} of encoding symbols from $k$ source blocks.
 Any $k+\epsilon$ encoding symbols can be used to reconstruct the original source data.
-This is different from traditional maximum distance separable (MDS) codes, such as Reed-Solomon codes, which produces $n$ fixed encoding symbols from the $k$ source blocks.
-Second, fountain codes work well with large $(n, k, r)$ parameters, where $n$, $k$, $r$ represents the number of total, original, and redundant symbols respectively.
-Real deployment of $(1200, 1000, 200)$ fountain code has been shown to be efficient~\cite{liquid}.
-Such numbers are two orders of magnitude larger than practical MDS codes used in production systems.
+This differs from traditional maximum distance separable (MDS) codes, such as Reed-Solomon codes, which produces $n$ fixed encoding symbols from the $k$ source blocks.
+Second, rateless codes work well with large $(n, k, r)$ parameters, where $n$, $k$, $r$ represents the number of total, original, and redundant symbols respectively.
+Real deployment of $(1200, 1000, 200)$ rateless code has been shown to be efficient~\cite{liquid}.
+Such parameters are two orders of magnitude larger than practical MDS codes used in production systems.
 
+\paragraph{Lazy repair.}
 Why do these properties matter in a decentralized storage system?
+One benefit is \emph{lazy repair friendly}.
 Using traditional erasure codes with a small value of $r$, the storage system needs to quickly regenerate encoding symbols when just a few stored symbols are lost due to failures.
-If the repair process is not done in a timely manner, the system risks losing the source data permanently.
-However, decentralized systems exhibit high degree of asynchrony: Network conditions vary both spatially and temporally, there exists large deviations in processing speeds across nodes, transient unreachabilities are also prevalent.
+Delayed repairs risk losing the source data permanently.
+However, decentralized systems exhibit high degree of asynchrony:
+Network conditions vary both spatially and temporally;
+there exists large deviations in processing speeds across nodes;
+transient unreachabilities are also prevalent.
 Strict timing requirement for detection and recovery of encoding symbols is therefore impractical in such environment.
-On the other hand, large values of $r$ in fountain codes tolerate bursty encoding failures without losing the data, and permit the system to recover at a steady average rate.
+On the other hand, large values of $r$ in rateless codes tolerate bursty encoding failures without losing the source data.
+It thus permits the system to repair at a steady average rate.
 Such property is more favorable in a highly aynchronous environment.
 For instance, a $(1200, 1000, 200)$ code can tolerate 200 simultaneous symbol failures, while losing 3 symbols will result in permanent data loss when deploying a $(12, 10, 2)$ code.
-The increase in $r$ in fountain codes, however, does not lead to higher redundancy.
+Note that the increase in $r$ in rateless codes does not lead to higher redundancy.
 The redundancy rate of the above two codes are identical.
 
-The rateless property of fountain code is also beneficial.
 %As discussed in \autoref{sec:approach:challenge}, coordination and consensus are costly in decentralized systems.
+\paragraph{Consensus-free repair.}
 MDS codes with small values of $(n, k, r)$ necessitate participants to coordinate to agree on the assignment of symbols.
 Uncoordinated symbol generation may lead to insufficient \emph{unique} symbols to recover the original data, an issue analogous to the coupon collector's problem \cite{ccp}.
 Rateless codes eschew this issue completely.
 The \emph{infinite} encoding space enables participants to generate unique symbols with high probability without explicit coordination.
 
-%Infinite, ordered fragments. Given order $i$, the $i$-th fragment can be generated in time linear to data object size.
-%Similar arguments have been made in the liquid system~\cite{liquid} and OceanStore~\cite{oceanstore}
+\paragraph{Strong security against adversaries.}
+Strong adversaries may not only discard stored data, but can also launch attacks targeting honest nodes to compromise data durability.
+We apply a novel approach that leverages the \emph{infinite} symbol sequence of a rateless code to defend such attacks.
+Specifically, the object owner applies rateless code, and uses \emph{private information} (e.g., its private key) to pick $n$ random symbols in the encoding sequence.
+The owner then stores these selected symbols as opaque data chunks into the storage system.
+A key property is that these opaque chunks from any object appears \emph{indistinguishable} to the adversaries.
+Consequently, targeted attacks can do no better than compromising randomly selected chunks in the system.
+With enough objects in the system, the chance of simultaneously attacking more than $r$ out of $n$ chunks of a particular object becomes negligible.
+As such, only the owner (who holds private information) can recover the original object with overwhelming probability.
+
+%Our deployment scenario makes it impossible to completely hide the identities of nodes selected to store symbols for an object, as the symbol storing and periodic repair process will reveal their identities.
+%Unfortunately, symbol storage and periodic repairs reveal the identities of honest nodes responsible for an object to the adversaries.
+%This is in contrast to prior work~\cite{algorand} that uses VRF to select consortium for a single round of consensus.
+%In \sys, we take a different approach to defending targeted attacks, by adding another layer of erasure coding.
+%For each stored object, \sys first applies a \emph{keyed} erasure coding function with a small $(n, k, r)$ parameter to produce a set of encoded chunks.
+%Critically, this \emph{outer layer} encoding ensures that each generated chunk is indistinguishable from another chunk to an external party, and the mapping between chunks to an object is only known to the client generating the encoding.
+%Each chunk is then stored as a stream of encoding fragments using the \emph{inner layer} fountain code (\autoref{sec:approach:code}) to ensure persistence.
 
 \subsection{Verifiable Randomness for Byzantine Tolerance}
 \label{sec:approach:random}
@@ -117,20 +137,6 @@ Randomization has been applied by prior systems, such as RAMCloud~\cite{ramcloud
 These systems, however, perform \emph{centralized} random replica selection on master nodes --- an approach that fails to work in our target environment.
 By combining VRF and rateless code, our solution enables fully decentralized random peer selection and ensures adversaries have no power to influence selection results.
 
-\subsection{Dual-Layer Erasure Coding to Defend Targeted Adversaries}
-\label{sec:approach:dualencode}
-
-Strong adversaries may not only discard stored symbols, but are also capable of launching attacks targeting honest nodes to compromise data durability.
-%Our deployment scenario makes it impossible to completely hide the identities of nodes selected to store symbols for an object, as the symbol storing and periodic repair process will reveal their identities.
-Unfortunately, symbol storage and periodic repairs reveal the identities of honest nodes responsible for an object to the adversaries.
-This is in contrast to prior work~\cite{algorand} that uses VRF to select consortium for a single round of consensus.
-In \sys, we take a different approach to defending targeted attacks, by adding another layer of erasure coding.
-For each stored object, \sys first applies a \emph{keyed} erasure coding function with a small $(n, k, r)$ parameter to produce a set of encoded chunks.
-Critically, this \emph{outer layer} encoding ensures that each generated chunk is indistinguishable from another chunk to an external party, and the mapping between chunks to an object is only known to the client generating the encoding.
-Each chunk is then stored as a stream of encoding fragments using the \emph{inner layer} fountain code (\autoref{sec:approach:code}) to ensure persistence.
-As every chunk appears indistinguishable to adversaries, targeted attacks can do no better than compromising randomly selected chunks in the system.
-With enough objects in the system, the chance of simultaneously attacking more than $r$ chunks ($r$ here is the redundancy of the outer code) of a particular object becomes negligible.
-As such, only the client (who knows the implicit object to chunk mapping) can recover the original object with overwhelming probability.
 
 % Obsolete Content
 \iffalse
@@ -159,5 +165,8 @@ As such, only the client (who knows the implicit object to chunk mapping) can re
 %\textbf{Insight of randomized rotation.} Only encounter a small subset of Byzantine node for all the time.
 %
 %\textbf{Overhead of fountain code.} Encode/decode performance is good enough. $\epsilon$ exist but small enough (on average much less than 1).
+
+%Infinite, ordered fragments. Given order $i$, the $i$-th fragment can be generated in time linear to data object size.
+%Similar arguments have been made in the liquid system~\cite{liquid} and OceanStore~\cite{oceanstore}
 
 \fi
