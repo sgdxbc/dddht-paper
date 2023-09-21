@@ -23,25 +23,22 @@ In such open and asynchronous environment, traditional redundancy schemes lose t
 Recently, more than 1600 TiB of data on the Filecoin~\cite{filecoin} network lost all replica copies simultaneously~\cite{filecoin_loss}.
 
 In this work, we propose a new decentralized object storage system, \sys, to address this durability challenge.
-\sys uses \emph{rateless erasure code} to generate a potentially \emph{infinite} stream of encoding fragments for each data object.
-Compared to conventional maximum distance separable code (MDS), a rateless encoding scheme offers better fault tolerance properties in a highly asynchronous network and faulty environment.
-The scheme supports efficient \emph{large code} encoding but with redundancy comparable to MDS codes.
-The large number of fragments improves statistical reliability of the object.
-More importantly, it eschews the need for time-sensitive encoding repair --- an impractical requirement in a decentralized network --- and permits repair at a steady average-rate.
-The rateless property of the scheme also facilitates nodes to perform encoding regeneration \emph{independently}, avoiding costly coordination.
+\sys uses \emph{rateless erasure code} to generate a virtual stream of encoding chunks for each object.
+When storing an object, the client uses its private key to materialize the infinite stream into a finite set of selected chunks.
+Critically, the mapping between the materialized chunks and the original object is \emph{opaque} to all participants except the client.
+With sufficient objects stored in the system, adversaries have negligible probability to attack enough materialized chunks of the same object to compromise durability.
 
-To provide fault tolerate against strong adversaries, \sys applies \emph{verifiable randomness} to select randomly distributed nodes to store encoding fragments.
+To handle high churn and failure rate, \sys applies \emph{large erasure code} to store each encoding chunk.
+Compared to conventional maximum distance separable code (MDS), a large code offers better fault tolerance properties in a highly asynchronous network and faulty environment.
+The large number of code symbols improves statistical reliability of the chunk without increasing redundancy.
+More importantly, it eschews the need for time-sensitive encoding repair --- an impractical requirement in a decentralized network --- and permits repair at a steady average-rate.
+The bigger symbol space also facilitates nodes to perform repair \emph{independently}, avoiding costly coordination.
+
+To tolerate strong adversaries, \sys applies \emph{verifiable randomness} to select randomly distributed nodes to store code symbols.
 The procedure avoids centralization by using verifiable random function~\cite{vrf} to determine participant eligibility.
 Selection results are unforgeable and publicly verifiable.
-Randomness and verifiability of the selection outcome ensures that sufficient encoding fragments are stored on honest nodes, even when significant portion of the participants are adversarial.
-\lijl{Maybe add homomorphic hashing and other optimizations here.}
-
-The nature of long-term storage exposes fragment-to-node mapping to adversaries.
-To defend against targeted attacks aiming to erase objects, \sys applies an additional layer of erasure coding.
-This \emph{outer} layer code uses keyed encoding to first encode an object into multiple chunks.
-Critically, object to chunk mapping is opaque and indistinguishable to adversaries, but transparent to the client.
-\sys then applies an \emph{inner} layer rateless code to encode each chunk into stream of encoding fragments.
-Our \emph{dual-layer} encoding scheme ensures negligible probability of adversaries attacking sufficient chunks of the same object to compromise durability.
+Randomness and verifiability of the selection outcome ensures that sufficient code symbols are stored on honest nodes, even when significant portion of the participants are adversarial.
+%\lijl{Maybe add homomorphic hashing and other optimizations here.}
 
 \sys is of a practical design.
 We implement \sys on top of libp2p and deploy \sys on 10,000 nodes across 5 continents on AWS.
@@ -51,3 +48,16 @@ Critically, \sys significantly improves fault tolerance to Byzantine participant
 Even when using a coding scheme with small redundancy level, \sys guarantees data durability with more than 33\% Byzantine participants, and more than 10\% of the nodes under targeted attacks.
 %\sys performs data object \store and \query with 1.6x-3.1x lower latency compare to existing decentralized storage, while achieving similar scalability over thousands of peers.
 \lijl{Update evaluation results}
+
+
+% Obsolete text
+\iffalse
+
+The nature of long-term storage exposes fragment-to-node mapping to adversaries.
+To defend against targeted attacks aiming to erase objects, \sys applies an additional layer of erasure coding.
+This \emph{outer} layer code uses keyed encoding to first encode an object into multiple chunks.
+Critically, object to chunk mapping is opaque and indistinguishable to adversaries, but transparent to the client.
+\sys then applies an \emph{inner} layer rateless code to encode each chunk into stream of encoding fragments.
+Our \emph{dual-layer} encoding scheme ensures negligible probability of adversaries attacking sufficient chunks of the same object to compromise durability.
+
+\fi
