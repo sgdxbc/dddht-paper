@@ -146,9 +146,9 @@ The node performs sanity check to make sure the object is properly retrieved.
 \paragraph{Latency Results.}
 
 \begin{figure}
-    \addgraph{put-get-outer}
-    \addgraph{put-get-inner}
-    \caption{Latency of \store and \query operation in a world-wide deployment.
+    \addgraph{operation-outer}
+    \addgraph{operation-inner}
+    \caption{Latency of \store and \query operation and repairing in a world-wide deployment.
     The top plot varies the outer code parameters of \sys, while the bottom plot varies the inner code.
     }
     \label{fig:latency}
@@ -186,6 +186,22 @@ By implementing the DHT record optimization, \query latency of \sys remains cons
 %The good support provided by the library not only make operations blazing fast, but also makes it feasible to regularly recover tons of whole objects among the peers without worrying about performance overhead.
 
 %Future work. Monitor cpu usage and network bandwidth usage.
+
+\begin{figure}
+    \addgraph{concurrent-put-get}
+    \addgraph{concurrent-repair}
+    \caption{Latency of concurrent \store and \query operation and repairing.
+    }
+    \label{fig:concurrent}
+\end{figure}
+
+\begin{figure}
+    \addgraph{scale}
+    \caption{Latency of \store and \query operation and repairing with varying number of nodes.
+    }
+    \label{fig:scale}
+\end{figure}
+
 
 \paragraph{Microbenchmarks}
 
