@@ -24,12 +24,13 @@ Recently, more than 1600 TiB of data on the Filecoin~\cite{filecoin} network los
 
 In this work, we propose a new decentralized object storage system, \sys, to address this durability challenge.
 \sys uses \emph{rateless erasure code} to generate a virtual stream of encoding chunks for each object.
-When storing an object, the client uses its private key to materialize the infinite stream into a finite set of selected chunks.
+When storing an object, the client uses its private key to materialize the infinite stream into a finite set of randomly selected chunks.
 Critically, the mapping between the materialized chunks and the original object is \emph{opaque} to all participants except the client.
 With sufficient objects stored in the system, adversaries have negligible probability to attack enough materialized chunks of the same object to compromise durability.
 
-To handle high churn and failure rate, \sys applies \emph{large erasure code} to store each encoding chunk.
-Compared to conventional maximum distance separable code (MDS), a large code offers better fault tolerance properties in a highly asynchronous network and faulty environment.
+To handle the high churn and failure rate, \sys applies rateless code a second time for storing each encoding chunk.
+Compared to conventional maximum distance separable code (MDS), rateless code offers better fault tolerance properties in a highly asynchronous network and faulty environment.
+Rateless code support efficient \emph{large code} encoding.
 The large number of code symbols improves statistical reliability of the chunk without increasing redundancy.
 More importantly, it eschews the need for time-sensitive encoding repair --- an impractical requirement in a decentralized network --- and permits repair at a steady average-rate.
 The bigger symbol space also facilitates nodes to perform repair \emph{independently}, avoiding costly coordination.
