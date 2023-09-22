@@ -368,28 +368,31 @@ The inaugural group peers receive the membership from the client issuing the \st
 However, a node may fail to receive client issued membership.
 Temporary network asynchrony can also lead to divergence in membership views across peers.
 To handle such cases, each peer periodically calls $\fn{MembershipTimer}()$ to \emph{eventually} synchronize on membership views.
+The procedure invokes $\fn{Locate}()$ to find peers currently responsible for storing encoding fragments for the chunk.
 %(pseudocode in \ifarxiv\autoref{sec:proto-more}\else the supplementary material\fi)
-The procedure linearly search the fragment hash stream from \wl to \wh, and for each missing member, it attempts to locate a new responsible peer that either already stores the fragment, or it instructs the peer to build the fragment.
-Fragment construction is elaborated in \autoref{sec:protocol:detail:repair}.
-When new members are located, \wh is updated according to the following invariant: the number of unique fragments between \wl and \wh is at most $R$.
-\lijl{Extra members for more lazy repair?}
-A corollary is that \wh may drop when new peers are added to the membership.
+%The procedure linearly search the fragment hash stream from \wl to \wh, and for each missing member, it attempts to locate a new responsible peer that either already stores the fragment, or it instructs the peer to build the fragment.
+%When new members are located, \wh is updated according to the following invariant: the number of unique fragments between \wl and \wh is at most $R$.
+%\lijl{Extra members for more lazy repair?}
+%A corollary is that \wh may drop when new peers are added to the membership.
 %We, however, do not remove peers beyond the updated \wh from the view; those peers effectively serve as extra redundancy, and this approach reduces unnecessary repairs due to view divergence.
-If the number of alive peers in the membership windows drops below $R$, the procedure extends \wh to add new members into the group, until membership size is restored.
+%If the number of alive peers in the membership windows drops below $R$, the procedure extends \wh to add new members into the group, until membership size is restored.
 
-To detect failures in a chunk group, group members periodically broadcast fragment persistence claims to other peers in the group ($\fn{HeartbeatTimer}()$).
+To detect failures in a chunk group, group members periodically broadcast fragment persistence claims to other peers in the group.
+%($\fn{HeartbeatTimer}()$).
 The persistence claim includes the fragment index within the encoding stream and the selection proof.
 To reduce the cost of generating selection proofs every timer interval, nodes can store them alongside the fragment.
-When a node receives a heartbeat message, it ignores the message if the sender is not within the membership window or verification of the selection proof fails.
+When a node receives a heartbeat message, it ignores the message if verification of the selection proof fails.
 Otherwise, the node adds the sender to its membership view and refreshes the sender's liveness.
+When the number of alive group members drop below $R$, the node initiates chunk repair.
+The repair process is elaborated in \autoref{sec:protocol:detail:repair}.
 %The sender may not be in the node's local view in a few scenarios: the node's local view is not complete; temporary network partition between the nodes caused by asynchrony; the sender is a new member, but the node was not informed.
 %In any case, the node verifies the selection proof, adds the sender to its local membership view, and updates \wh.
 
-Adversary nodes can arbitrarily extend their membership (with or without holding their fragments).
-Since honest nodes eventually leave or fail, if we allow nodes to stay in a chunk group indefinitely, a group may eventually be occupied by enough faulty nodes such that \emph{recoverability} is violated.
-To ensure recoverability, \sys enforces a bounded lifetime for each selected member in a chunk group.
-Concretely, each member periodically removes peer at the \wl position in a group and increments \wl.
-The \wl increment interval is set to approximately the average churn rate of the system.
+%Adversary nodes can arbitrarily extend their membership (with or without holding their fragments).
+%Since honest nodes eventually leave or fail, if we allow nodes to stay in a chunk group indefinitely, a group may eventually be occupied by enough faulty nodes such that \emph{recoverability} is violated.
+%To ensure recoverability, \sys enforces a bounded lifetime for each selected member in a chunk group.
+%Concretely, each member periodically removes peer at the \wl position in a group and increments \wl.
+%The \wl increment interval is set to approximately the average churn rate of the system.
 \lijl{Discuss churn rate estimation?}
 
 \subsubsection{Repairing Encoded Chunks}
