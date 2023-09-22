@@ -5,8 +5,10 @@ Our object store interface is similar to Amazon S3~\cite{amazon_s3} and Google C
 Many prior systems deploy a centralized service to manage storage metadata~\cite{gfs,bigtable}, while metadata management is fully decentralized in \sys.
 Dynamo~\cite{dynamo} uses consistent hashing~\cite{chash} to assign keys to nodes, similar to our DHT-based approach.
 Object-to-server mapping in Ceph~\cite{ceph} is done through a distribution function CRUSH~\cite{crush} which maps each object to a placement group based on the object hash.
+\ifspace
 Our approach of using rateless erasure code is inspired by liquid storage~\cite{liquid}.
 Other erasure codes such as local reconstruction codes~\cite{lrcode}, regenerating codes~\cite{rcode}, and traditional MDS codes have also been used in distributed storage.
+\fi
 
 \paragraph{Decentralized Storage.}
 Building reliable storage systems in a fully decentralized environment has been explored extensively~\cite{xfs,farsite,oceanstore,ipfs,filecoin,ar}.
