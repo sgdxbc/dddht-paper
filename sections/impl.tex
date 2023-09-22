@@ -31,6 +31,8 @@ This keeps the node to always be responsive, and this scalable design enables no
 We use wirehair \cite{wirehair}, an $O(1)$ time fountain code implementation, as our rateless erasure code.
 Wirehair not only attains high performance, it can also recover the original data with an expected $k + 0.02$ fragments.
 
+The implementation takes 2.1K lines of Rust code.
+
 % Our implementation attempts more than $R$ encoding indices for each \texttt{PUT} operation, in anticipation of unsuccessful peer selection for some indices.
 % This approach brings additional latency benefit.
 % %Also, the peer selection relays on iterative DHT operations, which makes its tail latency suboptimal.
