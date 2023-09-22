@@ -42,13 +42,16 @@ Randomness and verifiability of the selection outcome ensures that sufficient co
 %\lijl{Maybe add homomorphic hashing and other optimizations here.}
 
 \sys is of a practical design.
-We implement \sys on top of libp2p and deploy \sys on 10,000 nodes across 5 continents on AWS.
+% We implement \sys on top of libp2p and deploy \sys on 10,000 nodes across 5 continents on AWS.
+We implement \sys prototype and deploy \sys on 10,000 nodes across 5 continents on AWS.
 \sys shows good performance in both large-scale simulation and physical deployments.
 It achieves comparable repair traffic overhead when comparing to a baseline distributed replicated storage system.
 Critically, \sys significantly improves fault tolerance to Byzantine participants and targeted adversaries compared to the baseline.
 Even when using a coding scheme with small redundancy level, \sys guarantees data durability with more than 33\% Byzantine participants, and more than 10\% of the nodes under targeted attacks.
 %\sys performs data object \store and \query with 1.6x-3.1x lower latency compare to existing decentralized storage, while achieving similar scalability over thousands of peers.
+\sys performs data object \store with 2.1x-1.4x latency and \query with 0.92x latency compare to replicated baseline system, while achieving similar scalability over thousands of peers.
 \lijl{Update evaluation results}
+\sgd{updated}
 
 
 % Obsolete text
