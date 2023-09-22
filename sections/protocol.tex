@@ -57,17 +57,18 @@ We also make standard cryptography assumptions, i.e., the probability of subvert
     \centering
     \includegraphics[width=0.9\linewidth]{figures/store}
     \caption{\sys object store procedure.
-    Client first applies an outer-layer erasure code to generate a set of encoded chunks.
-    Each chunk is then encoded into a stream of fragments using a rateless code.
+    Client first applies a rateless code to generate a set of encoded chunks.
+    Each chunk is then encoded into a stream of fragments using a second layer of rateless code.
     A selection procedure assigns each fragment to randomly chosen nodes in the system.}
     \label{fig:store}
 \end{figure}
 
 As shown in \autoref{fig:store}, \sys uses two layers of erasure coding to ensure object durability.
-When storing an object, clients first apply a keyed outer-layer erasure code to generate a set of \emph{encoded chunks}.
-The encoding process is \emph{irreversible}: Even when external parties know the object content, they can only infer the mapping between encoded chunks and the object with negligible probability.
-The encoding process can be done either by encrypting the object using a secret key, or by using a rateless code with randomly chosen symbol indices.
-For each chunk, \sys uses a publicly-known rateless erasure code to generate a stream of \emph{encoding fragments}.
+When storing an object, a client first applies an outer-layer rateless code to generate a sequence of \emph{encoded chunks}.
+It then uses its private key and the object hash to deterministically select a set of chunks from the sequence.
+The process is \emph{irreversible}: Even when external parties know the object content, they can only infer the mapping between the encoded chunks and the object with negligible probability.
+%The encoding process can be done either by encrypting the object using a secret key, or by using a rateless code with randomly chosen symbol indices.
+For each selected chunk, \sys uses a publicly-known rateless code to generate a stream of \emph{encoding fragments}.
 The client then stores $R$ encoding fragments, where $R$ is large enough to ensure \emph{recoverability} of the chunk, at randomly selected nodes in the system.
 
 %The encoding fragments for a chunk are stored on a dynamic set of \sys nodes, collectively termed a chunk group.
@@ -95,20 +96,19 @@ The client then stores $R$ encoding fragments, where $R$ is large enough to ensu
 %If not done carefully, adversaries can collude and claim persistence of enough fragments for a chunk such that less than $k + \epsilon$ fragments are stored on honest nodes.
 %Once those adversaries discard their local fragments, the chunk is permanently lost.
 
-Randomly selecting nodes to store fragments is critical to the safety of \sys.
+Randomly selecting nodes to store chunk fragments is critical to the safety of \sys.
 To that end, \sys designs a \emph{decentralized} selection protocol with verifiable randomness, as shown in \autoref{fig:selection}.
 %The protocol leverages two sources of randomness: a cryptographic hash of the fragment and randomness from a verifiable random function (VRF).
-To choose responsible nodes for a fragment, \sys first uses a cryptographic hash of the fragment to locate candidates on a distributed hash table (DHT)~\cite{chash,chord,kademlia}.
-The \emph{candidate set} includes nodes who are in proximity to the  fragment hash on the hash ring.
-\sys ensures randomness of the candidate sets through two mechanisms.
-First, nodes are randomly distributed on the hash ring by generating IDs using a cryptographic hash of their public key~\cite{kademlia}.
-Second, property of rateless coding implies that each fragment in the symbol sequence, and by extension its candidate set, is randomly distributed on the ring.
-Note that \sys does not require consensus on the candidate set; each node can independently derive the \emph{same} fragment hash and locate an approximation of the set.
+To choose responsible nodes for a chunk, \sys first uses a cryptographic hash of the chunk to locate candidates on a distributed hash table (DHT)~\cite{chash,chord,kademlia}.
+The \emph{candidate set} includes nodes who are in proximity to the chunk hash on the hash ring.
+\sys ensures randomness of the candidate set by generating node IDs using a cryptographic hash of their public key~\cite{kademlia}.
+%Second, property of rateless coding implies that each fragment in the symbol sequence, and by extension its candidate set, is randomly distributed on the ring.
+Note that \sys does not require consensus on the candidate set; each node can use the chunk hash to locate an approximation of the set.
 
 %We impose two restrictions on peer selection from a candidate set: The selection process is fully decentralized, and the selection result is publicly verifiable.
 %\sys applies verifiable random function (VRF) to address both challenges.
-Each node in the candidate set independently feeds the fragment hash to a publicly-known VRF to generate a random hash and a proof.
-Selection outcome is derived from the generated hash, the node ID, and the fragment hash, with the selection probability inversely proportional to the hash distance from the fragment.
+Each node in the candidate set independently feeds the chunk hash to a publicly-known VRF to generate a random hash and a proof.
+Selection outcome is derived from the generated hash, the node ID, and the chunk hash, with the selection probability inversely proportional to the hash distance from the chunk.
 The selected nodes present their VRF outputs as a selection proof, which can be publicly verified by any participant of the system.
 
 %This decentralized process may lead to selection of zero or more than one peers, both of which are easily handled by our storage scheme.
@@ -130,16 +130,17 @@ Chunk repair in \sys is fully decentralized, as shown in \autoref{fig:chunkrepai
 Nodes storing encoding fragments for the same chunk form a \emph{chunk group}.
 Chunk group members periodically broadcast persistence claims of their stored fragments to other peers in the group (step 1).
 When repair condition is met, group members perform randomized peer selection to locate new members to replenish the group (step 2).
-New group members pull fragments from existing peers (step 3), decode the original chunk, and generate new encoding fragments using our rateless code.
+New members pull fragments from existing peers (step 3), decode the original chunk, and generate new encoding fragments using the inner-layer rateless code.
 
 \paragraph{Object retrieval}
 
-To retrieve an object, a client needs to recover $\kout$ distinct encoded chunks, each of which requires reading $\kin + \epsilon$ encoding fragments.
-Lacking a centralized metadata service, locating fragments is more challenging in \sys given the dynamic nature of chunk group membership.
-\sys leverages determinism of the rateless erasure code and verifiable membership to address the issue.
-From a chunk hash (which is part of the object ID), the client reconstructs the stream of encoding fragment hash using homomorphic hashing~\cite{homo_hash}.
-It then applies the same peer selection protocol to locate nodes who are responsible for storing the fragments.
-To reduce fragment search time, \sys nodes can optionally record their identities to the DHT when storing a fragment, an approach similar to the publisher record in IPFS.
+To retrieve an object, a client needs to recover $\kout + \epsilon$ distinct encoded chunks, each of which requires reading $\kin + \epsilon$ encoding fragments.
+%Lacking a centralized metadata service, locating fragments is more challenging in \sys given the dynamic nature of chunk group membership.
+\sys leverages determinism of a rateless code and verifiable membership to perform object reads.
+For each stored chunk hash (which is part of the returned object ID), %the client reconstructs the stream of encoding fragment hash using homomorphic hashing~\cite{homo_hash}.
+the client applies the same peer selection protocol to locate nodes who are responsible for storing encoding fragments of the chunk.
+%To reduce fragment search time, \sys nodes can optionally record their identities to the DHT when storing a fragment, an approach similar to the publisher record in IPFS.
+After retrieving enough fragments, the client can reconstruct the encoded chunks, and subsequently the original object.
 
 %To retrieve an object, a client needs to recover $k$ of its chunks, each of which requires reading $k + \epsilon$ distinct encoded fragments.
 %Locating alive encoded fragments for a chunk is more challenging in \sys given the dynamic nature of chunk group membership.
