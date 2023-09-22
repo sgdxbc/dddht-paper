@@ -202,6 +202,8 @@ This is because of the inner code deployed in DHT allow \sys to recover the obje
 
 %Future work. Monitor cpu usage and network bandwidth usage.
 
+\paragraph{Concurrent operations.}
+
 \begin{figure}
     \addgraph{concurrent-put-get}
     \addgraph{concurrent-repair}
@@ -218,6 +220,8 @@ We can derive that \sys can support more than 400K \store and 720K \query for ev
 and can tolerance over 13M repairing per day.
 This suggests that \sys is capable to handle massive real-world workload.
 
+\paragraph{Scalability.}
+
 \begin{figure}
     \addgraph{scale}
     \caption{Latency of \store and \query operation and repairing with varying number of nodes.
@@ -228,7 +232,7 @@ This suggests that \sys is capable to handle massive real-world workload.
 We also evaluate \sys with different number of nodes, as shown in \autoref{fig:scale}.
 Same as the replicated baseline system, \sys is also able to maintain near-constant performance regarding the system's scale.
 
-\paragraph{Microbenchmarks}
+\paragraph{Microbenchmarks.}
 
 \begin{figure}
     \addgraph{coding-time-outer}

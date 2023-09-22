@@ -1,4 +1,4 @@
-\paragraph{Distributed Storage Systems}
+\paragraph{Distributed Storage Systems.}
 As mentioned in \autoref{sec:background}, our work is related to a long line of research and production systems in distributed storage~\cite{ceph,gfs,bigtable,dynamo,liquid,amazon_s3,amazon_glacier,google_storage,google_cloudstore,google_coldline}.
 Unlike \sys, all those systems are centrally managed by a single administrative entity, and all participants are assumed to be non-Byzantine.
 Our object store interface is similar to Amazon S3~\cite{amazon_s3} and Google Cloud Storage~\cite{google_cloudstore}.
@@ -8,7 +8,7 @@ Object-to-server mapping in Ceph~\cite{ceph} is done through a distribution func
 Our approach of using rateless erasure code is inspired by liquid storage~\cite{liquid}.
 Other erasure codes such as local reconstruction codes~\cite{lrcode}, regenerating codes~\cite{rcode}, and traditional MDS codes have also been used in distributed storage.
 
-\paragraph{Decentralized Storage}
+\paragraph{Decentralized Storage.}
 Building reliable storage systems in a fully decentralized environment has been explored extensively~\cite{xfs,farsite,oceanstore,ipfs,filecoin,ar}.
 Farsite~\cite{farsite} uses BFT replication for directory metadata and CFT replication for file data.
 Membership management is done through trusted certificate authorities.
@@ -18,7 +18,7 @@ However, OceanStore makes centralized placement decisions and relies on trusted,
 As detailed in \autoref{sec:background}, IPFS~\cite{ipfs} uses DHT to store publisher record without centralization, but offers no mechanism to reliably store objects.
 Filecoin~\cite{filecoin} and Arweave~\cite{ar} both use tokens to incentivize nodes to store objects longer, but has weak durability guarantees in the presence of failures.
 
-\paragraph{BFT Protocols}
+\paragraph{BFT Protocols.}
 There exists a long line of research on replication protocols that tolerant Byzantine failures~\cite{pbft,algorand,hotstuff,bitcoin}.
 These protocols, however, require data to be replicated on all participants, sacrificing storage efficiency.
 Our peer selection protocol using verifiable random function is inspired by Algorand~\cite{algorand} and Sleepy Consensus~\cite{sleepyconsensus}.

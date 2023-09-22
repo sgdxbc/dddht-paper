@@ -132,7 +132,7 @@ Chunk group members periodically broadcast persistence claims of their stored fr
 When repair condition is met, group members perform randomized peer selection to locate new members to replenish the group (step 2).
 New members pull fragments from existing peers (step 3), decode the original chunk, and generate new encoding fragments using the inner-layer rateless code.
 
-\paragraph{Object retrieval}
+\paragraph{Object retrieval.}
 
 To retrieve an object, a client needs to recover $\kout$ distinct encoded chunks, each of which requires reading $\kin$ encoding fragments.
 %Lacking a centralized metadata service, locating fragments is more challenging in \sys given the dynamic nature of chunk group membership.
@@ -152,7 +152,7 @@ After retrieving enough fragments, the client can reconstruct the encoded chunks
 %In the worst case where no fragment pointer is found, the requesting node either performs a linear search of the encoding fragment stream, or disseminates a chunk query request using a gossip protocol.
 
 
-\subsection{Protocol Details}
+\subsection{Protocol Details.}
 
 \lijl{Describe somewhere that we are using a stake system, each staked identity stores a fixed amount of data, and so the total number of nodes is fixed}
 
