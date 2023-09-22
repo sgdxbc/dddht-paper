@@ -19,7 +19,7 @@ The verifiable random selection proof and persistence claim's signature use ed25
 All messages are serialized using bincode~\cite{bincode}.
 
 Nodes send HTTP requests as asynchronous messaging.
-The requests are handled by an immediate dummy \texttt{200 OK} response,
+The requests are handled with an immediate dummy \texttt{200 OK} response,
 and any further reply will be sent as a reversed HTTP request.
 This ensures the system can tolerance arbitrary network delay and node slow down.
 
