@@ -206,10 +206,10 @@ For each stored fragment, it maintains a local view of the alive peers in the co
 We define a constant $R$ to denote the threshold chunk group size.
 \lijl{Explain how to calculate $R$.}
 Repair is triggered when group size drops below $R$.
-Since the inner rateless code generates an infinite stream of encoding symbols, each encoding index maps to a unique fragment, and by extension, a set of responsible nodes.
-We define two variables, \wl and \wh, to delineate the current encoding index \emph{window} of the chunk group.
-Only peers within the encoding window are considered \emph{active}.
-Peers below \wl are permanently ignored, while nodes above \wh wait for future peer selection.
+%Since the inner rateless code generates an infinite stream of encoding symbols, each encoding index maps to a unique fragment, and by extension, a set of responsible nodes.
+%We define two variables, \wl and \wh, to delineate the current encoding index \emph{window} of the chunk group.
+%Only peers within the encoding window are considered \emph{active}.
+%Peers below \wl are permanently ignored, while nodes above \wh wait for future peer selection.
 
 \subsubsection{\sys Client Protocol}
 
