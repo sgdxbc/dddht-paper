@@ -19,7 +19,7 @@ We use \emph{outer code} to denote the rateless code that a client applies to an
 Each chunk is applied another rateless code when storing, referred to as the \emph{inner code}.
 
 \begin{invariant}
-At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $\kout$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
+At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $\kout$\footnote{Both $\kout$ and $\kin$ include $\epsilon$ of rateless code.} encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
 An encoded chunk is recoverable if at least $\kin$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
 \label{inv:safety}
 \end{invariant}
