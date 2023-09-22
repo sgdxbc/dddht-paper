@@ -302,29 +302,29 @@ Similar to \fn{store}, all fragment retrievals can be done in parallel.
 
 \begin{algorithm}[t]
     \begin{algorithmic}[1]
-        \Procedure{Locate}{$\var{fhash}$}
-            \State $\var{candidates} \gets \fn{DHT-Lookup}(\var{fhash}), \var{nodes} \gets \set{}$
+        \Procedure{Locate}{$\var{chash}$}
+            \State $\var{candidates} \gets \fn{DHT-Lookup}(\var{chash}), \var{nodes} \gets \set{}$
             \ForAll{$\var{c} \in \var{candidates}$}
                 \State request selection proof $\langle r, \pi \rangle$ from $c$
-                \If{$\fn{VerifySelection}(\var{fhash}, r, \pi, \var{pk}_{c})$}
+                \If{$\fn{VerifySelection}(\var{chash}, r, \pi, \var{pk}_{c})$}
                     \State insert $\var{c}$ into $\var{nodes}$
                 \EndIf
             \EndFor
             \State \Return $\var{nodes}$
         \EndProcedure
-        \Procedure{SelectionProof}{$\var{fhash}$}
+        \Procedure{SelectionProof}{$\var{chash}$}
             \State $\var{d} \gets \fn{Distance}(\var{hash}, \var{ID})$
-            \State $\langle \var{r}, \pi \rangle \gets \fn{VRF}_{sk}(\var{fhash})$
-            \State $s \gets r < 2^{hashlen - \var{d}}$
+            \State $\langle \var{r}, \pi \rangle \gets \fn{VRF}_{sk}(\var{chash})$
+            \State $s \gets r < R * 2^{hashlen - \var{d}}$
             \State \Return $\langle \var{r}, \pi, s \rangle$
         \EndProcedure
-        \Procedure{VerifySelection}{$\var{fhash}, r, \pi, \var{pk}$}
-            \If{$\neg \fn{VerifyVRF}_{pk}(r, \pi, \var{fhash})$}
+        \Procedure{VerifySelection}{$\var{chash}, r, \pi, \var{pk}$}
+            \If{$\neg \fn{VerifyVRF}_{pk}(r, \pi, \var{chash})$}
                 \Return false
             \EndIf
             \State $\var{nID} \gets \fn{NodeID}(\var{pk})$
             \State $\var{d} \gets \fn{Distance}(\var{hash}, \var{nID})$
-            \State \Return $r < 2^{hashlen - d}$
+            \State \Return $r < R * 2^{hashlen - d}$
         \EndProcedure
         \Procedure{Distance}{$\var{a}, \var{b}$}
             \State $D \gets \frac{2^{hashlen}}{N}$ // $N$ is the total number of nodes
@@ -336,26 +336,26 @@ Similar to \fn{store}, all fragment retrievals can be done in parallel.
 \end{algorithm}
 
 As shown in \autoref{alg:selection}, \sys uses verifiable randomness to select nodes to store encoding fragments.
-The procedure first invokes $\fn{DHT-Lookup}$ to get a list of candidate nodes for a fragment hash.
-The function returns the $N$ closest neighbor nodes of the hash value on the ring.
+The procedure first invokes $\fn{DHT-Lookup}$ to get a list of candidate nodes for an encoded chunk.
+The function returns the $N$ neighbor nodes closest to the chunk hash value on the ring.
 Note that each lookup may return a different candidate set due to the dynamic and decentralized nature of DHT.
-However, all final selection will include an unforgeable selection proof, and the protocol tolerates multiple responsible nodes for one fragment.
+However, all final selection will include an unforgeable selection proof, and the protocol tolerates duplicated responsible nodes for a fragment.
 
 For each candidate in the set, the caller requests a fragment \emph{selection proof} from the node.
-The selection probability of a candidate is inversely proportional to its distance to the fragment hash, and the expected number of selected nodes is approximated 1 \lijl{what is the actual expectation?}.
+The selection probability of a candidate is inversely proportional to its distance to the chunk hash, and the expected number of selected nodes is approximated $R$ \lijl{what is the actual expectation?}.
 %To do so, \sys divides the hash ring into \emph{buckets}, each with hash length $BucketSize$.
 %The requested node first calculates its distance in unit of buckets to the fragment hash.
-To do so, the algorithm ($\fn{Distance}$) calculates a distance metric in the expected number of nodes in the fragment hash neighborhood up to the candidate.
+To do so, the algorithm ($\fn{Distance}$) calculates a distance metric in the expected number of nodes in the chunk hash neighborhood up to the candidate.
 The candidate then feeds its secrete key $sk$ and the fragment hash into a public-known VRF.
 The VRF outputs a random hash $r$ and a proof $\pi$.
 Properties of VRF ensure that $r$ is uniformly distributed between $0$ and $2^{hashlen}-1$.
-By comparing $r$ to a fraction of the total hash space inverse exponential to the distance metric, the selection probability drops exponentially with each additional node closer to the fragment hash.
+By comparing $r$ to a fraction of the total hash space inverse exponential to the distance metric, the selection probability drops exponentially with each additional node closer to the chunk hash.
 \lijl{We need to empirically verify the likelihood of finding a responsible peer for a fragment.}
 
 %This decentralized process may lead to selection of zero or more than one peers, both of which are easily handled by our storage scheme.
 
-Once the caller receives a selection proof, it inputs the random hash $r$, the proof $\pi$, the fragment hash, and the public key of the prover to the $\fn{VerifyVRF}$ function.
-The function verifies that the random hash is properly generated by the prover using the same fragment hash.
+Once the caller receives a selection proof, it inputs the random hash $r$, the proof $\pi$, the chunk hash, and the public key of the prover to the $\fn{VerifyVRF}$ function.
+The function verifies that the random hash is properly generated by the prover using the same chunk hash.
 If $\fn{VerifyVRF}()$ passes, the caller follows the same procedure in $\fn{SelectionProof}()$ to verify candidate selection.
 To derive the ID of the candidate, $\fn{NodeID}()$ calculates a SHA256 hash of its public key.
 
