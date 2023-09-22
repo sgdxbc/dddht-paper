@@ -19,8 +19,8 @@ We use \emph{outer code} to denote the rateless code that a client applies to an
 Each chunk is applied another rateless code when storing, referred to as the \emph{inner code}.
 
 \begin{invariant}
-At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $\kout + \epsilon$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
-An encoded chunk is recoverable if at least $\kin + \epsilon$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
+At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $\kout$ encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
+An encoded chunk is recoverable if at least $\kin$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
 \label{inv:safety}
 \end{invariant}
 
@@ -134,7 +134,7 @@ New members pull fragments from existing peers (step 3), decode the original chu
 
 \paragraph{Object retrieval}
 
-To retrieve an object, a client needs to recover $\kout + \epsilon$ distinct encoded chunks, each of which requires reading $\kin + \epsilon$ encoding fragments.
+To retrieve an object, a client needs to recover $\kout$ distinct encoded chunks, each of which requires reading $\kin$ encoding fragments.
 %Lacking a centralized metadata service, locating fragments is more challenging in \sys given the dynamic nature of chunk group membership.
 \sys leverages determinism of a rateless code and verifiable membership to perform object reads.
 For each stored chunk hash (which is part of the returned object ID), %the client reconstructs the stream of encoding fragment hash using homomorphic hashing~\cite{homo_hash}.
@@ -222,16 +222,14 @@ Repair is triggered when group size drops below $R$.
                 \State $\var{members} \gets \set{}, i \gets 0$
                 \While{$|$stored fragments$|$ $ < R$}
                     \State $\var{frag} \gets \fn{InnerEncode}(\var{chunk}, i)$
-                    \State $\var{nodes} \gets \fn{Locate}(\fn{Hash}(\var{frag}))$
-                    \If{$\var{nodes}$ is not empty}
-                    \State request any $\var{n} \in \var{nodes}$ to store frag
+                    \State $\var{nodes} \gets \fn{Locate}(\var{chash})$
+                    \State request $n$ to store frag where $n \in \var{nodes} \land n \notin \var{members}$
                     \State insert $n$ into $\var{members}$
-                    \EndIf
                     \State increment $i$
                 \EndWhile
-                \ForAll{$\var{node} \in \var{members}$}
-                    \State initialize $\var{chash}$ group with $\var{members}$
-                \EndFor
+                %\ForAll{$\var{node} \in \var{members}$}
+                %    \State initialize $\var{chash}$ group with $\var{members}$
+                %\EndFor
                 \State insert $\var{chash}$ into $\var{chashes}$
             \EndFor
             \State \Return $\var{chashes}$
@@ -244,10 +242,10 @@ Repair is triggered when group size drops below $R$.
             \State \Return $\fn{OuterDecode}(\var{chunks})$
         \EndProcedure
         \Procedure{RetrieveChunk}{$\var{chash}$}
-            \State $\var{frags} \gets \set{}, i \gets \wl$
+            \State $\var{frags} \gets \set{}, i \gets 0$
             \While{$|\var{frags}| < \kin$}
-                \State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
-                \State $\var{nodes} \gets \fn{Locate}(\var{fhash})$
+                %\State $\var{fhash} \gets \fn{InnerEncodeHash}(\var{chash}, i)$
+                \State $\var{nodes} \gets \fn{Locate}(\var{chash})$
                 \State $\var{frag} \gets $ retrieve from any $\var{n} \in \var{nodes}$
                 \State insert $\var{frag}$ into $\var{frags}$
                 \State increment $i$
@@ -278,7 +276,7 @@ Once enough fragments are stored, the client also forwards the membership to eac
 The hash of all encoded chunks are returned to the client for object retrieval.
 As there is no dependency among the different chunks, the client can perform all peer selection and fragment store in parallel.
 
-To query an object, a client reconstructs $\kout + \epsilon$ encoded chunks from its list of chunk hashes.
+To query an object, a client reconstructs $\kout$ encoded chunks from its list of chunk hashes.
 For each chunk hash, the client applies $\fn{Locate}()$ to find peers responsible for storing its encoding fragments.
 With verifiable selection proof (detailed in \autoref{sec:protocol:detail:selection}), only peers from the chunk group will be returned.
 The client then attempts to request chunk fragments from these peers.
