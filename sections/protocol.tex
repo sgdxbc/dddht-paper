@@ -219,7 +219,7 @@ Repair is triggered when group size drops below $R$.
             \State $\var{chunks} \gets \fn{OuterEncode}(\var{obj}), \var{chashes} \gets \set{}$
             \ForAll{$\var{chunk} \in \var{chunks}$}
                 \State $\var{chash} \gets \fn{Hash}(\var{chunks})$
-                \State $\var{members} \gets \set{}, i \gets \wl$
+                \State $\var{members} \gets \set{}, i \gets 0$
                 \While{$|$stored fragments$|$ $ < R$}
                     \State $\var{frag} \gets \fn{InnerEncode}(\var{chunk}, i)$
                     \State $\var{nodes} \gets \fn{Locate}(\fn{Hash}(\var{frag}))$
@@ -261,34 +261,38 @@ Repair is triggered when group size drops below $R$.
 
 \autoref{alg:client} lists the client side protocol.
 Being a decentralized peer-to-peer system, client operations are issued on participating nodes, though they can serve as proxies for light-weight clients.
-We use \emph{clients} to denote nodes that issue client operations.
+Here, we use \emph{clients} to denote nodes that issue client operations.
 
 \lijl{Describe expiration time.}
 \lijl{Discuss secrets in the outer layer code.}
 
-To store an object, a client uses the outer layer encoding function to generate a set of encoded chunks.
-For each chunk, the client picks a randomized genesis time $t$ in the past, and derives the initial chunk $\wl$ based on $t$ and the current time.
-Time randomization reduces timing correlation among chunks of the same object, minimizing effectiveness of targeted attacks.
-The client then applies the inner layer erasure code to output a stream of fragments and stores $R$ of them at responsible peers, starting from $\wl$.
-Chunk genesis time $t$ is embedded in each fragment, so that each peer can independently derive $\wl$.
+To store an object, a client uses the outer layer encoding function $\fn{OuterEncode}$ to generate a set of encoded chunks.
+The function applies a rateless code on the object, and uses the client's private key and the object hash to randomly select $n$ chunks from the encoding sequence.
+%For each chunk, the client picks a randomized genesis time $t$ in the past, and derives the initial chunk $\wl$ based on $t$ and the current time.
+%Time randomization reduces timing correlation among chunks of the same object, minimizing effectiveness of targeted attacks.
+For each chunk, the client then applies the inner layer erasure code to output a stream of fragments and stores $R$ of them at responsible peers.
+%Chunk genesis time $t$ is embedded in each fragment, so that each peer can independently derive $\wl$.
 Peer selection for a fragment is performed by the $\fn{Locate}()$ procedure, which we further elaborate in \autoref{sec:protocol:detail:selection}.
 %If no responsible peer is found, the client skips the fragment and continues down the stream, until $k_{inner}$ fragments are properly stored.
 Once enough fragments are stored, the client also forwards the membership to each group peer for bootstrapping.
 The hash of all encoded chunks are returned to the client for object retrieval.
-As there is no dependency among the different chunks and fragments, the client can perform all peer selection and fragment store in parallel.
+As there is no dependency among the different chunks, the client can perform all peer selection and fragment store in parallel.
 
-To query an object, a client reconstructs $\kout$ encoded chunks from its list of chunk hashes.
-For each chunk hash, the client performs a linear search on the encoding stream to retrieve $\kin$ fragments.
-Specifically, it applies homomorphic hashing~\cite{homo_hash} on the inner layer code and the chunk hash to generate a stream of fragment hashes, and requests each fragment from responsible peers using $\fn{Locate}()$.
-As the rear end of the membership window slides at fixed time interval, the client can start the search at an estimated \wl based on chunk genesis time.
-\lijl{Client needs to store genesis time?}
-This reduces the search time from linear to constant in the common case.
+To query an object, a client reconstructs $\kout + \epsilon$ encoded chunks from its list of chunk hashes.
+For each chunk hash, the client applies $\fn{Locate}()$ to find peers responsible for storing its encoding fragments.
+With verifiable selection proof (detailed in \autoref{sec:protocol:detail:selection}), only peers from the chunk group will be returned.
+The client then attempts to request chunk fragments from these peers.
+%For each chunk hash, the client performs a linear search on the encoding stream to retrieve $\kin$ fragments.
+%Specifically, it applies homomorphic hashing~\cite{homo_hash} on the inner layer code and the chunk hash to generate a stream of fragment hashes, and requests each fragment from responsible peers using $\fn{Locate}()$.
+%As the rear end of the membership window slides at fixed time interval, the client can start the search at an estimated \wl based on chunk genesis time.
+%\lijl{Client needs to store genesis time?}
+%This reduces the search time from linear to constant in the common case.
 Once $\kin$ fragments are retrieved, it uses the inner layer decoding function to reconstruct the chunk.
 Finally, the original object is recovered by applying outer layer decoding on $\kout$ reconstructed chunks.
 Similar to \fn{store}, all fragment retrievals can be done in parallel.
 
-As each member node stores a local view of the group membership, clients can optimize $\fn{Query}()$ by requesting membership view from each located peer.
-With this optimization, a client only needs to search for a few fragment hashes in the common case to gather enough member addresses to reconstruct the chunk.
+%As each member node stores a local view of the group membership, clients can optimize $\fn{Query}()$ by requesting membership view from each located peer.
+%With this optimization, a client only needs to search for a few fragment hashes in the common case to gather enough member addresses to reconstruct the chunk.
 
 %To further reduce object retrieval latency, a node optionally records its own address and the selection proof into the DHT (with the chunk hash as the key) when being selected to store a fragment.
 %When reconstructing a chunk, the client first queries the DHT to receive a list of member nodes.
