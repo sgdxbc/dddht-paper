@@ -148,10 +148,10 @@ The node performed sanity check to make sure the object is properly retrieved.
 
 In the evaluation of repairing, we trigger a special command to the nodes to force them evict the oldest member that stores the chunk,
 which is effectively same as the member has disconnected from the network.
-The remaining group members find a new member to replace the evicted one, 
+The remaining group members find a new member to replace the evicted one,
 and report the latency between the eviction and the instant when the new member is known to be storing the chunk.
 
-We evaluate the system with a simulated DHT routing system that provides node discovery in constant time, 
+We evaluate the system with a simulated DHT routing system that provides node discovery in constant time,
 to mitigate the affection of DHT routing performance on the result and focus on the performance differences of the protocols.
 
 \paragraph{Latency Results.}
@@ -172,7 +172,7 @@ We measure end-to-end latency of \store and \query operations for each system, a
 % This is reflected in the longer \sys $\store$ latency.
 % \query shows similar latency trend when \sys client linearly searches for fragments.
 % By implementing the DHT record optimization, \query latency of \sys remains constant regardless of coding parameters, and is comparable to the baseline performance.
-The \store and repairing latencies are larger than the baseline replication system, 
+The \store and repairing latencies are larger than the baseline replication system,
 due to coding overhead and network overhead introduced by verifiable random selection.
 However, the \query latency is smaller than the baseline replication system despite coding overhead.
 This is because of the inner code deployed in DHT allow \sys to recover the object with fragments that are geologically closer to the \query node.
@@ -213,7 +213,7 @@ This is because of the inner code deployed in DHT allow \sys to recover the obje
 \end{figure}
 
 To measure the system capacity, we perform multiple \store and \query loops concurrently from different random nodes,
-and also trigger multiple repairing concurrently. 
+and also trigger multiple repairing concurrently.
 The latency result is shown in \autoref{fig:concurrent}.
 \sys keeps stable performance with 100 concurrent \store and \query operations, and can support more than 600 concurrent repairing.
 We can derive that \sys can support more than 400K \store and 720K \query for every day,
@@ -274,7 +274,9 @@ As our evaluation results have shown, \sys incurs higher performance overhead an
 However, we believe there exists inherent trade-offs between performance and security guarantees (e.g., anti-censorship and strong adversary tolerance).
 As we demonstrated earlier (\autoref{sec:intro} and \autoref{sec:background}), these properties are more critical than performance for our target deployment scenarios.
 
+\ifspace
 We also note that \sys is not the only decentralized system that pays this price.
 Both Bitcoin and Ethereum require around one hour to confirm a transaction.
 And it has been proved that the long confirmation time is critical to their safety guarantees in a permissionless setting.
 Algorand~\cite{algorand} takes 13 message steps to commit in the presence of adversaries, and relies on randomized peer selection for security.
+\fi

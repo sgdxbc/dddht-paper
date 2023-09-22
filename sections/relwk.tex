@@ -18,11 +18,13 @@ However, OceanStore makes centralized placement decisions and relies on trusted,
 As detailed in \autoref{sec:background}, IPFS~\cite{ipfs} uses DHT to store publisher record without centralization, but offers no mechanism to reliably store objects.
 Filecoin~\cite{filecoin} and Arweave~\cite{ar} both use tokens to incentivize nodes to store objects longer, but has weak durability guarantees in the presence of failures.
 
+\ifspace
 \paragraph{BFT Protocols.}
 There exists a long line of research on replication protocols that tolerant Byzantine failures~\cite{pbft,algorand,hotstuff,bitcoin}.
 These protocols, however, require data to be replicated on all participants, sacrificing storage efficiency.
 Our peer selection protocol using verifiable random function is inspired by Algorand~\cite{algorand} and Sleepy Consensus~\cite{sleepyconsensus}.
 Our proof-of-stake based approach to defend Sybil attacks is similar to the ones used in Ethereum~\cite{ethereum} and Algorand~\cite{algorand}.
+\fi
 
 \iffalse
 
