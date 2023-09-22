@@ -130,7 +130,7 @@ This public verifiability enables \sys nodes to independently generate checkable
 Specifically, for each encoding symbol, a candidate node generates a VRF hash, and \sys defines publicly-known rules to calculate selection probability \emph{inversely proportional} to the node's distance to the symbol on the hash ring~\cite{chash,chord}.
 The ``winning'' hash values serves as \textit{unforgeable tokens} to store encoding symbols, which can be publicly verified using the VRF proof.
 \mh{Its not clear how using a random seed -> randomly distribution}
-The infinite sequence of fountain code encoding symbols is used as a publicly-known random seed to the VRF function, ensuring that the selected nodes are randomly distributed in the system.
+The infinite sequence of rateless erasure code encoding symbols is used as a publicly-known random seed to the VRF function, ensuring that the selected nodes are randomly distributed in the system.
 %Given that fountain code produces an infinite stream of encoding symbol each with a random value, our decentralized selection scheme ensures that the chosen nodes storing the symbols for an object are randomly distributed.
 
 Randomization has been applied by prior systems, such as RAMCloud~\cite{ramcloud} and HDFS~\cite{hdfs}.

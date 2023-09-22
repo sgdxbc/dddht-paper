@@ -28,7 +28,7 @@ Any long-running tasks regardless blocking or nonblocking, e.g., coding, making 
 are offloaded from server thread and submitted to worker thread pool.
 This keeps the node to always be responsive, and this scalable design enables node to leverage available parallelism resource.
 
-We use wirehair \cite{wirehair}, an $O(1)$ time fountain code implementation, as our rateless erasure code.
+We use wirehair \cite{wirehair}, an $O(1)$ time rateless erasure code implementation, as our rateless erasure code.
 Wirehair not only attains high performance, it can also recover the original data with an expected $k + 0.02$ fragments.
 
 The implementation takes 2.1K lines of Rust code.

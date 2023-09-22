@@ -2,7 +2,7 @@
 
 The lack of centralized control, combined with highly dynamic adversarial behaviors, makes data durability a challenge in decentralized storage systems.
 In this work, we introduce a new storage system, \sys, that offers strong data durability guarantees in a fully decentralized, permissionless setting.
-\sys leverages the rateless property of fountain code to encode each data object into an infinite stream of encoding fragments.
+\sys leverages the rateless property of erasure code to encode each data object into an infinite stream of encoding fragments.
 To ensure durability in the presence of dynamic Byzantine behaviors and targeted attacks, an infinite sequence of storage nodes are \textit{randomly} selected to store encoding fragments.
 Encoding generation and candidate selection are fully decentralized: When necessary, \sys nodes use a gossip protocol and a publically verifiable selection proof to determine new fragments.
 Simulations and large-scale EC2 experiments demonstrate that \sys provides close-to-ideal mean-time-to-data-loss (MTTDL) with low storage redundancy, scales to more than 10,000 nodes, and attains performance comparable to IPFS.
