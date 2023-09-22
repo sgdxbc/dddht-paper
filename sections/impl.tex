@@ -23,8 +23,8 @@ The requests are handled by an immediate dummy \texttt{200 OK} response,
 and any further reply will be sent as a reversed HTTP request.
 This ensures the system can tolerance arbitrary network delay and node slow down.
 
-The node is implemented with one single-thread server and a worker thread pool.
-Any long-running tasks regardless blocking or nonblocking, e.g., coding, making request and file system operations,
+The node is implemented with a single-thread server and a worker thread pool.
+All long-running tasks regardless blocking or nonblocking, e.g., coding, making request and file system operations,
 are offloaded from server thread and submitted to worker thread pool.
 This keeps the node to always be responsive, and this scalable design enables node to leverage available parallelism resource.
 
