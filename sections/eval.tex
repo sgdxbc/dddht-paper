@@ -125,13 +125,13 @@ With a (14, 8) coding configuration, no object is lost until more than 20\% of t
 %In practice, it could be parallelized and improve \store performance.
 
 Next, we evaluate \sys using our Raft implementation.
-We deploy 10000 \sys nodes on Amazon EC2 in 5 AWS zones (us-west, ap-southeast, eu-central, sa-east, af-south) across 5 continents.
+We deploy 10,000 \sys nodes on Amazon EC2 in 5 AWS zones (us-west, ap-southeast, eu-central, sa-east, af-south) across 5 continents.
 We launch 20 c5.9xlarge instances with 36 vCPU, 72GiB of memory and 12Gbps network bandwidth in each zone, and run 100 peers on each instance.
 
 As mentioned earlier, we implemented an IPFS-like decentralized storage system using Kademlia DHT as a comparison system.
 %This Kademlia-based system serves as a state-of-the-art decentralized storage baseline.
 We directly use Kademlia's \texttt{PUT\_RECORD} interface to store the data object, and set the replication factor to 3 to make a comparable redundancy compare to \sys.
-The data object is splited into $\kin \cdot \kout$ records and the plain content is stored.
+The data object is split into $\kin \cdot \kout$ records and the plain content is stored.
 This makes the storing perfectly load balanced across the system.
 % Note that erasure coding, unfortunately, cannot be easily adapted into Kademlia.
 %We also deployed a Ceph cluster with one replication pool and one erasure coding pool, all with the stock configuration.
@@ -142,17 +142,17 @@ This makes the storing perfectly load balanced across the system.
 % Once the node successfully connects to the network, it issues a \store with a randomly generated object.
 % After the \store returns an object ID, another fresh node is spawned to issue a \query with the returned ID to retrieve the object.
 In the evaluation of \store and \query operation, we select a random node as client to perform one pair of operations.
-The client node first \store with a randomly generated object.
+The client node first issues \store with a randomly generated object.
 After the \store returns an object ID, it immediately issues a \query with the returned ID to retrieve the object.
-The node performed sanity check to make sure the object is properly retrieved.
+The node performs sanity check to make sure the object is properly retrieved.
 
-In the evaluation of repairing, we trigger a special command to the nodes to force them evict the oldest member that stores the chunk,
-which is effectively same as the member has disconnected from the network.
-The remaining group members find a new member to replace the evicted one,
-and report the latency between the eviction and the instant when the new member is known to be storing the chunk.
+In the evaluation of repairing, we trigger a special command to force nodes to evict the oldest member that stores the chunk.
+This is equivalent to the member being disconnected from the network.
+The remaining group members locate a new member to replace the evicted one.
+We report the latency between the eviction and the instant when the new member is known to successfully store the chunk.
 
-We evaluate the system with a simulated DHT routing system that provides node discovery in constant time,
-to mitigate the affection of DHT routing performance on the result and focus on the performance differences of the protocols.
+We evaluate the system with a simulated DHT routing system that provides node discovery in constant time.
+This simplification mitigates the effect of DHT routing performance on the result, and focus on the performance differences between the protocols.
 
 \paragraph{Latency Results.}
 
@@ -172,10 +172,10 @@ We measure end-to-end latency of \store and \query operations for each system, a
 % This is reflected in the longer \sys $\store$ latency.
 % \query shows similar latency trend when \sys client linearly searches for fragments.
 % By implementing the DHT record optimization, \query latency of \sys remains constant regardless of coding parameters, and is comparable to the baseline performance.
-The \store and repairing latencies are larger than the baseline replication system,
+The \store and repairing latencies are higher than the baseline replication system,
 due to coding overhead and network overhead introduced by verifiable random selection.
-However, the \query latency is smaller than the baseline replication system despite coding overhead.
-This is because of the inner code deployed in DHT allow \sys to recover the object with fragments that are geologically closer to the \query node.
+However, \query latency is smaller than the baseline replication system despite the coding overhead.
+This is because the inner code deployed in DHT allow \sys to recover the object with fragments that are geologically closer to the \query node.
 
 %For the default object size of 64 MiB, \sys outperforms both Kademlia and Ceph by a wide margin in latency.
 %Moreover, \sys also enjoys a much lower latency variance compared to Kademlia.
@@ -212,12 +212,10 @@ This is because of the inner code deployed in DHT allow \sys to recover the obje
     \label{fig:concurrent}
 \end{figure}
 
-To measure the system capacity, we perform multiple \store and \query loops concurrently from different random nodes,
-and also trigger multiple repairing concurrently.
+To measure our system capacity, we perform multiple \store and \query loops concurrently from different random nodes, while triggering multiple repairing concurrently.
 The latency result is shown in \autoref{fig:concurrent}.
-\sys keeps stable performance with 100 concurrent \store and \query operations, and can support more than 600 concurrent repairing.
-We can derive that \sys can support more than 400K \store and 720K \query for every day,
-and can tolerance over 13M repairing per day.
+\sys maintains its performance even up to 100 concurrent \store and \query operations, and is able to support more than 600 concurrent repairing.
+We can derive that \sys can support more than 400K \store and 720K \query per day, and can tolerance over 13M daily object repairs.
 This suggests that \sys is capable to handle massive real-world workload.
 
 \paragraph{Scalability.}
@@ -229,10 +227,11 @@ This suggests that \sys is capable to handle massive real-world workload.
     \label{fig:scale}
 \end{figure}
 
-We also evaluate \sys with different number of nodes, as shown in \autoref{fig:scale}.
-Same as the replicated baseline system, \sys is also able to maintain near-constant performance regarding the system's scale.
+We also evaluate \sys with increasing system size, i.e., the number participants in the system.
+The scalability result is shown in \autoref{fig:scale}.
+Similar to the baseline replicated system, \sys is able to maintain near-constant performance regardless of the system's scale.
 
-\paragraph{Microbenchmarks.}
+\paragraph{Micro-benchmarks.}
 
 \begin{figure}
     \addgraph{coding-time-outer}
@@ -241,7 +240,7 @@ Same as the replicated baseline system, \sys is also able to maintain near-const
     \label{fig:coding-time}
 \end{figure}
 
-Lastly, we run microbenchmarks to evaluate the performance of object encoding and decoding.
+Lastly, we run micro-benchmarks to evaluate the performance of object encoding and decoding.
 In the first experiment, we run a single client who applies both the outer layer and inner layer erasure code to encodes a 1 GB object into fragments.
 Then, the client takes the generated fragments, and uses the decoding function in both erasure codes to recover the original object.
 Lastly, we set up one peer node to generate a fragment from $\kin$ existing fragments.
