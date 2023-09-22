@@ -417,7 +417,7 @@ Upon receiving a \mtype{RepairRequest}, the node immediately responds if it alre
 Otherwise, it merges the incoming view with its local membership, joins the group, and starts the repair process.
 Specifically, it requests fragments from each group member in its view.
 %Each request includes its selection proof for verification.
-Once the node receives $\kin$ or more encoding fragments, it uses the inner decoding function to recover the original chunk, then applies the encoding function to construct its responsible fragment.
+Once the node receives $\kin$ or more encoding fragments, it uses the inner decoding function to recover the original chunk, then applies the encoding function to construct a randomly selected fragment within the encoding stream.
 Note that the node may not find enough fragments initially due to incomplete membership view or network asynchrony.
 %Subsequent \mtype{RepairRequest}{}s from other peers initiating repair will update the membership view through $\fn{MergeView}()$.
 $\fn{MembershipTimer}()$ ensures that the node eventually finds sufficient alive members to complete the repair process.
