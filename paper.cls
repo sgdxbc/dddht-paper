@@ -36,7 +36,7 @@
 \ifacm
 \LoadClass[sigplan,10pt]{acmart}
 \renewcommand\footnotetextcopyrightpermission[1]{}
-\settopmatter{printfolios=true}
+\settopmatter{printfolios=true, printacmref=false}
 \else
 \LoadClass[letterpaper,twocolumn,10pt]{article}
 \RequirePackage{usenix-2020-09}
