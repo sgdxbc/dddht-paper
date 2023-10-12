@@ -19,6 +19,8 @@ $(PAPER).pdf $(SUPPL).pdf: $(PAPER_DEPS)
 	@rm -f $@
 	$(LATEX) $(addsuffix .tex, $(basename $@)) -O .latex.out -o $@
 
+arxiv: arxiv.tar.gz
+
 arxiv.tar.gz: $(PAPER).pdf
 	rm -rf arxiv
 	mkdir -p arxiv
