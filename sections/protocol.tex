@@ -362,6 +362,8 @@ To derive the ID of the candidate, $\fn{NodeID}()$ calculates a SHA256 hash of i
 \subsubsection{Chunk Group Maintenance}
 \label{sec:protocol:detail:group}
 
+\sgd{Remove this subsection.}
+
 For each stored fragment, a node maintains a local view of the current chunk group membership.
 % (the $\var{group}$ state in \autoref{fig:node-state}).
 The inaugural group peers receive the membership from the client issuing the \store (\autoref{alg:client}).
@@ -407,6 +409,15 @@ This, however, does not impact protocol safety, and the membership protocol even
 %As listed in \autoref{alg:repair}, when a node detects that repair is necessary for a chunk, it calculates the next fragment hash in the encoding stream as marked by \wh.
 %If the node's local view includes extra redundancy at \wh, the repair process can be skipped.
 %We show the repair procedure pseudocode in \ifarxiv\autoref{sec:proto-more}\else the supplementary material\fi.
+
+\sgd{Update protocol design.}
+
+Each node periodically broadcasts for each stored fragment to $n$ peers closest to the chunk hash, which potentially reaches peers that previously do not store the chunk.
+If a node is close enough to the chunk hash, eventually it will be reached out by enough number of broadcasts from difference peers that currently store the chunk.
+The node then proceeds to recover the chunk, generates its own fragment, and participant into storing the chunk, which means it will also periodically broadcast for the chunk from now on.
+
+\sgd{Original content follows.}
+
 To install a new fragment for the group, the repairing node invokes $\fn{Locate}()$ to find responsible peers for the fragment, and sends them a \mtype{RepairRequest} message.
 %The message includes the chunk hash, the repair fragment hash and its index in the stream, as well as the node's local membership view.
 The message includes the sender's local membership view to assist bootstrapping.

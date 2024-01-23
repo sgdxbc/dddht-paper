@@ -8,6 +8,8 @@ All objects are 1 GB in size.
 % In our physical deployment, \store operations return only when $1.6k$ persistence proofs are received through gossip.
 % This safeguard policy improves system stability without introducing significant overhead.
 
+\sgd{TODO turn this into an IPFS-based setup.}
+
 When evaluating physical deployments, we compare \sys to an IPFS-like decentralized storage system that uses Kademlia DHT to store publisher record.
 The system directly uses DHT \texttt{PUT\_RECORD} to store object data.
 We set the replication factor for this IPFS-like system to 3, so that the redundancy level is similar to \sys{}'s 3.125.

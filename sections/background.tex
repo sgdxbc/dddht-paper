@@ -1,3 +1,32 @@
+\sgd{Alternative flow for background \& motivation section.}
+
+\paragraph{The demand of \emph{store and forget} service in p2p network.}
+Definition: \emph{unattended store}.
+Client does not participant in setting up store strategy during storing data.
+Client can go offline before retrieving the data and does not need to monitor the data.
+Reason: client should not build its confidence of the data persistent in the system on the trust to several specific peers.
+In another word, whether some specific peers behave correctly or not should not affect the overall confidence level of the client on that the data will not lose.
+
+\paragraph{Scalability failure of blockchains.}
+Full replication does not scale. 
+Partial replication (arweave) only mitigates the problem: workload still grows linearly according to chain depth.
+
+\paragraph{Indexing systems provide mismatched functions.}
+IPFS requires client to pick providers, potentially monitor providers' liveness and re-pick when necessary.
+Filecoin picks providers for clients, but require clients to actively challenge periodically.
+Trying to \emph{store and forget} in such systems can result in data lose.
+
+\paragraph{Demonstration of data lose in indexing system.}
+Randomly pick providers w/ or w/o replication.
+Simulated faulty providers.
+
+\paragraph{Goals.}
+User interacts the system as a whole, not individual peers.
+Durability guarantee that only depends on overall properties (e.g. faulty portion, churn rate), regardless of properties of any individual peer.
+Controllable redundancy.
+
+\sgd{Original content below.}
+
 We consider the problem of designing a \emph{durable} object storage system in a fully \emph{decentralized} environment.
 The system provides a simple object store and retrieval interface to end users.
 Each object contains a blob of binary data of arbitrary size.
