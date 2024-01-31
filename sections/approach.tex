@@ -1,6 +1,6 @@
 Why is it hard to guarantee data durability in a decentralized storage system?
 In this section, we analyze key challenges faced by existing systems to prevent data losses in an open, permissionless environment.
-We then present our approach of combining rateless erasure code and verifiable randomness to tackle the durability challenge.
+We then present our key principles of enforcing durability, as well as a concrete approach of combining rateless erasure code and verifiable randomness following the principle.
 
 \subsection{The Decentralized Durability Challenge}
 \label{sec:approach:challenge}
@@ -16,14 +16,14 @@ Nodes are free to join and leave the system at any time.
 There is no centralized control over who are the participants and their trustworthiness.
 In these systems, adversarial behaviors are the \emph{common case}, not the exception.
 Adversaries might also possess strong attacking power.
-They can partition regions of the network using BGP poisoning or distributed denial-of-service (DDoS);
+They can partition regions of the network using BGP poisoning or launch distributed denial-of-service (DDoS) attacks;
 they can collude with each other and compromise honest nodes;
 they can create and change identities in a highly dynamic fashion.
 
-A direct implication of a decentralized environment is that failure assumptions made by prior systems no longer hold.
+A direct implication of a decentralized environment is that failure assumptions made by prior storage systems no longer hold.
 Adversaries can launch Sybil attacks such that they control more than $n-r$ copies or erasure code symbols of an object;
-once they locate more than $n-r$ nodes responsible for an object, they can also launch targeted attacks to partition their network or compromise their systems.
-Data durability is immediately violated under these attack scenarios.
+once they locate more than $n-r$ nodes responsible for an object, they can also launch targeted attacks to compromise their systems.
+Data durability is violated under these attack scenarios.
 
 Existing blockchain systems face similar attack vectors.
 Decentralized storage, however, are particularly vulnerable, given their scale and redundancy constraints.
@@ -50,6 +50,38 @@ Decentralized storage designs that rely on frequent consensus are impractical in
 %    \item Sybil i.e. cooperative peers group takes advantage and may be harmful to the system. All issue of economic market is inherited.
 %    \item Unexpected breach of the rules already happen, e.g. most data on Filecoin is garbage \sgd{really?}.
 %\end{itemize}
+
+\subsection{Principles of Data Durability}
+\label{sec:approach:principles}
+
+Given the above challenges, we identify two key principles in providing data durability in our targeted deployment scenario.
+These principles guide us in the concrete design of a durable decentralized storage system; we elaborate our main approaches to materialize the principles in \autoref{sec:approach:code} and \autoref{sec:approach:random}.
+
+\subsubsection{Information Asymmetry}
+Launching targeted attacks enables adversaries to erase data blocks stored on selected peers in the network.
+One critical property of such attacks is that adversaries can choose targets based on any \emph{public information} in the network.
+Such strong adversarial power could be detrimental to a storage system.
+Metadata information about stored objects in existing systems are effectively public.
+Any peer or external identities can learn the location of stored objects.
+Take IPFS as an example.
+Any peer in the network can query the identity of providers for a stored object through the DHT.
+A key observation is that this location information is completely \emph{symmetrical} between an honest node and an adversary.
+The reasoning behind this symmetry is simple: location information is critical for system functionality (data retrieval), and there is no reliable way to identify adversaries.
+Adversaries can leverage this symmetrical information to concentrate their attack power to specific set of provider nodes to break durability.
+To guarantee durability, the system thus needs to use redundancy level strictly higher than the \emph{aggregated} adversarial power, which can be prohibitively high.
+
+It is not hard to see that if all metadata information is symmetrical, the system can do no better than applying overwhelming redundancy to tolerate targeted attacks.
+Taking the contrapositive of the statement, we arrive at our first durability principle:
+
+\begin{principle}[Information Asymmetry]
+    To tolerate targeted adversarial behaviors without increasing redundancy, some metadata information needs to be \emph{asymmetrical}.
+\end{principle}
+
+\subsubsection{Data Uniformity}
+
+\begin{principle}[Data Uniformity]
+    Data uniformity principle.
+\end{principle}
 
 \subsection{The Case for Using Rateless Code}
 \label{sec:approach:code}
