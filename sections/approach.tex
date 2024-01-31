@@ -57,7 +57,8 @@ Decentralized storage designs that rely on frequent consensus are impractical in
 Given the above challenges, we identify two key principles in providing data durability in our targeted deployment scenario.
 These principles guide us in the concrete design of a durable decentralized storage system; we elaborate our main approaches to materialize the principles in \autoref{sec:approach:code} and \autoref{sec:approach:random}.
 
-\subsubsection{Information Asymmetry}
+\subsubsection{\textbf{Information Asymmetry}}
+
 Launching targeted attacks enables adversaries to erase data blocks stored on selected peers in the network.
 One critical property of such attacks is that adversaries can choose targets based on any \emph{public information} in the network.
 Such strong adversarial power could be detrimental to a storage system.
@@ -67,7 +68,7 @@ Take IPFS as an example.
 Any peer in the network can query the identity of providers for a stored object through the DHT.
 A key observation is that this location information is completely \emph{symmetrical} between an honest node and an adversary.
 The reasoning behind this symmetry is simple: location information is critical for system functionality (data retrieval), and there is no reliable way to identify adversaries.
-Adversaries can leverage this symmetrical information to concentrate their attack power to specific set of provider nodes to break durability.
+Adversaries can leverage this symmetrical information to concentrate their attack power on specific set of provider nodes to break durability.
 To guarantee durability, the system thus needs to use redundancy level strictly higher than the \emph{aggregated} adversarial power, which can be prohibitively high.
 
 It is not hard to see that if all metadata information is symmetrical, the system can do no better than applying overwhelming redundancy to tolerate targeted attacks.
@@ -75,13 +76,24 @@ Taking the contrapositive of the statement, we arrive at our first durability pr
 
 \begin{principle}[Information Asymmetry]
     To tolerate targeted adversarial behaviors without increasing redundancy, some metadata information needs to be \emph{asymmetrical}.
+    \label{principle:asymmetry}
 \end{principle}
 
-\subsubsection{Data Uniformity}
+\subsubsection{\textbf{Data Uniformity}}
+
+Durability of an object is maintained when redundancy of the object on non-faulty nodes stays above the recovery threshold.
+To ensure durability of the entire system, the above invariant needs to be true for all stored objects.
+Given that identities of faulty nodes are unknown and unpredictable~\footnote{We assume there is no pre-established trust in the system, which is a common assumption of decentralized systems}, probability of data durability is maximized when redundancy of each object is distributed \emph{uniformly random} across the storage peers.
+Intuitively, for any other distribution, certain nodes in the system will store a greater proportion of data redundancy.
+Failures (either adversarial or fail-stop) of such nodes will result in higher chance of object redundancy dropping below the recovery threshold, as compared to a uniformly random distribution.
+This reasoning leads to our second durability principle:
 
 \begin{principle}[Data Uniformity]
-    Data uniformity principle.
+    Probability of data durability is maximized when object redundancy is \emph{uniformly distributed} across all storage nodes.
 \end{principle}
+
+In fact, replicating each object on every node is an extreme case that follows this principle.
+Such scheme indeed maximizes data durability, but at the cost of high storage cost.
 
 \subsection{The Case for Using Rateless Code}
 \label{sec:approach:code}
