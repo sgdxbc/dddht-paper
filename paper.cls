@@ -93,6 +93,7 @@
 \def\defnautorefname{Definition}
 \def\algorithmautorefname{Algorithm}
 \def\invariantautorefname{Invariant}
+\def\principleautorefname{Principle}
 
 \algnewcommand\algorithmicswitch{\textbf{switch}}
 \algnewcommand\algorithmiccase{\textbf{case}}
