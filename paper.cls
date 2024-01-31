@@ -79,6 +79,7 @@
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
 \fi
+\newtheorem{principle}{Principle}
 
 \def\Snospace~{\S{}}
 % Autoref
