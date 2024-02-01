@@ -81,19 +81,24 @@ Taking the contrapositive of the statement, we arrive at our first durability pr
 
 \subsubsection{\textbf{Data Uniformity}}
 
+%\footnote{We assume there is no pre-established trust in the system, which is a common assumption of decentralized systems}
+
 Durability of an object is maintained when redundancy of the object on non-faulty nodes stays above the recovery threshold.
 To ensure durability of the entire system, the above invariant needs to be true for all stored objects.
-Given that identities of faulty nodes are unknown and unpredictable~\footnote{We assume there is no pre-established trust in the system, which is a common assumption of decentralized systems}, probability of data durability is maximized when redundancy of each object is distributed \emph{uniformly random} across the storage peers.
+Given that identities of faulty nodes are unknown, probability of data durability is maximized when redundancy of each object is distributed \emph{uniformly random} across the storage peers.
 Intuitively, for any other distribution, certain nodes in the system will store a greater proportion of data redundancy.
-Failures (either adversarial or fail-stop) of such nodes will result in higher chance of object redundancy dropping below the recovery threshold, as compared to a uniformly random distribution.
-This reasoning leads to our second durability principle:
+Failures (either adversarial or fail-stop) of such nodes will result in higher probability of object redundancy dropping below the recovery threshold, as compared to a uniformly random distribution.
+Note that the reasoning above assumes completely unpredictable faulty behaviors.
+This is a common property of decentralized system with minimum trust;
+in a centralized deployment, the administrator instead has perfect information on the failure domains and probabilities.
+This line of argument leads to our second durability principle:
 
 \begin{principle}[Data Uniformity]
     Probability of data durability is maximized when object redundancy is \emph{uniformly distributed} across all storage nodes.
 \end{principle}
 
 In fact, replicating each object on every node is an extreme case that follows this principle.
-Such scheme indeed maximizes data durability, but at the cost of high storage cost.
+Such scheme indeed maximizes data durability, but at the expense of excessively high storage cost.
 
 \subsection{The Case for Using Rateless Code}
 \label{sec:approach:code}
