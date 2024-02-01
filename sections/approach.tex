@@ -88,21 +88,33 @@ To ensure durability of the entire system, the above invariant needs to be true 
 Given that identities of faulty nodes are unknown, probability of data durability is maximized when redundancy of each object is distributed \emph{uniformly random} across the storage peers.
 Intuitively, for any other distribution, certain nodes in the system will store a greater proportion of data redundancy.
 Failures (either adversarial or fail-stop) of such nodes will result in higher probability of object redundancy dropping below the recovery threshold, as compared to a uniformly random distribution.
-Note that the reasoning above assumes completely unpredictable faulty behaviors.
-This is a common property of decentralized system with minimum trust;
-in a centralized deployment, the administrator instead has perfect information on the failure domains and probabilities.
+Note that the reasoning above assumes completely \emph{unpredictable} faulty behaviors.
+This is a common property of decentralized systems with minimum trust;
+in a centralized deployment, the operator instead has perfect information on the failure domains and probabilities.
 This line of argument leads to our second durability principle:
 
 \begin{principle}[Data Uniformity]
     Probability of data durability is maximized when object redundancy is \emph{uniformly distributed} across all storage nodes.
+    \label{principle:uniformity}
 \end{principle}
 
-In fact, replicating each object on every node is an extreme case that follows this principle.
+Replicating each object on every node, \eg, a blockchain, is an extreme case that follows this principle.
 Such scheme indeed maximizes data durability, but at the expense of excessively high storage cost.
 
-\subsection{The Case for Using Rateless Code}
+\subsection{Dual Layer Erasure Coding Using Rateless Code}
 \label{sec:approach:code}
 
+Following \autoref{principle:asymmetry} demands adding asymmetry in the storage metadata.
+In a permissionless setting, participating peers are treated equally given the system model;
+creating asymmetrical information among the egalitarian storage nodes is therefore challenging.
+We instead push the asymmetry requirement to clients:
+when storing data, the client holds some \emph{private} information unknown to any storage node.
+
+Private information commonly protects confidentiality and authenticity of data.
+How to apply it to metadata to enforce durability?
+We leverage a special class of erasure coding, the rateless codes, to design such a scheme.
+
+\paragraph{\textbf{Rateless code primer.}}
 Rateless codes are a family of erasure codes that have two special properties.
 Firstly, a rateless code generates an \emph{infinite sequence} of encoding symbols from $k$ source blocks.
 Any $k+\epsilon$ encoding symbols can be used to reconstruct the original source data.
@@ -110,6 +122,16 @@ This differs from traditional maximum distance separable (MDS) codes, such as Re
 Second, rateless codes work well with large $(n, k, r)$ parameters, where $n$, $k$, $r$ represents the number of total, original, and redundant symbols respectively.
 Real deployment of $(1200, 1000, 200)$ rateless code has been shown to be efficient~\cite{liquid}.
 Such parameters are two orders of magnitude larger than practical MDS codes used in production systems.
+
+\paragraph{\textbf{Applying rateless code to defend targeted attacks.}}
+We leverage the \emph{infinite} symbol sequence of a rateless code to ``encode'' client private information into storage metadata.
+Specifically, when storing an object, the client applies rateless code, and uses its \emph{private information} (e.g., its private key) to pick $n$ random symbols in the encoding sequence.
+The client then stores these selected symbols as opaque data chunks into the storage system.
+A key property is that these opaque chunks from any object appears \emph{indistinguishable} to the adversaries.
+Consequently, targeted attacks can do no better than compromising randomly selected chunks in the system.
+This is even true if the adversaries possess information about the object content.
+With enough objects in the system, the chance of simultaneously attacking more than $r$ out of $n$ chunks of a particular object becomes negligible.
+As such, only the client who holds the private information can recover the original object with overwhelming probability.
 
 \paragraph{Lazy repair.}
 Why do these properties matter in a decentralized storage system?
@@ -134,16 +156,6 @@ MDS codes with small values of $(n, k, r)$ necessitate participants to coordinat
 Uncoordinated symbol generation may lead to insufficient \emph{unique} symbols to recover the original data, an issue analogous to the coupon collector's problem \cite{ccp}.
 Rateless codes eschew this issue completely.
 The \emph{infinite} encoding space enables participants to generate unique symbols with high probability without explicit coordination.
-
-\paragraph{Strong security against adversaries.}
-Strong adversaries may not only discard stored data, but can also launch attacks targeting honest nodes to compromise data durability.
-We apply a novel approach that leverages the \emph{infinite} symbol sequence of a rateless code to defend such attacks.
-Specifically, the object owner applies rateless code, and uses \emph{private information} (e.g., its private key) to pick $n$ random symbols in the encoding sequence.
-The owner then stores these selected symbols as opaque data chunks into the storage system.
-A key property is that these opaque chunks from any object appears \emph{indistinguishable} to the adversaries.
-Consequently, targeted attacks can do no better than compromising randomly selected chunks in the system.
-With enough objects in the system, the chance of simultaneously attacking more than $r$ out of $n$ chunks of a particular object becomes negligible.
-As such, only the owner (who holds private information) can recover the original object with overwhelming probability.
 
 %Our deployment scenario makes it impossible to completely hide the identities of nodes selected to store symbols for an object, as the symbol storing and periodic repair process will reveal their identities.
 %Unfortunately, symbol storage and periodic repairs reveal the identities of honest nodes responsible for an object to the adversaries.
