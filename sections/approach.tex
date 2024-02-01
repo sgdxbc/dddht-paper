@@ -94,14 +94,14 @@ in a centralized deployment, the operator instead has perfect information on the
 This line of argument leads to our second durability principle:
 
 \begin{principle}[Data Uniformity]
-    Probability of data durability is maximized when object redundancy is \emph{uniformly distributed} across all storage nodes.
+    Probability of data durability is maximized when object redundancy is \emph{uniformly distributed} across all storage nodes ad infinitum.
     \label{principle:uniformity}
 \end{principle}
 
 Replicating each object on every node, \eg, a blockchain, is an extreme case that follows this principle.
 Such scheme indeed maximizes data durability, but at the expense of excessively high storage cost.
 
-\subsection{Dual Layer Erasure Coding Using Rateless Code}
+\subsection{Dual Layer Rateless Code For Information Asymmetry}
 \label{sec:approach:code}
 
 Following \autoref{principle:asymmetry} demands adding asymmetry in the storage metadata.
@@ -133,9 +133,14 @@ This is even true if the adversaries possess information about the object conten
 With enough objects in the system, the chance of simultaneously attacking more than $r$ out of $n$ chunks of a particular object becomes negligible.
 As such, only the client who holds the private information can recover the original object with overwhelming probability.
 
-\paragraph{Lazy repair.}
-Why do these properties matter in a decentralized storage system?
-One benefit is \emph{lazy repair friendly}.
+\paragraph{\textbf{A second layer rateless code for decentralized repair.}}
+Metadata asymmetry, however, causes an undesirable side effect.
+Since no storage nodes have the mapping between encoded chunks and the original object, they cannot perform repair (which requires reading $k+\epsilon$ unique encoded symbols) when the stored chunks are lost due to failures, eventually leading to data loss.
+To address this issue, we add another layer of erasure coding on the encoded chunks to guarantee their durability with minimum redundancy overhead.
+
+In theory, we can use any erasure code for this ``inner layer'' encoding.
+Surprisingly, we again identify rateless code as the optimal coding choice given its unique properties.
+Firstly, rateless codes are \emph{lazy repair friendly}.
 Using traditional erasure codes with a small value of $r$, the storage system needs to quickly regenerate encoding symbols when just a few stored symbols are lost due to failures.
 Delayed repairs risk losing the source data permanently.
 However, decentralized systems exhibit high degree of asynchrony:
@@ -150,8 +155,7 @@ For instance, a $(1200, 1000, 200)$ code can tolerate 200 simultaneous symbol fa
 Note that the increase in $r$ in rateless codes does not lead to higher redundancy.
 The redundancy rate of the above two codes are identical.
 
-%As discussed in \autoref{sec:approach:challenge}, coordination and consensus are costly in decentralized systems.
-\paragraph{Consensus-free repair.}
+Secondly, rateless codes enable \emph{consensus-free repair}.
 MDS codes with small values of $(n, k, r)$ necessitate participants to coordinate to agree on the assignment of symbols.
 Uncoordinated symbol generation may lead to insufficient \emph{unique} symbols to recover the original data, an issue analogous to the coupon collector's problem \cite{ccp}.
 Rateless codes eschew this issue completely.
@@ -165,10 +169,8 @@ The \emph{infinite} encoding space enables participants to generate unique symbo
 %Critically, this \emph{outer layer} encoding ensures that each generated chunk is indistinguishable from another chunk to an external party, and the mapping between chunks to an object is only known to the client generating the encoding.
 %Each chunk is then stored as a stream of encoding fragments using the \emph{inner layer} fountain code (\autoref{sec:approach:code}) to ensure persistence.
 
-\subsection{Verifiable Randomness for Byzantine Tolerance}
+\subsection{Verifiable Randomness for Data Uniformity}
 \label{sec:approach:random}
-
-\lijl{Can discuss how our approach (how we select new ``replicas'') differs from traditional DHT.}
 
 Rateless erasure code alone does not solve the durability challenge.
 Byzantine participants can claim storage of sufficient number of encoding symbols, resulting in less than $k + \epsilon$ symbols survived on honest nodes.
