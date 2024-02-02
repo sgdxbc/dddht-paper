@@ -160,10 +160,8 @@ This simplification mitigates the effect of DHT routing performance on the resul
 \paragraph{Latency Results.}
 
 \begin{figure}
-    \addgraph{operation-outer}
-    \addgraph{operation-inner}
-    \caption{Latency of \store and \query operation and repairing in a world-wide deployment.
-    The top plot varies the outer code parameters of \sys, while the bottom plot varies the inner code.
+    \addgraph{latency}
+    \caption{Latency of \store and \query operation in a world-wide deployment.
     }
     \label{fig:latency}
 \end{figure}
@@ -209,8 +207,8 @@ This is because the inner code deployed in DHT allow \sys to recover the object 
 
 \begin{figure}
     \addgraph{concurrent-put-get}
-    \addgraph{concurrent-repair}
-    \caption{Latency of concurrent \store and \query operation and repairing.
+    % \addgraph{concurrent-repair}
+    \caption{Latency of concurrent \store and \query operation.
     }
     \label{fig:concurrent}
 \end{figure}
@@ -224,8 +222,8 @@ This suggests that \sys is capable to handle massive real-world workload.
 \paragraph{Scalability.}
 
 \begin{figure}
-    \addgraph{scale}
-    \caption{Latency of \store and \query operation and repairing with varying number of nodes.
+    \addgraph{peer}
+    \caption{Latency of \store and \query operation with varying number of nodes.
     }
     \label{fig:scale}
 \end{figure}
