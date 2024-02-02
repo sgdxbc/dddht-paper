@@ -407,24 +407,41 @@ The repair process is elaborated in \autoref{sec:protocol:detail:repair}.
 \subsubsection{Repairing Encoded Chunks}
 \label{sec:protocol:detail:repair}
 
-The core of \sys centers around a \emph{decentralized} repair protocol that ensures the durability of encoded chunks.
+A critical part of \sys centers around a \emph{decentralized} repair protocol that ensures the durability of encoded chunks.
 Repairing an encoded chunk involves locating new peers to store additional fragments, until healthy group size is restored.
 Each node performs repair independently according to their local view, without explicit consensus.
 Temporary network asynchrony may result in over-repair, i.e., chunk group exceeding $R$.
-This, however, does not impact protocol safety, and the membership protocol eventually synchronize the membership view across peers.
+This, however, does not impact protocol safety, and the group size will eventually converge to approximately $R$ due to churns.
+We also avoid eager chunk regeneration which requires coordination and adds communication overhead.
+Properties of rateless code allows \sys to perform repair lazily without compromising durability.
 
 %As listed in \autoref{alg:repair}, when a node detects that repair is necessary for a chunk, it calculates the next fragment hash in the encoding stream as marked by \wh.
 %If the node's local view includes extra redundancy at \wh, the repair process can be skipped.
 %We show the repair procedure pseudocode in \ifarxiv\autoref{sec:proto-more}\else the supplementary material\fi.
 
-\sgd{Update protocol design.}
-
+\iffalse
 Each node periodically broadcasts for each stored fragment to $n$ peers closest to the chunk hash, which potentially reaches peers that previously do not store the chunk.
 If a node is close enough to the chunk hash, eventually it will be reached out by enough number of broadcasts from difference peers that currently store the chunk.
 The node then proceeds to recover the chunk, generates its own fragment, and participant into storing the chunk, which means it will also periodically broadcast for the chunk from now on.
+\fi
 
-\sgd{Original content follows.}
+Here we detail our decentralized repair protocol.
+For each node and for each of its stored fragment, the node periodically invokes $\fn{Locate}()$ to find $R$ verifiable peers for the corresponding chunk.
+The $R$ peers may include both existing members and new members (either recently joined, or was previously missed due to asynchrony).
+The node broadcasts a repair message that includes the chunk hash and the selection proof to all $R$ peers.
+When a node receives a repair message with a correct selection proof, it ignores the request if it is already in the chunk group.
+Otherwise, the node is a new candidate.
+It requests the fragment from the sender and buffers the fragment locally.
+Once $\kin$ fragments are collected, the candidate reconstructs the original chunk by calling $\fn{InnerDecode()}$.
+It then generates a new fragment by invoking $\fn{InnerEncode()}$ on the chunk.
+It picks a random fragment index different from its local buffer when calling $\fn{InnerEncode()}$.
+Randomness ensures minimum fragment collision within the chunk group, which maximizes chunk recovery probability.
+Once the fragment is constructed, the node adds it to the fragment store and joins the chunk group.
+Note that a new candidate may not receive enough fragments during period of asynchrony.
+The recovery protocol, however, ensures that some candidates close to the chunk hash will eventually join the group when they are reachable from $\kin$ existing members.
 
+
+\iffalse
 To install a new fragment for the group, the repairing node invokes $\fn{Locate}()$ to find responsible peers for the fragment, and sends them a \mtype{RepairRequest} message.
 %The message includes the chunk hash, the repair fragment hash and its index in the stream, as well as the node's local membership view.
 The message includes the sender's local membership view to assist bootstrapping.
@@ -446,6 +463,7 @@ $\fn{MembershipTimer}()$ ensures that the node eventually finds sufficient alive
 The above procedure transmits at least $\kin$ fragments to repair a single fragment, resulting in a minimum repair amplification of $\kin$.
 To reduce repair traffic, each node optionally caches the original chunk for a limited time.
 Upon requested by a new peer, the node sends its chunk copy if still available, and the requesting peer can immediately construct the fragment without any further \mtype{RepairRequest}.
+\fi
 
 \subsection{Correctness}
 We now sketch the proof of correctness for \sys.
