@@ -86,7 +86,7 @@ The client then stores $R$ encoding fragments, where $R$ is large enough to ensu
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.9\linewidth]{figures/selection}
+    \includegraphics[width=0.7\linewidth]{figures/selection}
     \caption{Randomized peer selection}
     \label{fig:selection}
 \end{figure}
@@ -116,16 +116,19 @@ The selected nodes present their VRF outputs as a selection proof, which can be 
 
 \paragraph{Chunk repair.}
 
+\iffalse
 \begin{figure}
     \centering
     \includegraphics[width=0.8\linewidth]{figures/repair}
     \caption{Chunk repair process}
     \label{fig:chunkrepair}
 \end{figure}
+\fi
 
 Storage device failures and node churns can lead to permanent loss of encoding fragments, resulting in violation of the durability invariant.
 Similar to prior storage systems, \sys performs \emph{repair} by regenerating new encoding fragments when the number of alive fragments drops below a threshold.
-Chunk repair in \sys is fully decentralized, as shown in \autoref{fig:chunkrepair}.
+Chunk repair in \sys is fully decentralized.
+%as shown in \autoref{fig:chunkrepair}.
 Nodes storing encoding fragments for the same chunk form a \emph{chunk group}.
 Chunk group members periodically broadcast their fragments to other, potentially new, members verified by the selection process.
 Once a new member receives enough fragments, it decodes the original chunk, generates a new encoding fragment, and joins the group.
