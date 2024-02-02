@@ -10,9 +10,10 @@ All objects are 1 GB in size.
 
 \sgd{TODO turn this into an IPFS-based setup.}
 
-When evaluating physical deployments, we compare \sys to an IPFS-like decentralized storage system that uses Kademlia DHT to store publisher record.
-The system directly uses DHT \texttt{PUT\_RECORD} to store object data.
-We set the replication factor for this IPFS-like system to 3, so that the redundancy level is similar to \sys{}'s 3.125.
+When evaluating physical deployments, we compare \sys to a private IPFS~\cite{ipfs} network.
+When working with IPFS, we reuse our client from \sys implementation, and send chunks to IPFS peers instead of \sys peer nodes.
+Each chunk is sent to three randomly-chosen IPFS peers for \store operation.
+For \query operation, client contacts one random IPFS peer per chunk,  and the chunk will first be transferred from one of the three storing peers to that contacted peer, then get back to client, similar to the interaction with \sys peer node.
 
 % We only slightly modified IPFS in the following way: When storing an object, we transfer the object to a random peer instead of storing locally.
 % Note that IPFS (and our modified version) by default only stores a single copy of the object, therefore offering no durability guarantee.
@@ -98,9 +99,9 @@ As expected, the configuration with higher redundancy (and therefore a higher th
 
 \begin{figure}
     \addgraph{faulty-lost}
-    \addgraph{targeted-lost}
-    \caption{Percentage of lost objects in the presence of Byzantine faulty peers (top plot) and targeted attacks (bottom plot).
-    \sys runs with three inner and outer code configurations respectively for the two simulations.}
+    % \addgraph{targeted-lost}
+    \caption{Percentage of lost objects in the presence of Byzantine faulty peers.
+    \sys runs with three inner and outer code configurations respectively for the simulation.}
     \label{fig:faulty}
 \end{figure}
 
@@ -108,16 +109,16 @@ As expected, the configuration with higher redundancy (and therefore a higher th
 To evaluate how well \sys tolerates adversaries, we simulate a network with Byzantine faulty nodes.
 Byzantine nodes participate correctly in all \sys protocols; however, they do not store any encoding fragment.
 A data object is consider permanently lost when less than $\kout$ of its encoded chunks are irrecoverable (for \sys) or no replicas are left (for the replicated system).
-The top subplot of \autoref{fig:faulty} shows the percentage of lost objects in a one-year trace.
+The \autoref{fig:faulty} shows the percentage of lost objects in a one-year trace.
 This simulation validates that a simple replication system does not tolerance strong adversaries: The baseline system loses all of its objects when less than 5\% of the nodes are faulty.
 On the other hand, \sys can tolerate a significant fraction of faulty nodes without losing data.
 The degree of tolerance depends on the inner code parameters.
 Using the default parameter, \sys can tolerate around the targeted 33\% faulty nodes, while a more conservative configuration can improve tolerance further at the expense of increased redundancy.
 
-We also evaluate \sys{}'s tolerance against targeted adversaries, and show the object lost rate in the lower subplot of \autoref{fig:faulty}.
-Once again, the baseline replication system shows weak fault tolerance, losing all objects when less than 2\% of the nodes were attacked.
-In contrast, our outer layer coding approach effectively defends against targeted adversaries.
-With a (14, 8) coding configuration, no object is lost until more than 20\% of the nodes are being attacked.
+% We also evaluate \sys{}'s tolerance against targeted adversaries, and show the object lost rate in the lower subplot of \autoref{fig:faulty}.
+% Once again, the baseline replication system shows weak fault tolerance, losing all objects when less than 2\% of the nodes were attacked.
+% In contrast, our outer layer coding approach effectively defends against targeted adversaries.
+% With a (14, 8) coding configuration, no object is lost until more than 20\% of the nodes are being attacked.
 
 \subsection{Physical Deployment}
 
@@ -126,15 +127,17 @@ With a (14, 8) coding configuration, no object is lost until more than 20\% of t
 %This results in sequentially generation of all fragments.
 %In practice, it could be parallelized and improve \store performance.
 
-Next, we evaluate \sys using our Raft implementation.
-We deploy 10,000 \sys nodes on Amazon EC2 in 5 AWS zones (us-west, ap-southeast, eu-central, sa-east, af-south) across 5 continents.
+Next, we evaluate \sys using our implementation.
+We deploy 10,000 \sys nodes on Amazon EC2 in 5 AWS zones (us-west, ap-east, eu-central, sa-east, af-south) across 5 continents.
 We launch 20 m5.4xlarge instances with 16 vCPU, 64GiB of memory and up to 10Gbps network bandwidth in each zone, and run 100 peers on each instance.
 
-As mentioned earlier, we implemented an IPFS-like decentralized storage system using Kademlia DHT as a comparison system.
-%This Kademlia-based system serves as a state-of-the-art decentralized storage baseline.
-We directly use Kademlia's \texttt{PUT\_RECORD} interface to store the data object, and set the replication factor to 3 to match the redundancy of \sys.
-Each data object is split into $\kin \cdot \kout$ records.
-This splitting scheme ensures good storage load balancing across nodes in the system.
+% As mentioned earlier, we implemented an IPFS-like decentralized storage system using Kademlia DHT as a comparison system.
+% %This Kademlia-based system serves as a state-of-the-art decentralized storage baseline.
+% We directly use Kademlia's \texttt{PUT\_RECORD} interface to store the data object, and set the replication factor to 3 to match the redundancy of \sys.
+% Each data object is split into $\kin \cdot \kout$ records.
+% This splitting scheme ensures good storage load balancing across nodes in the system.
+As mentioned earlier, we compared \sys with a IPFS network that paired with \sys client.
+Each data object is split into $\kout$ chunks, replicated three times and stored into IPFS network.
 
 % Note that erasure coding, unfortunately, cannot be easily adapted into Kademlia.
 %We also deployed a Ceph cluster with one replication pool and one erasure coding pool, all with the stock configuration.
@@ -144,18 +147,17 @@ This splitting scheme ensures good storage load balancing across nodes in the sy
 % In every run of the evaluation, to remove any caching effect, we spawn a fresh node as client.
 % Once the node successfully connects to the network, it issues a \store with a randomly generated object.
 % After the \store returns an object ID, another fresh node is spawned to issue a \query with the returned ID to retrieve the object.
-In the evaluation of \store and \query operation, we select a random node as client to perform one pair of operations.
-The client node first issues \store with a randomly generated object.
-After the \store returns an object ID, it immediately issues a \query with the returned ID to retrieve the object.
+In the evaluation of \store and \query operation, we spawn a client to perform \store in one of the five regions.
+After the \store finished with chunk secrets, another client is immediately spawned in another random region to issue a \query with the secret to retrieve the object.
 The node performs sanity check to make sure the object is properly retrieved.
 
-In the evaluation of repairing, we trigger a special command to force nodes to evict the oldest member that stores the chunk.
-This is equivalent to the member being disconnected from the network.
-The remaining group members locate a new member to replace the evicted one.
-We report the latency between the eviction and the instant when the new member is known to successfully store the chunk.
+% In the evaluation of repairing, we trigger a special command to force nodes to evict the oldest member that stores the chunk.
+% This is equivalent to the member being disconnected from the network.
+% The remaining group members locate a new member to replace the evicted one.
+% We report the latency between the eviction and the instant when the new member is known to successfully store the chunk.
 
-We evaluate the system with a simulated DHT routing system that provides node discovery in constant time.
-This simplification mitigates the effect of DHT routing performance on the result, and focus on the performance differences between the protocols.
+% We evaluate the system with a simulated DHT routing system that provides node discovery in constant time.
+% This simplification mitigates the effect of DHT routing performance on the result, and focus on the performance differences between the protocols.
 
 \paragraph{Latency Results.}
 
@@ -173,7 +175,7 @@ We measure end-to-end latency of \store and \query operations for each system, a
 % This is reflected in the longer \sys $\store$ latency.
 % \query shows similar latency trend when \sys client linearly searches for fragments.
 % By implementing the DHT record optimization, \query latency of \sys remains constant regardless of coding parameters, and is comparable to the baseline performance.
-Baseline replication system has better \store performance, while its \query performance is dramatically affected by outer code.
+IPFS has better \store performance, while its \query performance is dramatically affected by outer code.
 \sys on the other hand, manages to maintain the latency on a steady state across different code setup.
 
 %For the default object size of 64 MiB, \sys outperforms both Kademlia and Ceph by a wide margin in latency.
@@ -228,7 +230,7 @@ This suggests that \sys is capable to handle massive real-world workload.
 
 We also evaluate \sys with increasing system size, i.e., the number participants in the system.
 The scalability result is shown in \autoref{fig:scale}.
-Similar to the baseline replicated system, \sys is able to maintain near-constant performance regardless of the system's scale.
+Similar to IPFS, \sys is able to maintain near-constant performance regardless of the system's scale.
 
 \paragraph{Micro-benchmarks.}
 
