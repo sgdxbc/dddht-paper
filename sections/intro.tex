@@ -22,25 +22,34 @@ adversarial behaviors are prevalent.
 In such open and asynchronous environment, traditional redundancy schemes lose their effectiveness in preventing data losses.
 Recently, more than 1600 TiB of data on the Filecoin~\cite{filecoin} network lost all replica copies simultaneously~\cite{filecoin_loss}.
 
-In this work, we propose a new decentralized object storage system, \sys, to address this durability challenge.
-\sys uses \emph{rateless erasure code} to generate a virtual stream of encoding chunks for each object.
-When storing an object, the client uses its private key to materialize the infinite stream into a finite set of randomly selected chunks.
+In this work, we propose a new decentralized storage system, \sys, to address this durability challenge.
+At the core of our approach is two durability principles we identified for decentralized storage, namely \emph{information asymmetry} and \emph{data uniformity}.
+The information asymmetry principle states that, in the presence of targeted adversarial attacks, data durability can only be guaranteed if some metadata information is asymmetrical in the system.
+The intuition behind the principle is that if adversaries have equal and complete view of storage metadata, they can concentrate attack powers on specific nodes to break durability of certain objects.
+The data uniformity principle says that to maximize durability, encoding of all stored objects should be distributed uniformly random across storage nodes.
+The principle hinges on the unpredictability of churning and adversarial behaviors in an open, decentralized system.
+
+Following the information asymmetry principle, \sys uses a \emph{rateless erasure code} to generate a virtual stream of encoding chunks for each object.
+To create asymmetry, a client uses its \emph{private key} to materialize the infinite stream into a finite set of randomly selected chunks.
 Critically, the mapping between the materialized chunks and the original object is \emph{opaque} to all participants except the client.
 With sufficient objects stored in the system, adversaries have negligible probability to attack enough materialized chunks of the same object to compromise durability.
 
-To handle the high churn and failure rate, \sys applies rateless code a second time for storing each encoding chunk.
-Compared to conventional maximum distance separable code (MDS), rateless code offers better fault tolerance properties in a highly asynchronous network and faulty environment.
+This opaque object-to-chunk mapping, unfortunately, also precludes object repair.
+To ensure long-term durability of the object, \sys applies erasure coding a second time for each encoding chunk with only public information.
+Here \sys chooses to use rateless code again: Compared to conventional maximum distance separable code (MDS), rateless code offers better fault tolerance properties in a highly asynchronous network and faulty environment.
 Rateless code support efficient \emph{large code} encoding.
 The large number of code symbols improves statistical reliability of the chunk without increasing redundancy.
 More importantly, it eschews the need for time-sensitive encoding repair --- an impractical requirement in a decentralized network --- and permits repair at a steady average-rate.
 The bigger symbol space also facilitates nodes to perform repair \emph{independently}, avoiding costly coordination.
 
-To tolerate strong adversaries, \sys applies \emph{verifiable randomness} to select randomly distributed nodes to store code symbols.
+To comply with the data uniformity principle, \sys applies \emph{verifiable randomness} to select randomly distributed nodes to store code symbols.
 The procedure avoids centralization by using verifiable random function~\cite{vrf} to determine participant eligibility.
 Selection results are unforgeable and publicly verifiable.
-Randomness and verifiability of the selection outcome ensures that sufficient code symbols are stored on honest nodes, even when significant portion of the participants are adversarial.
+Randomness and verifiability of the selection outcome ensures that sufficient code symbols are stored on non-faulty nodes, even when significant portion of the participants are adversarial.
+
 %\lijl{Maybe add homomorphic hashing and other optimizations here.}
 
+\lijl{Update evaluation results here.}
 \sys is of a practical design.
 % We implement \sys on top of libp2p and deploy \sys on 10,000 nodes across 5 continents on AWS.
 We implement \sys prototype and deploy \sys on 10,000 nodes across 5 continents on AWS.
@@ -50,8 +59,6 @@ Critically, \sys significantly improves fault tolerance to Byzantine participant
 Even when using a coding scheme with small redundancy level, \sys guarantees data durability with more than 33\% Byzantine participants, and more than 10\% of the nodes under targeted attacks.
 %\sys performs data object \store and \query with 1.6x-3.1x lower latency compare to existing decentralized storage, while achieving similar scalability over thousands of peers.
 \sys performs data object \store with 2.1x-1.4x latency and \query with 0.92x latency compare to replicated baseline system, while achieving similar scalability over thousands of peers.
-\lijl{Update evaluation results}
-\sgd{updated}
 
 
 % Obsolete text
