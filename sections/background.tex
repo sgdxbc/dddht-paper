@@ -1,3 +1,4 @@
+\iffalse
 \sgd{Alternative flow for background \& motivation section.}
 
 \paragraph{The demand of \emph{store and forget} service in p2p network.}
@@ -8,7 +9,7 @@ Reason: client should not build its confidence of the data persistent in the sys
 In another word, whether some specific peers behave correctly or not should not affect the overall confidence level of the client on that the data will not lose.
 
 \paragraph{Scalability failure of blockchains.}
-Full replication does not scale. 
+Full replication does not scale.
 Partial replication (arweave) only mitigates the problem: workload still grows linearly according to chain depth.
 
 \paragraph{Indexing systems provide mismatched functions.}
@@ -26,11 +27,12 @@ Durability guarantee that only depends on overall properties (e.g. faulty portio
 Controllable redundancy.
 
 \sgd{Original content below.}
+\fi
 
 We consider the problem of designing a \emph{durable} object storage system in a fully \emph{decentralized} environment.
 The system provides a simple object store and retrieval interface to end users.
 Each object contains a blob of binary data of arbitrary size.
-The system provides \emph{durability}: Once an object is successfully stored, users are guaranteed to retrieve the object with its original content until it expires.
+The system provides \emph{durability}: Once an object is successfully stored, the object can be recovered with its original content until expiration, even if part of the system fails.
 Objects are \emph{immutable}, i.e., users cannot modify an object after it is stored.
 The system presents a \emph{flat view} of all objects; it does not offer explicit hierarchies such as those in a file system.
 It serves as a base persistent storage layer where higher-level functionalities, such as files and relational databases, can be built atop.
@@ -55,7 +57,7 @@ For instance, a recent study of IPFS~\cite{ipfs} reveals that 87.6\% of session 
 another study~\cite{bitcoin_churn} shows similar churn rate in the Bitcoin network.
 The storage system needs to ensure data durability even when nodes fail and depart at such high rate.
 
-\paragraph{Prior distributed storage systems.}
+\paragraph{\textbf{Prior distributed storage systems.}}
 There is a long line of work on centrally managed distributed storage systems~\cite{ceph,gfs,bigtable,dynamo,liquid}.
 These systems commonly divide objects into equal-sized chunks, and deploy a large pool of nodes to store those chunks.
 A dedicated set of nodes are responsible for maintaining and processing storage metadata.
@@ -73,7 +75,7 @@ To reduce the risk of data losses, placement groups are chosen to minimize corre
 These systems, however, only consider crash failures of individual components.
 All participants of the system are under a single, protected administrative domain, so there is no requirement to tolerate Byzantine failures~\cite{bft}.
 
-\paragraph{State of the art decentralized storage.}
+\paragraph{\textbf{State of the art decentralized storage.}}
 With the popularization of peer-to-peer file sharing networks in the late 90s, designing storage and file systems from a network of decentralized, untrusted computers was an active research topic at the time.
 Representative work during this period of time include xFS~\cite{xfs}, Farsite~\cite{farsite}, and OceanStore~\cite{oceanstore}.
 Departing from centralized deployment, handling unreliable and malicious participants is a key design goal.
@@ -92,6 +94,10 @@ Retrieving a file involves querying the DHT for the publisher records and the ad
 IPFS, however, does not offer any file durability guarantee.
 File content in IPFS is only stored on the original file publishers;
 the protocol has no explicit redundancy mechanism to enforce file content durability.
+
+\paragraph{\textbf{IPFS case study.}}
+To investigate the durability guarantees in existing systems, we conducted a measurement study on the public IPFS network.
+\lijl{Describe study and results.}
 
 \ifspace
 Filecoin~\cite{filecoin} addresses this issue using an incentive-based approach called Proof-of-Storage~\cite{fc_pos}.
