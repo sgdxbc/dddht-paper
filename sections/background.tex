@@ -41,6 +41,7 @@ Performance is not a key design metric of the system.
 We target the \emph{cold storage} layer of the storage stack which emphasizes on \emph{data durability}, \emph{storage capacity}, and \emph{cost}, as opposed to the warm~\cite{f4} or the hot storage~\cite{haystack} layers.
 Amazon Glacier~\cite{amazon_glacier,amazon_s3} and Google Coldline~\cite{google_coldline}/Archive~\cite{google_archive} storage are popular production-level systems in this category.
 
+\iffalse
 Our target deployment environment is a fully \emph{decentralized} and \emph{open} network.
 The deployment model mirrors existing permissionless blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
 There is no central entity to manage or administer the system.
@@ -56,6 +57,7 @@ Besides adversarial behaviors, a decentralized network can have higher churn rat
 For instance, a recent study of IPFS~\cite{ipfs} reveals that 87.6\% of session uptime is under 8 hours and only 2.5\% of them exceed 24 hours;
 another study~\cite{bitcoin_churn} shows similar churn rate in the Bitcoin network.
 The storage system needs to ensure data durability even when nodes fail and depart at such high rate.
+\fi
 
 \paragraph{\textbf{Prior distributed storage systems.}}
 There is a long line of work on centrally managed distributed storage systems~\cite{ceph,gfs,bigtable,dynamo,liquid}.
