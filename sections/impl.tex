@@ -13,25 +13,42 @@
 % To conform with libp2p, a dummy response is sent.
 % All messages are serialized using Protocol Buffers~\cite{protobuf}.
 
-We implement \sys peer node as HTTP server and client,
-atop the open-source actix-web HTTP server framework~\cite{actix-web} and its client library awc.
-The verifiable random selection proof and persistence claim's signature use ed25519 curve.
-All messages are serialized using bincode~\cite{bincode}.
+% We implement \sys peer node as HTTP server and client,
+% atop the open-source actix-web HTTP server framework~\cite{actix-web} and its client library awc.
+% The verifiable random selection proof and persistence claim's signature use ed25519 curve.
+% All messages are serialized using bincode~\cite{bincode}.
 
-Nodes send HTTP requests using asynchronous messaging.
-The requests are handled with an immediate dummy \texttt{200 OK} response,
-and any further reply will be sent as a reversed HTTP request.
-This ensures the system can tolerance arbitrary network delay and node slow down.
+% Nodes send HTTP requests using asynchronous messaging.
+% The requests are handled with an immediate dummy \texttt{200 OK} response,
+% and any further reply will be sent as a reversed HTTP request.
+% This ensures the system can tolerance arbitrary network delay and node slow down.
 
-The node is implemented using a single-thread server and a worker thread pool.
-All long-running tasks, either blocking or non-blocking (e.g., coding, making request and file system operations),
-are offloaded from server thread and submitted to worker thread pool.
-This keeps the node to be responsive; the design is also scalable by fully exploiting the  available parallelism.
+% The node is implemented using a single-thread server and a worker thread pool.
+% All long-running tasks, either blocking or non-blocking (e.g., coding, making request and file system operations),
+% are offloaded from server thread and submitted to worker thread pool.
+% This keeps the node to be responsive; the design is also scalable by fully exploiting the  available parallelism.
+
+The implementation of \sys consists of two parts: peer node and client.
+During \store the client performs outer layer encoding and then send encoded chunks to arbitrary chosen peer nodes, which is accessible to (and by) the DHT network and push the fragments of the chunks to selected peers according to the peer selection protocol.
+The peer nodes then response client with a proof of the chunk has been stored by sufficient number of peers, i.e. a certification that is signed with peers' signatures.
+The client persists secrets of generated chunks between \store and \query.
+On \query client send requests to arbitrary chosen online peers, who will perform the inner layer decoding and response client with chunks.
+Client then performs outer layer decoding and recover the data.
+
+In the implementation client and peer node exchange chunks through HTTP endpoints, similar to IPFS's \texttt{add} and \texttt{cat} RPC APIs.
+Peers use plain TCP to communicate with each other, with designated public-key signatures on messages when necessary.
+The TCP sockets are multiplexed among \sys and DHT's peer discovery service, while fragments are transferred through bulk transfer service with dedicated connections, to be isolated from latency-incentive messaging.
+
+The peer selection protocol requires DHT to discover large amount of peers around a chunk hash, e.g. 40-160 in our evaluation.
+To cooperate with such workload, the concurrency factor of contacting peers (i.e. $\alpha$ in Kademlia) has been increased to 30 from its typical setting i.e. 3.
+This configuration can dramatically reduce peer discovery latency in a worldwide p2p network, as shown in our evaluation.
 
 We use wirehair \cite{wirehair}, an $O(1)$ time rateless erasure code implementation, as our rateless erasure code.
 Wirehair not only attains high performance, it can also recover the original data with an expected $k + 0.02$ fragments.
 
-The overall implementation is written in 2.1K lines of Rust code.
+On both peer node and client side, we deploy Tokio~\cite{tokio} as asynchronous IO runtime and userspace scheduler to facilitate efficient high concurrent IO workload and parallelize encoding workload.
+
+The overall implementation is written in 6447 lines of Rust code.
 
 % Our implementation attempts more than $R$ encoding indices for each \texttt{PUT} operation, in anticipation of unsuccessful peer selection for some indices.
 % This approach brings additional latency benefit.
