@@ -3,24 +3,23 @@ In this section, we elaborate how \sys combines rateless erasure code and verifi
 \subsection{System Model and Assumptions}
 We consider a decentralized system in which nodes can freely join and leave.
 Each node maintains finite local storage, and the entire set of participants collectively implements a storage system.
-\lijl{Discuss stake and storage-per-node here.}
-\sys exposes a \textit{synchronous} object storage interface with two API calls: \query and \store.
-\store takes an object and an expiration time, and returns an ID when the object is successfully stored;
-\query takes an object ID and returns the object if it exists in the system.
+\sys exposes a \emph{synchronous} object storage interface with two API calls: \query and \store.
+\store takes an object, a private key, and an expiration time, and returns an object ID when the object is successfully stored;
+\query takes an ID and returns the object if it exists in the system.
 Objects are immutable --- \sys does not provide an explicit interface to update existing objects.
-Similar to IPFS, \sys uses content addressing, i.e., an object ID uniquely identifies the content of the object stored.
+Similar to IPFS, \sys uses content addressing, \ie, an object ID uniquely identifies the content of the object stored.
 Issuing a new \store with a different object content is therefore equivalent to an object update.
-Mapping client objects to \sys issued IDs is out of the scope of the paper.
-Unlike IPFS, object IDs are private to data owners to protect object from targeted attacks.
+Mapping client objects to \sys issued IDs is out of scope.
+Unlike IPFS, object IDs are private to data owners to protect objects from targeted attacks.
 
 \sys guarantees the following \emph{data durability} invariant.
 A direct implication of the invariant is that once a \store successfully returns, all subsequent \query{}s for the returned ID output the original object until expiration.
-We use \emph{outer code} to denote the rateless code that a client applies to an object to generate the encoding chunks.
-Each chunk is applied another rateless code when storing, referred to as the \emph{inner code}.
+We use \emph{outer code} to denote the rateless code that a client applies to generate the encoding chunks of an object.
+Each chunk is applied another rateless code when storing, referred to as the \emph{inner code} (\autoref{sec:approach:code}).
 
 \begin{invariant}
-At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $\kout$\footnote{Both $\kout$ and $\kin$ include $\epsilon$ of rateless code.} encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
-An encoded chunk is recoverable if at least $\kin$ encoding fragments of the chunk are stored on non-faulty nodes which are free from targeted attacks.
+At any time $t$ after a \store for object $o$ is completed and until $o$ expires, at least $\kout$\footnote{For brevity, both $\kout$ and $\kin$ include $\epsilon$ of rateless code.} encoded chunks of $o$ are \emph{recoverable} with overwhelmingly high probability.
+An encoded chunk is recoverable if at least $\kin$ encoding fragments of the chunk are stored on non-faulty nodes.
 \label{inv:safety}
 \end{invariant}
 
@@ -44,9 +43,9 @@ We consider a strong Byzantine fault model in which adversaries can collude with
 We, however, assume a stake-based system, and that adversaries do not possess more than $1/3$ of the system stakes in aggregate, a standard assumption made in proof-of-stake protocols.
 Note that using stake is not an inherent part of the protocol.
 \sys only leverages stake to defend against strong Sybil attacks; other approaches such as proof-of-work or permissioned settings can also be applied.
-We also assume that adversaries have enough computational power to launch targeted attacks (e.g., DDoS attack) on a small percentage of nodes in the system.
+%We also assume that adversaries have enough computational power to launch targeted attacks (e.g., DDoS attack) on a small percentage of nodes in the system.
 %These attacks can partition the victims from the network during the attack period.
-We also make standard cryptography assumptions, i.e., the probability of subverting cryptographic hash functions or public-key cryptography algorithms we used in the protocol is negligible.
+We also make standard cryptography assumptions, i.e., the probability of subverting cryptographic hash functions or public-key cryptography algorithms is negligible.
 
 \subsection{Design Overview}
 
@@ -58,12 +57,12 @@ We also make standard cryptography assumptions, i.e., the probability of subvert
     \includegraphics[width=0.9\linewidth]{figures/store}
     \caption{\sys object store procedure.
     Client first applies a rateless code to generate a set of encoded chunks.
-    Each chunk is then encoded into a stream of fragments using a second layer of rateless code.
+    A private key is used to select a subset of the chunks, and each chunk is then encoded into a stream of fragments using a second layer of rateless code.
     A selection procedure assigns each fragment to randomly chosen nodes in the system.}
     \label{fig:store}
 \end{figure}
 
-As shown in \autoref{fig:store}, \sys uses two layers of erasure coding to ensure object durability.
+As shown in \autoref{fig:store}, \sys uses two layers of erasure coding to ensure object durability (\autoref{sec:approach:code}).
 When storing an object, a client first applies an outer-layer rateless code to generate a sequence of \emph{encoded chunks}.
 It then uses its private key and the object hash to deterministically select a set of chunks from the sequence.
 The process is \emph{irreversible}: Even when external parties know the object content, they can only infer the mapping between the encoded chunks and the object with negligible probability.
@@ -96,7 +95,7 @@ The client then stores $R$ encoding fragments, where $R$ is large enough to ensu
 %If not done carefully, adversaries can collude and claim persistence of enough fragments for a chunk such that less than $k + \epsilon$ fragments are stored on honest nodes.
 %Once those adversaries discard their local fragments, the chunk is permanently lost.
 
-Randomly selecting nodes to store chunk fragments is critical to the safety of \sys.
+Randomly selecting nodes to store chunk fragments is critical to the safety of \sys (\autoref{sec:approach:random}).
 To that end, \sys designs a \emph{decentralized} selection protocol with verifiable randomness, as shown in \autoref{fig:selection}.
 %The protocol leverages two sources of randomness: a cryptographic hash of the fragment and randomness from a verifiable random function (VRF).
 To choose responsible nodes for a chunk, \sys first uses a cryptographic hash of the chunk to locate candidates on a distributed hash table (DHT)~\cite{chash,chord,kademlia}.
@@ -128,9 +127,13 @@ Storage device failures and node churns can lead to permanent loss of encoding f
 Similar to prior storage systems, \sys performs \emph{repair} by regenerating new encoding fragments when the number of alive fragments drops below a threshold.
 Chunk repair in \sys is fully decentralized, as shown in \autoref{fig:chunkrepair}.
 Nodes storing encoding fragments for the same chunk form a \emph{chunk group}.
-Chunk group members periodically broadcast persistence claims of their stored fragments to other peers in the group (step 1).
-When repair condition is met, group members perform randomized peer selection to locate new members to replenish the group (step 2).
-New members pull fragments from existing peers (step 3), decode the original chunk, and generate new encoding fragments using the inner-layer rateless code.
+Chunk group members periodically broadcast their fragments to other, potentially new, members verified by the selection process.
+Once a new member receives enough fragments, it decodes the original chunk, generates a new encoding fragment, and joins the group.
+As argued in \autoref{sec:approach:code}, properties of our rateless code facilitate lazy and consensus-free repair, both critical conditions for effective repairs in an asynchronous, decentralized network.
+
+%Chunk group members periodically broadcast persistence claims of their stored fragments to other peers in the group (step 1).
+%When repair condition is met, group members perform randomized peer selection to locate new members to replenish the group (step 2).
+%New members pull fragments from existing peers (step 3), decode the original chunk, and generate new encoding fragments using the inner-layer rateless code.
 
 \paragraph{Object retrieval.}
 
@@ -152,7 +155,7 @@ After retrieving enough fragments, the client can reconstruct the encoded chunks
 %In the worst case where no fragment pointer is found, the requesting node either performs a linear search of the encoding fragment stream, or disseminates a chunk query request using a gossip protocol.
 
 
-\subsection{Protocol Details.}
+\subsection{Protocol Details}
 
 \lijl{Describe somewhere that we are using a stake system, each staked identity stores a fixed amount of data, and so the total number of nodes is fixed}
 
@@ -197,15 +200,16 @@ After retrieving enough fragments, the client can reconstruct the encoded chunks
 %\end{figure}
 
 %\autoref{fig:node-state} shows the local state maintained by each \sys node.
-Each \sys node generates a (\textit{sk}, \textit{pk}) key pair, and keeps the secret key \textit{sk} locally.
+Each \sys node generates a (\emph{sk}, \emph{pk}) key pair, and keeps the secret key \textit{sk} locally.
 Public keys are assumed to be known by all nodes in the system.
 A SHA256 hash of the public key is used as the node ID~\cite{kademlia}.
 This ensures that node IDs are randomly distributed on the hash ring.
 Each node stores a set of encoding fragments.
-For each stored fragment, it maintains a local view of the alive peers in the constituent chunk group.
-We define a constant $R$ to denote the threshold chunk group size.
-\lijl{Explain how to calculate $R$.}
-Repair is triggered when group size drops below $R$.
+%For each stored fragment, it maintains a local view of the alive peers in the constituent chunk group.
+We define a constant $R$ to denote the target redundancy level for each chunk.
+$R$ needs to be at least $\kin$; a bigger $R$ increases chunk durability, but at the expense of higher storage overhead.
+
+%Repair is triggered when group size drops below $R$.
 %Since the inner rateless code generates an infinite stream of encoding symbols, each encoding index maps to a unique fragment, and by extension, a set of responsible nodes.
 %We define two variables, \wl and \wh, to delineate the current encoding index \emph{window} of the chunk group.
 %Only peers within the encoding window are considered \emph{active}.
@@ -216,7 +220,7 @@ Repair is triggered when group size drops below $R$.
 \begin{algorithm}[t]
     \begin{algorithmic}[1]
         \Procedure{\store}{$\var{obj}$}
-            \State $\var{chunks} \gets \fn{OuterEncode}(\var{obj}), \var{chashes} \gets \set{}$
+            \State $\var{chunks} \gets \fn{OuterEncode}(\var{pk}, \var{obj}), \var{chashes} \gets \set{}$
             \ForAll{$\var{chunk} \in \var{chunks}$}
                 \State $\var{chash} \gets \fn{Hash}(\var{chunks})$
                 \State $\var{members} \gets \set{}, i \gets 0$
@@ -262,23 +266,23 @@ Being a decentralized peer-to-peer system, client operations are issued on parti
 Here, we use \emph{clients} to denote nodes that issue client operations.
 
 \lijl{Describe expiration time.}
-\lijl{Discuss secrets in the outer layer code.}
 
 To store an object, a client uses the outer layer encoding function $\fn{OuterEncode}$ to generate a set of encoded chunks.
 The function applies a rateless code on the object, and uses the client's private key and the object hash to randomly select $n$ chunks from the encoding sequence.
 %For each chunk, the client picks a randomized genesis time $t$ in the past, and derives the initial chunk $\wl$ based on $t$ and the current time.
 %Time randomization reduces timing correlation among chunks of the same object, minimizing effectiveness of targeted attacks.
-For each chunk, the client then applies the inner layer erasure code to output a stream of fragments and stores $R$ of them at responsible peers.
+For each chunk, the client applies the inner layer erasure code to output a stream of fragments and stores $R$ of them at responsible peers.
 %Chunk genesis time $t$ is embedded in each fragment, so that each peer can independently derive $\wl$.
 Peer selection for a fragment is performed by the $\fn{Locate}()$ procedure, which we further elaborate in \autoref{sec:protocol:detail:selection}.
+Note that each fragment is stored on a \emph{unique} group member, following our uniformity principle (\autoref{principle:uniformity}).
 %If no responsible peer is found, the client skips the fragment and continues down the stream, until $k_{inner}$ fragments are properly stored.
-Once enough fragments are stored, the client also forwards the membership to each group peer for bootstrapping.
+%Once enough fragments are stored, the client also forwards the membership to each group peer for bootstrapping.
 The hash of all encoded chunks are returned to the client for object retrieval.
-As there is no dependency among the different chunks, the client can perform all peer selection and fragment store in parallel.
+As no dependency exists among the different chunks, the client can perform all peer selection and fragment store \emph{in parallel}.
 
 To query an object, a client reconstructs $\kout$ encoded chunks from its list of chunk hashes.
 For each chunk hash, the client applies $\fn{Locate}()$ to find peers responsible for storing its encoding fragments.
-With verifiable selection proof (detailed in \autoref{sec:protocol:detail:selection}), only peers from the chunk group will be returned.
+With verifiable selection proof, only peers from the chunk group will be returned.
 The client then attempts to request chunk fragments from these peers.
 %For each chunk hash, the client performs a linear search on the encoding stream to retrieve $\kin$ fragments.
 %Specifically, it applies homomorphic hashing~\cite{homo_hash} on the inner layer code and the chunk hash to generate a stream of fragment hashes, and requests each fragment from responsible peers using $\fn{Locate}()$.
