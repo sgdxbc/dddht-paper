@@ -128,7 +128,7 @@ With a (14, 8) coding configuration, no object is lost until more than 20\% of t
 
 Next, we evaluate \sys using our Raft implementation.
 We deploy 10,000 \sys nodes on Amazon EC2 in 5 AWS zones (us-west, ap-southeast, eu-central, sa-east, af-south) across 5 continents.
-We launch 20 c5.9xlarge instances with 36 vCPU, 72GiB of memory and 12Gbps network bandwidth in each zone, and run 100 peers on each instance.
+We launch 20 m5.4xlarge instances with 16 vCPU, 64GiB of memory and up to 10Gbps network bandwidth in each zone, and run 100 peers on each instance.
 
 As mentioned earlier, we implemented an IPFS-like decentralized storage system using Kademlia DHT as a comparison system.
 %This Kademlia-based system serves as a state-of-the-art decentralized storage baseline.
@@ -173,10 +173,8 @@ We measure end-to-end latency of \store and \query operations for each system, a
 % This is reflected in the longer \sys $\store$ latency.
 % \query shows similar latency trend when \sys client linearly searches for fragments.
 % By implementing the DHT record optimization, \query latency of \sys remains constant regardless of coding parameters, and is comparable to the baseline performance.
-The \store and repairing latencies are higher than the baseline replication system,
-due to coding overhead and network overhead introduced by verifiable random selection.
-However, \query latency is smaller than the baseline replication system despite the coding overhead.
-This is because the inner code deployed in DHT allow \sys to recover the object with fragments that are geologically closer to the \query node.
+Baseline replication system has better \store performance, while its \query performance is dramatically affected by outer code.
+\sys on the other hand, manages to maintain the latency on a steady state across different code setup.
 
 %For the default object size of 64 MiB, \sys outperforms both Kademlia and Ceph by a wide margin in latency.
 %Moreover, \sys also enjoys a much lower latency variance compared to Kademlia.
@@ -213,7 +211,7 @@ This is because the inner code deployed in DHT allow \sys to recover the object 
     \label{fig:concurrent}
 \end{figure}
 
-To measure our system capacity, we perform multiple \store and \query loops concurrently from different random nodes, while triggering multiple repairing concurrently.
+To measure our system capacity, we perform multiple \store and \query loops concurrently from different random nodes.
 The latency result is shown in \autoref{fig:concurrent}.
 \sys maintains its performance even up to 100 concurrent \store and \query operations, and is able to support more than 600 concurrent repairing.
 We can derive that \sys can support more than 400K \store and 720K \query per day, and can tolerance over 13M daily object repairs.
