@@ -9,6 +9,12 @@
 \newcommand{\sgd}[1]{\editorial{cyan}{sgd: #1}}
 \newcommand{\mh}[1]{\editorial{green}{mh: #1}}
 
+\ifdraft
+\newenvironment{outline}{\color{blue} \textbf{Outline:}}{}
+\else
+\excludecomment{outline}
+\fi
+
 \ifarxiv
 \newcommand{\sys}{V\textsc{ault}\xspace}
 \else
@@ -19,8 +25,6 @@
 \newcommand{\store}{\textsc{store}\xspace}
 \newcommand{\del}{\textsc{delete}\xspace}
 
-\newcommand{\wh}{\ensuremath{wmark_{h}}\xspace}
-\newcommand{\wl}{\ensuremath{wmark_{l}}\xspace}
 \newcommand{\kout}{\ensuremath{K_{outer}}\xspace}
 \newcommand{\kin}{\ensuremath{K_{inner}}\xspace}
 

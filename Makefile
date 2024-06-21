@@ -13,9 +13,12 @@ PAPER_DEPS := $(TEX) $(CLS) $(BIB) $(FIG)
 
 .PHONY: all clean
 
-all: $(PAPER).pdf $(SUPPL).pdf
+# all: $(PAPER).pdf $(SUPPL).pdf
+all: $(PAPER).pdf
 
-$(PAPER).pdf $(SUPPL).pdf: $(PAPER_DEPS)
+# $(PAPER).pdf $(SUPPL).pdf: $(PAPER_DEPS)
+.PHONY: FORCE
+$(PAPER).pdf $(SUPPL).pdf: FORCE
 	@rm -f $@
 	$(LATEX) $(addsuffix .tex, $(basename $@)) -O .latex.out -o $@
 
