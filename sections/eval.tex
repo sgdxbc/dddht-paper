@@ -42,6 +42,7 @@ Such replication scheme is commonly employed in data center settings, and we use
     \addgraph{object-repair}
     \caption{Repair traffic over increasing number of objects and churn rate.
     The subscript number indicates duration in hours until the chunk cache is cleared.}
+    \Description{TODO}
     \label{fig:repair}
 \end{figure}
 
@@ -74,6 +75,7 @@ The drop in repair traffic at high churn is caused by more frequent cache refres
 \begin{figure}
     \addgraph{time-alive}
     \caption{Number of fragments stored on alive \sys honest nodes over time. The two lines are for different inner code configurations with different redundancy.}
+    \Description{TODO}
     \label{fig:time}
 \end{figure}
 
@@ -102,6 +104,7 @@ As expected, the configuration with higher redundancy (and therefore a higher th
     % \addgraph{targeted-lost}
     \caption{Percentage of lost objects in the presence of Byzantine faulty peers.
     \sys runs with three inner and outer code configurations respectively for the simulation.}
+    \Description{TODO}
     \label{fig:faulty}
 \end{figure}
 
@@ -163,8 +166,8 @@ The node performs sanity check to make sure the object is properly retrieved.
 
 \begin{figure}
     \addgraph{latency}
-    \caption{Latency of \store and \query operation in a world-wide deployment.
-    }
+    \caption{Latency of \store and \query operation in a world-wide deployment.}
+    \Description{TODO}
     \label{fig:latency}
 \end{figure}
 
@@ -208,8 +211,8 @@ IPFS has better \store performance, while its \query performance is dramatically
 \begin{figure}
     \addgraph{concurrent-put-get}
     % \addgraph{concurrent-repair}
-    \caption{Latency of concurrent \store and \query operation.
-    }
+    \caption{Latency of concurrent \store and \query operation.}
+    \Description{TODO}
     \label{fig:concurrent}
 \end{figure}
 
@@ -223,8 +226,8 @@ This suggests that \sys is capable to handle massive real-world workload.
 
 \begin{figure}
     \addgraph{peer}
-    \caption{Latency of \store and \query operation with varying number of nodes.
-    }
+    \caption{Latency of \store and \query operation with varying number of nodes.}
+    \Description{TODO}
     \label{fig:scale}
 \end{figure}
 
@@ -238,6 +241,7 @@ Similar to IPFS, \sys is able to maintain near-constant performance regardless o
     \addgraph{coding-time-outer}
     \addgraph{coding-time-inner}
     \caption{Micro-benchmarks showing the utilized CPU time for clients to encode and decode a data object (top plot), and for repairing a fragment in a chunk group.}
+    \Description{TODO}
     \label{fig:coding-time}
 \end{figure}
 

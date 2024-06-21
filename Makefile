@@ -4,12 +4,12 @@ LATEX := ./bin/latexrun --color auto -W no-overfull -W no-citation
 PAPER := paper
 SUPPL := suppl
 
-TEX := $(shell find ./ -type f -name "*.tex")
-CLS := $(shell find ./ -type f -name "*.cls" -o -name "*.sty")
-BIB := $(shell find ./ -type f -name "*.bib")
-FIG := $(shell find ./figures/ -type f -name "*.pdf") $(shell find ./graphs/ -type f -name "*.pdf")
+# TEX := $(shell find ./ -type f -name "*.tex")
+# CLS := $(shell find ./ -type f -name "*.cls" -o -name "*.sty")
+# BIB := $(shell find ./ -type f -name "*.bib")
+# FIG := $(shell find ./figures/ -type f -name "*.pdf") $(shell find ./graphs/ -type f -name "*.pdf")
 
-PAPER_DEPS := $(TEX) $(CLS) $(BIB) $(FIG)
+# PAPER_DEPS := $(TEX) $(CLS) $(BIB) $(FIG)
 
 .PHONY: all clean
 
