@@ -87,6 +87,17 @@ With this assumption, a (known to be) higher churn rate can simply be addressed 
 This means that according to our definition, the systems with same faulty degree produces correlated failure events of same difficulty to be handled, which is exactly what to expect from a definition of faulty.
 Nevertheless, it's still meaningful to perform evaluations on repair overhead of systems under different churn rates, in order to show how the systems react to increasingly frequent failure events.
 
+This fault model has substantial difference to a usual one for either permissioned or permissionless systems.
+In those models, as long as a node is interpreted as honest, it will not fail.
+However, in our model, every node may fail at any time.
+And what's worse, under certain faulty degree, all failure events may be correlated.
+In the traditional sense this means there's no single honest node in the system.
+This fault model is specially tailored for open storage systems.
+Whenever a storage node permanently leave the system, some information is lost for real, which is not the same as a leave in a blockchain system.
+So any well-designed storage system must tolerate the failures that will eventually take away all the information currently stored in the system (in some cases, no one can tolerate the case that the whole system go away all together).
+This is a basic requirement, and accomplishing this requirement is not fault tolerance.
+The only thing that makes storage systems different to each other in the sense of fault tolerance is how they react to correlated failures.
+
 With proper definitions of fault and fault tolerance in mind, we conduct a series of analysis on the previous works.
 Given a target faulty degree and churn rate, we generate synthetic system traces in three different ways
 \begin{itemize}
@@ -113,8 +124,8 @@ The use of large code in an open system that lacks centralized coordination rais
 
 The new content probably covers what we previously called \emph{data uniformity} below, and I believe the new representation is more comprehensive.
 
-For the \emph{information asymmetry} part, it should be able to be considered as a further measurement for ensuring fragments not get trapped into too few failure domains.
-I'm also ok to keep it side by side to the whole correlated failure stuff, as a general ``defending targeted attack by hiding secrets'' principle.
+For the \emph{information asymmetry} part, it should be able to be considered as a further discipline for ensuring fragments not get trapped into too few failure domains.
+I'm also ok to keep it side by side to the whole correlated failure stuff, as a general ``defending targeted attack by hiding secrets'' discipline.
 But according to the latest discussion its priority is dropping.}
 
 In this work, we propose a new decentralized storage system, \sys, to address this durability challenge.
