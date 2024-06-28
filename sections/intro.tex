@@ -1,14 +1,38 @@
-\sgd{Just saying but maybe consider (partially) switching from `decentralized' to `open'/`cooperative'/`collaborative'/`collective'/better alternatives.
-(At least, this work only cares about the decentralization of authority, not geological distribution (which is often instead/also the topic of decentralized works).)
+\begin{outline}
+The development direction of large scale public storage services has been changed several times due to the progress of hardware and software technologies.
 
-The fact of the work has been built in a decentralized form is mostly a coincidence: the only significant consideration may be ``that is how previous works look'' (if those are indeed perceived as previous works). The decentralization is not a must-have property of this work, it can be deployed in a centralized, private blockchain like setup, none of its features benefits from (or even has anything to do with) decentralization, and it does not solve any challenge that is posed by decentralization.
+At first the features, \eg durability, storage and bandwidth capacity, etc., of a centralized storage system has been insufficient to support reliably storing a desired amount of data with adequate performance, so people start to design decentralized storage systems, 
+\sgd{TODO cite 20 year ago works}
+collaboratively serving large amount of public data, \eg academic datasets, mail list archives, to go beyond the limit of single storage node, ensuring the whole system is more powerful and durable compared to any single point.
 
-Not sure this suggestion would be a good thing or bad thing regarding reviewers' perception of this work.
-On one hand the aged ``decentralized storage systems'' have been the wrong comparison targets of this work for long, which have already been bother us since the very first submission.
-On the other hand that concept is at least something the reviewers have ever heard of.
-We probably don't want to make too many definitions in one work.
+Later than, the increasing power that can be owned by centralized storage systems terminated the previous trend of designing decentralized systems.
+As long as a centralized storage system can provide satisfying storage capacity and accessibility, it can easily defeat decentralized solutions in most other aspects \eg access latencies, durability, and cost efficiency.
+\sgd{TODO list some outstanding achievements of centralized solutions regarding these aspects.}
 
-Anyway, I believe decoupling decentralization can result in a more accurate description to this work, and more importantly, a more accurate understanding on where our efforts go.}
+Now we have come to an end that the limitations of public storage services are mostly by the centralized authorities.
+The capacity, accessibility and cost efficiency (to end users) are not pushed to the limits, but optimized according to the service providers' own consideration (mostly in the economic sense).
+For the durability it's even worse: although the service providers always claim to secure the stored data with sophisticated replication and erasure coding solutions, the durability guarantee subjectively depends on the trust level of the providers from end users.
+And it even depends on the durability of the providers themselves: if you trust your data can persist 100 years in Google Drive, you must first trust that Google itself is still there 100 years later.
+
+Luckily, with the ever-growing hardware/software capabilities, we now have a chance to revisit the idea of permissionless storage systems to overcome the limitations of a single service provider with acceptable overheads.
+In a permissionless storage system, the durability guarantee is not bounded by the trust to or the durability of any individual.
+Instead, it will remain constant even in the presence of constant membership rotation.
+\sgd{TODO list achievements of recent p2p works}
+In one word, it is possible for a carefully designed permissionless storage system to provide better durability than all the centralized storage systems however built.
+
+\sgd{It is still possible to mention the web3 industry somewhere, but feels unnecessary in the current flow.
+The storyline is becoming ``this is a better storage system for everyone including those currently using centralized solutions'', not ``web3 demands everything to be decentralized so there must be a decentralized solution also for durable storage''.
+It's more risky, but its acceptance is independent to the reviewers' thoughts regarding web3, so I think it worth taking the risk.}
+
+With our new focusing on the durability, the most critical design consideration becomes how the permissionless storage system react to failures that permanently takes away the fragments stored on the failed storage nodes.
+We emphasize on the nature of permissionless systems that, unlike the centralized ones, the correlation among node failures cannot be feasibly reasoned about.
+While a centralized storage system can be designed with predetermined failure domains in mind, a permissionless storage system has to be designed against all kinds of correlated failures, and any assumption made to the failure domains may lead to unexpected data loss upon certain correlated failure.
+
+We point out that the fault tolerance capability of a permissionless storage system cannot be discussed against a presumed set of failure domains, as a centralized system with planned failure domains.
+Instead, we define the fault tolerance of a permissionless storage system in the notion of \emph{probabilistic failure domains}.
+\end{outline}
+
+\iffalse
 
 We are witnessing a technological paradigm shift to move away from service centralization, a hallmark of the cloud computing and web services industries in the past two decades.
 This \emph{decentralization} movement is catalyzed by the growing concern over content censorship~\cite{twitter_censorship}, data misuse~\cite{fb_misuse}, monopolistic practices~\cite{google_antitrust}, and single point of organization failure~\cite{ftx_debacle}.
@@ -33,100 +57,6 @@ there exists high variance in node performance, reliability, and network conditi
 adversarial behaviors are prevalent.
 In such open and asynchronous environment, traditional redundancy schemes lose their effectiveness in preventing data losses.
 Recently, more than 1600 TiB of data on the Filecoin~\cite{filecoin} network lost all replica copies simultaneously~\cite{filecoin_loss}.
-
-\begin{outline}
-Probably not everything follows go to introduction section.
-Just a centralized note of the new flow.
-
-We identify the most critical challenge to ensure durability in an open storage system: the impossibility of correlated failure modeling.
-In a centralized storage system, the single authority knows well (maybe even decides) every aspect of the storage nodes, including geological location, power supply solution, hardware specification, and all storage nodes are trusted.
-The single authority can in turn model the storage nodes into failure domains to predict for the possible correlated failures.
-The modeled failure domains make placement of erasure coded stripes a straightforward task; just span stripes across sufficient failure domains.
-\sgd{Can we have some references on failed cases of determining failure domains? Will such examples be helpful?}
-
-In an open storage system, correlated failure modeling is infeasible.
-There's no trusted source of information about storage node specifications due to the nature of an open, permissionless system.
-Moreover, the set of storage nodes constantly changes, thus even if the system can acquire and propagate some trusted specifications of a newly joined storage node, it may need to enumerate the whole system to determine whether the node would belong to any existing failure domain, or it may form a new failure domain with some other existing storage nodes.
-\sgd{One more point is adversarial attacks can influence the failure domain in the ways against assumptions/expectations.
-Maybe a bit too detailed to mention.}
-As the result, the correlated failure model remains unknown and unpredictable in an open storage system.
-
-We show reasons that the classical decentralized storage systems \sgd{cite works from 20 years ago} are far from sophisticated enough to tolerate correlated failures that are possible in reality.
-At core of the regeneration systems proposed by previous works, certain amount of fragments are distributed into network for each data object, and a repair mechanism maintain the number of fragments throughout the lifetime of data object.
-\sgd{Probably need to define object/fragment somewhere before.}
-In another word, the storage nodes regenerate fragments to replace the lost ones as long as possible.
-If there are only independent failures, it's easy to guarantee that the regeneration is always possible by voluntarily reporting or detecting sufficiently frequently.
-Then the repair mechanism has no substantial difference to the one of a centralized storage system.
-However, if the system cannot guarantee to place fragments on sufficient number of different failure domains, the correlated failures happened on the involved failure domains may take away too many fragments simultaneously, leaving no chance to repair.
-And that is exactly what may happen with the previous works.
-
-To accurately formalize the challenge of handling correlated failures, we make the following definition of fault and fault tolerance of an open storage system:
-\begin{itemize}
-    \item There are a certain number of failure domains in the storage system, whose members are hidden to protocol designers.
-    The size of failure domains ranges from 1 (\ie independent failure) to the total number of storage nodes (\ie the whole system go down simultaneously, which probably only happen in a nuclear winter).
-    Every storage node belongs to at least one failure domain and may belong to multiple failure domains.
-    For example, a storage node may belong to one failure domain of all other storage nodes in the same city by considering local nature disasters. If it is running on a cloud platform, it may also belong to another failure domain of all other storage nodes from that cloud platform by considering the cloud platform authority. It may belong to yet another failure domain with all other storage nodes that equips the disks from the same manufacture batch by considering the hardware failures. Again, protocol designers are not able to learn any of these failure domains.
-    \item In each failure event, all storage nodes belong to a failure domain permanently leave the system.
-    For simplicity, we are not considering transient failures/availability in this work, and if the failure domain may partially fail, we simply model the failed part as another failure domain.
-    The churn rate of the system is measured by the total number of left storage nodes in all failure events in a unit time interval.
-    In all studied systems we assume (or configure) the total number of contained storage nodes remains constant.
-    The faster nodes fail, the faster nodes join.
-    Unlike failure domains, we assume the churn rate can be predetermined \ie it's impossible to predict which/when nodes will fail, especially which nodes will fail together, but it's possible to estimate how much portion of nodes will fail in a time window.
-    \item The faulty degree of the system is measured by the distribution of the failure domain sizes.
-    For example, fixing the other factors, the more the failure domains, or the larger failure domains are, the more faulty the system is.
-    \sgd{``The larger the more faulty'' part is straightforward, for the ``the more the more faulty'' part, it means each storage node will involve in more failure domains, so that when selecting it with one random other storage node, there's higher chance that two nodes happen to belong to any common failure domain.}
-    A system is considered as not faulty at all if all failure domains have the size one \ie there are only independent failures.
-    This also means that a protocol can tolerate failures does not necessary mean it can tolerate fault - only so if it can tolerate correlated failures.
-    \item A protocol is considered to tolerate a certain faulty degree if, when the protocol is running on a system whose failure domains are randomly configured according to the failure domain size distribution of that faulty degree, then every stored data object has overwhelming probability to be recoverable at the end of storage period.
-    In another word, the protocol tolerates \emph{almost all} possible failure domain configurations.
-    Note that it's usually impossible to ensure no data loss under all possible failure domains configurations given any nontrivial failure domain size distribution, as in the worst case the failure domains may be identical to the actual placement.
-\end{itemize}
-Notice that according to these definitions, churn rate does \emph{not} contribute to the faulty degree.
-In this work, we only consider the cases where the churn rate is low enough that the interval between consecutive failure events related to the same data object are much longer than the time to detect and repair for the former failure event, which means the repairs of the data object are never concurrently happening.
-With this assumption, a (known to be) higher churn rate can simply be addressed by tweaking parameters related to failure detection/handling.
-This means that according to our definition, the systems with same faulty degree produces correlated failure events of same difficulty to be handled, which is exactly what to expect from a definition of faulty.
-Nevertheless, it's still meaningful to perform evaluations on repair overhead of systems under different churn rates, in order to show how the systems react to increasingly frequent failure events.
-
-This fault model has substantial difference to a usual one for either permissioned or permissionless systems.
-In those models, as long as a node is interpreted as honest, it will not fail.
-However, in our model, every node may fail at any time.
-And what's worse, under certain faulty degree, all failure events may be correlated.
-In the traditional sense this means there's no single honest node in the system.
-This fault model is specially tailored for open storage systems.
-Whenever a storage node permanently leave the system, some information is lost for real, which is not the same as a leave in a blockchain system.
-So any well-designed storage system must tolerate the failures that will eventually take away all the information currently stored in the system (in some cases, no one can tolerate the case that the whole system go away all together).
-This is a basic requirement, and accomplishing this requirement is not fault tolerance.
-The only thing that makes storage systems different to each other in the sense of fault tolerance is how they react to correlated failures.
-
-With proper definitions of fault and fault tolerance in mind, we conduct a series of analysis on the previous works.
-Given a target faulty degree and churn rate, we generate synthetic system traces in three different ways
-\begin{itemize}
-    \item Random generate failure domain configurations for \XXX times, report the average results.
-    \item Designated failure domain patterns for individual protocols. The failure domains are decided deterministically without feeding the runtime behavior of the protocol.
-    \item A fully adversarial failure domain pattern simulating the presence of targeted attacks.
-\end{itemize}
-We show that all previous works have significant probabilities to lost data even with fully random failure domains.
-Most data are lost with designated failure domains, and they always lost all data in the case of adversarial attacks.
-
-With all the analysis presented, it is clear that in order to build fault tolerate storage system, we need to distribute fragments into different failure domains without knowing the failure domains.
-To this seemingly impossible challenge, our proposed solution is random sampling.
-According to the law of large numbers, when the sampling count is going larger, the number of fragments distributed into each failure domain will be proportion to the size of the failure domain with smaller variance.
-By deploying large code that generates enough number of fragments, we are able to guarantee that there will be sufficient failure domains that at least one fragment is distributed into them with high probabilities.
-Thus tolerate as many correlated failures as desired.
-
-The use of large code in an open system that lacks centralized coordination raises the problem of duplicated fragments.
-\sgd{the vrf part}.
-
-\sgd{Need to complete the adversarial stuff somewhere, but the path should be already clear.}
-\end{outline}
-
-\sgd{Regarding the previous content.
-
-The new content probably covers what we previously called \emph{data uniformity} below, and I believe the new representation is more comprehensive.
-
-For the \emph{information asymmetry} part, it should be able to be considered as a further discipline for ensuring fragments not get trapped into too few failure domains.
-I'm also ok to keep it side by side to the whole correlated failure stuff, as a general ``defending targeted attack by hiding secrets'' discipline.
-But according to the latest discussion its priority is dropping.}
 
 In this work, we propose a new decentralized storage system, \sys, to address this durability challenge.
 At the core of our approach is two durability principles we identified for decentralized storage, namely \emph{information asymmetry} and \emph{data uniformity}.
@@ -155,7 +85,9 @@ Randomness and verifiability of the selection outcome ensures that sufficient co
 
 %\lijl{Maybe add homomorphic hashing and other optimizations here.}
 
-\lijl{Update evaluation results here.}
+% \lijl{Update evaluation results here.}
+\fi
+
 \sys is of a practical design.
 % We implement \sys on top of libp2p and deploy \sys on 10,000 nodes across 5 continents on AWS.
 We implement \sys prototype and deploy \sys on 10,000 nodes across 5 continents on AWS.
@@ -165,7 +97,6 @@ Critically, \sys significantly improves fault tolerance to Byzantine participant
 Even when using a coding scheme with small redundancy level, \sys guarantees data durability with more than 33\% Byzantine participants, and more than 10\% of the nodes under targeted attacks.
 %\sys performs data object \store and \query with 1.6x-3.1x lower latency compare to existing decentralized storage, while achieving similar scalability over thousands of peers.
 \sys performs data object \store with 1.2x-2.2x latency and \query with 0.5-0.9x latency compare to replicated baseline system, while achieving similar scalability over thousands of peers.
-
 
 % Obsolete text
 \iffalse

@@ -1,10 +1,18 @@
 \begin{abstract}
 
-The lack of centralized control, combined with highly dynamic adversarial behaviors, makes data durability a challenge in decentralized storage systems.
-In this work, we introduce a new storage system, \sys, that offers strong data durability guarantees in a fully decentralized, permissionless setting.
-\sys leverages the rateless property of erasure code to encode each data object into an infinite stream of encoding fragments.
-To ensure durability in the presence of dynamic Byzantine behaviors and targeted attacks, an infinite sequence of storage nodes are \textit{randomly} selected to store encoding fragments.
-Encoding generation and candidate selection are fully decentralized: When necessary, \sys nodes use a gossip protocol and a publically verifiable selection proof to determine new fragments.
-Simulations and large-scale EC2 experiments demonstrate that \sys provides close-to-ideal mean-time-to-data-loss (MTTDL) with low storage redundancy, scales to more than 10,000 nodes, and attains performance comparable to IPFS.
+Building permissionless storage system that is open to everyone to provide storage resource can benefit users by decoupling the durability reasoning of the system with the trust to individual operators.
+However, the permissionless setup also bring its unique challenge of dealing with unpredictable correlated failures.
+% The ability of making promise on tolerating these correlated failures is the key step to moving from a voluntary best effort storage service to a reliable and production-ready one.
+% This is highly demanded by real world decentralized applications for durably storing high-value digital assets in a permissionless way to incorporate their trust model.
+In this work, we proposed a proper definition of fault tolerance of permissionless storage systems, as the key measure of the durability of such systems.
+This novel fault model precisely captures the inability of modeling or predicting correlated failures \ie failure domains in a permissionless system.
+
+Motivated by the vulnerability of data loss of prior works under this fault model, we designed \sys, a permissionless storage system that can tolerate realistic correlated failures with a correlation-oblivious design.
+With large code, \sys performs large number of independent random samplings to distribute erasure code fragments, ensuring the data object is distributed into sufficient failure domains with overwhelming probability regardless of the ground truth failure domains.
+Moreover, \sys deploys rateless erasure code to enable fragment repairing of large code in a permissionless system without explicit coordination, and we specially designed an unpredictable random sampling solution to defend adversarial attacks.
+
+We show the effectiveness of \sys's durability by both deriving the relation between the probability of data loss with the erasure code configuration, showing \sys can practically tolerate correlated failures with reasonable redundancy, and evaluating the system performance with simulations.
+We also implement \sys and evaluate its real world performance with a worldwide deployment.
+\sys shows performance degradation within \XXX\% compare to baseline systems which cannot reliably tolerate correlated failures, which proves that \sys is able to secure real world applications with acceptable overhead.
 
 \end{abstract}
