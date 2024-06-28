@@ -24,13 +24,61 @@ In one word, it is possible for a carefully designed permissionless storage syst
 The storyline is becoming ``this is a better storage system for everyone including those currently using centralized solutions'', not ``web3 demands everything to be decentralized so there must be a decentralized solution also for durable storage''.
 It's more risky, but its acceptance is independent to the reviewers' thoughts regarding web3, so I think it worth taking the risk.}
 
+\end{outline}
+
+\sgd{The following paragraphs are also new. I think they are formal enough to be called ``content'' instead of ``outline''.}
 With our new focusing on the durability, the most critical design consideration becomes how the permissionless storage system react to failures that permanently takes away the fragments stored on the failed storage nodes.
 We emphasize on the nature of permissionless systems that, unlike the centralized ones, the correlation among node failures cannot be feasibly reasoned about.
 While a centralized storage system can be designed with predetermined failure domains in mind, a permissionless storage system has to be designed against all kinds of correlated failures, and any assumption made to the failure domains may lead to unexpected data loss upon certain correlated failure.
 
+\sgd{New.}
 We point out that the fault tolerance capability of a permissionless storage system cannot be discussed against a presumed set of failure domains, as a centralized system with planned failure domains.
 Instead, we define the fault tolerance of a permissionless storage system in the notion of \emph{probabilistic failure domains}.
-\end{outline}
+We consider all combinations of storage nodes to be a possible failure domain, and every possible failure domain has its own \emph{failure rate} \ie the probability of failing in a time unit.
+(For those storage node combinations that never fail together \ie do not actually form a failure domain, their failure rates are 0.)
+The failure rates of the failure domains are assigned with a function $P(f) = g_f({n_1, n_2, \dots})$ where $n_1, n_2, ...$ are the nodes of the failure domain.
+This function $g_f$ is called \emph{failure generator}.
+
+\sgd{With this definition we cannot model the failure domain whose failure likelihood changes over time. Be sure of that.}
+
+\sgd{New.}
+A permissionless system is in turn modeled as a series of \emph{failure events} that
+\begin{itemize}
+    \item In every failure event, all storage nodes from a specific failure domain simultaneously fail in the time unit (which is approximated as an instant).
+    \item In each time unit, all failure domains \emph{independently} fail according to their failing rates.
+    \item Since failure domains overlap with each other, a storage node fails at a time unit if at least one of the failure domains it belongs fail.
+    The failed storage nodes permanently leave the system, so each failure domain can only fail once.
+    \item The system's \emph{churn rate} is measured as the expected number of failed nodes in every time unit.
+    For simplicity, we assume the system remains constant scale, so in every time unit, the number of fresh storage nodes joining the system equals to the number of failed nodes of that time unit.
+    \item As the fresh nodes joining, they immediately form new failure domains in combination of all the other nodes.
+    The failure rates of the new failure domains are also assigned by the failure generator.
+\end{itemize}
+With this system model, the faulty degree of the system can be precisely described with the failure generator.
+
+\sgd{A complete black box failure generator is rigorous but not intuitive. White box it a little if possible.}
+
+\sgd{One more paragraph here to argue we can assume to know failure generator ahead of time, just the actual failure events not predictable.}
+
+\sgd{New.}
+With a properly defined fault model we then perform analysis on the prior storage systems.
+In the analysis we simulate a permissionless network with various failure generators.
+We then populate data objects into the network and observe their persistency over time.
+Unsurprisingly, all previous works yield poor mean time to data lost (MTTDL), suggesting they are not able to truthfully tolerate faults.
+Further investigation reveals that they are \emph{failure domain sensitive}, meaning their performance may dramatically degrade because of the presence of certain failure domains.
+Considering the unpredictable nature of failure domains in a permissionless system, this behavior is highly undesired since there's no way to prevent those ``bad'' failure domains from emerging.
+
+\sgd{New.}
+Guided by the analysis we designed \sys, a permissionless storage system that truly tolerates storage node faults.
+Unlike previous works that all stick on static placement group policies and become vulnerable to corresponding correlated failures, \sys creates placement groups by independently random sampling over all the storage nodes.
+Sampling against storage nodes effectively equivalents to simultaneously sampling all failure domains.
+Leveraging large erasure coding,
+\sgd{need to define ``large'' somewhere before?}
+\sys is able to sufficiently sample the failure domains so that the law of large numbers kicks in, ensuring that the times that each failure domain get sampled will be close enough to a known value.
+With this we are able to tolerate an individual failure domain by making sure that it is \emph{not} getting sampled for enough times, so that whenever this failure domain fails, all the remaining fragments can still support the recovery.
+Because failure domains fail independently to each other, we can also independently tolerate one failure domain by another.
+We then determine the erasure coding parameters to tolerate all the failure domains given by a failure generators with high probability.
+
+\sgd{TODO elaboration.}
 
 \iffalse
 
