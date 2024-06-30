@@ -47,6 +47,7 @@ For each pair of nodes, let $f_{all}$ be the sum of failure rates of the failure
 Notice that the correlation coefficients in our fault mode is always non-negative.
 This is expected and matches the observation from previous works \sgd{cite}.
 
-Defining the fault model in terms of correlation coefficients of each pair of storage nodes is theoretically possible (as long as all coefficients are non-negative), and may be preferred over failure generators because the concept of correlation coefficient is widely adopted and determining the coefficients is easier than determining the failure generator of a system.
+The alternative definition of the fault model is in terms of the failure rate of individual storage nodes and the correlation coefficients of each pair of storage nodes (as long as all coefficients are non-negative). This alternation may be preferred over failure generators because the concept of correlation coefficient is widely adopted and determining the individual failure rates and the coefficients is easier than determining the failure generator of a system.
 \sgd{I don't know, should we use coefficients instead?}
+However, we take the failure generator approach \ie define the fault model directly with failure domains for its clear correspondence with storage placement groups.
 \end{outline}
