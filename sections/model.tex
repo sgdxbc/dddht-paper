@@ -34,4 +34,19 @@ We cannot rely on things like ``it is an honest node but failed out of nature di
 We don't have an explicit model for adversarial/arbitrary faults in this work.
 In our proposed protocol there's no coordination, so it (mostly) does not rely on \eg whether the interacted nodes behave correctly.
 Those faulty behaviors are also covered by correlated failures.
+
+Discussion on authoritative storage systems.
+Although we mostly claim that the authoritative storage systems have predetermined failure domains and this work does not contribute to them, failing to identify correlations causes disastrous consequences in those storage systems.
+So we suggest modeling faults of authoritative storage systems with our fault model as well, with failure generators adjusted toward expected failure domains, but still leave some uncertainty.
+
+Discussion on correlations.
+The standard way to describe correlation is through a \emph{correlation coefficient}, usually denoted with $\rho$, in the range of $[-1, 1]$ where $\rho = 1$ means definite correlated \ie the two events always happen/not happen together, and $\rho = -1$ means definite anti-correlated \ie there's always exactly one event of the two happens.
+
+The correlation coefficients of node failures in our fault model can be inferred from failure generators.
+For each pair of nodes, let $f_{all}$ be the sum of failure rates of the failure domains that contain at least one of the two nodes, $f_{both}$ be the sum of failure rates of the failure domains that contains both of the nodes, then $\rho = f_{both}/f_{all}$.
+Notice that the correlation coefficients in our fault mode is always non-negative.
+This is expected and matches the observation from previous works \sgd{cite}.
+
+Defining the fault model in terms of correlation coefficients of each pair of storage nodes is theoretically possible (as long as all coefficients are non-negative), and may be preferred over failure generators because the concept of correlation coefficient is widely adopted and determining the coefficients is easier than determining the failure generator of a system.
+\sgd{I don't know, should we use coefficients instead?}
 \end{outline}
