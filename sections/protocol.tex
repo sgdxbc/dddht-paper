@@ -1,3 +1,4 @@
+\iffalse
 In this section, we elaborate how \sys combines rateless erasure code and verifiable random peer selection to design a durable decentralized storage system.
 
 \subsection{System Model and Assumptions}
@@ -46,6 +47,13 @@ Note that using stake is not an inherent part of the protocol.
 %We also assume that adversaries have enough computational power to launch targeted attacks (e.g., DDoS attack) on a small percentage of nodes in the system.
 %These attacks can partition the victims from the network during the attack period.
 We also make standard cryptography assumptions, i.e., the probability of subverting cryptographic hash functions or public-key cryptography algorithms is negligible.
+\fi
+
+\begin{outline}
+A proof of concept design that gives decent MTTDL with constant, ahead of time configurable redundancy, against certain failure generator.
+
+Failure generator is assumed to be known ahead of time.
+\end{outline}
 
 \subsection{Design Overview}
 

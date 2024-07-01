@@ -47,7 +47,26 @@ For each pair of nodes, let $f_{all}$ be the sum of failure rates of the failure
 Notice that the correlation coefficients in our fault mode is always non-negative.
 This is expected and matches the observation from previous works \sgd{cite}.
 
-The alternative definition of the fault model is in terms of the failure rate of individual storage nodes and the correlation coefficients of each pair of storage nodes (as long as all coefficients are non-negative). This alternation may be preferred over failure generators because the concept of correlation coefficient is widely adopted and determining the individual failure rates and the coefficients is easier than determining the failure generator of a system.
+The alternative definition of the fault model is in terms of the failure rate of individual storage nodes and the pairwise correlation coefficients (as long as all coefficients are non-negative). This alternation may be preferred over failure generators because the concept of correlation coefficient is widely adopted or determining the individual failure rates and the coefficients is easier than determining the failure generator of a system.
 \sgd{I don't know, should we use coefficients instead?}
 However, we take the failure generator approach \ie define the fault model directly with failure domains for its clear correspondence with storage placement groups.
+
+Analysis previous works with proposed fault model.
+
+Design proper failure generators.
+A uniformly random generator may be good enough.
+The failure rates of failure domains of same sizes are the same.
+The failure rates exponentially decrease as the failure domain size grows.
+This is not realistic as in the real world a storage node will not possibly fail together with every other node.
+But it's hard to make any assumption, and we should design systems that can deal with this.
+
+A slightly ``friendly'' generator would be the one above with locality.
+Some node pairs are considered to be independent to each other, and every failure domain that contain both of them are removed.
+To this end we will eventually end up with the case where all pairs are independent and only failure domains containing single node are retained \ie there are only independent failures left.
+This gives us a spectrum of generators to evaluate how systems react to varying correlation degrees.
+
+And there are tailored generators for special cases. \sgd{Not sure whether this is necessary.}
+
+Each previous work is evaluated with redundancy adjusted to different levels.
+They must be impractically redundant \ie blockchain like in order to be somehow fault tolerance.
 \end{outline}
