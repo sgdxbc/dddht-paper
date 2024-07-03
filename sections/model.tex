@@ -1,17 +1,13 @@
 \begin{outline}
-What is different between designing an authoritative storage system and designing a permissionless one?
-
 The storage systems do essentially same things to ensure durability.
 Store with redundancy.
 Detect redundancy loss in time.
 Recover expected redundancy level in time.
 Durability proved by showing the recovery is always faster than the series of loss arriving at an independently random interval.
 
-The difference lies in studying the correlations of the failures.
-There's no way to study the correlations in a permissionless system in a reliable and trusted way.
-Correlations in the wild are multidimensional.
-In datacenters storage nodes are carefully deployed to reduce the dimensions.
-This is impossible in permissionless systems.
+The correlated failures affect the part of how redundancy loss.
+If it is lost all at once then no solution can recover the data.
+So the solution must ensure redundancy does not loss at once no matter what correlated failures happen.
 
 We must consider \emph{all} possible correlated failures in a permissionless system.
 Every combination of nodes may fail together, while they may still fail by themselves.

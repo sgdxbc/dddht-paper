@@ -1,11 +1,11 @@
 \begin{outline}
 The development direction of large scale public storage services has been changed several times due to the progress of hardware and software technologies.
 
-At first the features, \eg durability, storage and bandwidth capacity, etc., of a centralized storage system has been insufficient to support reliably storing a desired amount of data with adequate performance, so people start to design decentralized storage systems, 
-\sgd{TODO cite 20 year ago works}
-collaboratively serving large amount of public data, \eg academic datasets, mail list archives, to go beyond the limit of single storage node, ensuring the whole system is more powerful and durable compared to any single point.
+% At first the features, \eg durability, storage and bandwidth capacity, etc., of a centralized storage system has been insufficient to support reliably storing a desired amount of data with adequate performance, so people start to design decentralized storage systems, 
+% \sgd{TODO cite 20 year ago works}
+% collaboratively serving large amount of public data, \eg academic datasets, mail list archives, to go beyond the limit of single storage node, ensuring the whole system is more powerful and durable compared to any single point.
 
-Later than, the increasing power that can be owned by centralized storage systems terminated the previous trend of designing decentralized systems.
+Later than \sgd{some good old days}, the increasing power that can be owned by centralized storage systems terminated the previous trend of designing decentralized systems.
 As long as a centralized storage system can provide satisfying storage capacity and accessibility, it can easily defeat decentralized solutions in most other aspects \eg access latencies, durability, and cost efficiency.
 \sgd{TODO list some outstanding achievements of centralized solutions regarding these aspects.}
 
@@ -20,9 +20,9 @@ Instead, it will remain constant even in the presence of constant membership rot
 \sgd{TODO list achievements of recent p2p works}
 In one word, it is possible for a carefully designed permissionless storage system to provide better durability than all the centralized storage systems however built.
 
-\sgd{It is still possible to mention the web3 industry somewhere, but feels unnecessary in the current flow.
-The storyline is becoming ``this is a better storage system for everyone including those currently using centralized solutions'', not ``web3 demands everything to be decentralized so there must be a decentralized solution also for durable storage''.
-It's more risky, but its acceptance is independent to the reviewers' thoughts regarding web3, so I think it worth taking the risk.}
+% \sgd{It is still possible to mention the web3 industry somewhere, but feels unnecessary in the current flow.
+% The storyline is becoming ``this is a better storage system for everyone including those currently using centralized solutions'', not ``web3 demands everything to be decentralized so there must be a decentralized solution also for durable storage''.
+% It's more risky, but its acceptance is independent to the reviewers' thoughts regarding web3, so I think it worth taking the risk.}
 
 \end{outline}
 
@@ -78,7 +78,7 @@ With this we are able to tolerate an individual failure domain by making sure th
 Because failure domains fail independently to each other, we can also independently tolerate one failure domain by another.
 We then determine the erasure coding parameters to tolerate all the failure domains given by a failure generators with high probability.
 
-\sgd{TODO elaboration.}
+\sgd{TODO elaboration. (Probably not necessary for a vision paper. Neither the evaluation brief below.)}
 
 \iffalse
 

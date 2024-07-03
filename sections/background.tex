@@ -49,6 +49,7 @@ Each participating node has some local storage for storing data, as well as netw
 There is, however, no requirement on the type, speed, or quality of their physical storage or network devices.
 Participants can be either \emph{honest} or \emph{adversarial}.
 Honest nodes follow the protocol exactly, while adversarial nodes can deviate arbitrarily from the protocol.
+\sgd{Honest nodes, though honest, still fails from time to time; noticeably, all nodes eventually fail.}
 Adversaries may also collude and attack the system.
 
 \iffalse
@@ -58,6 +59,47 @@ For instance, a recent study of IPFS~\cite{ipfs} reveals that 87.6\% of session 
 another study~\cite{bitcoin_churn} shows similar churn rate in the Bitcoin network.
 The storage system needs to ensure data durability even when nodes fail and depart at such high rate.
 \fi
+
+\begin{outline}
+\sgd{Most desired previous works are already here, just listing the expected flow.}
+
+First are the 20 years ago works that designed for extending single node's capacity.
+Either centrally managed or not, as that was not the key concern.
+While the unmanaged solutions had the opportunity of achieving supreme durability, their design actually cannot.
+Later analysis prove this.
+
+In the next period most works are centrally managed.
+Their durability are bounded by the managing organization, as stated before.
+
+Recent works start to revisit unmanaged solutions mostly for web3 uses.
+Most noticeable ones are blockchains and Filecoin.
+
+Blockchain bypasses correlated failures by overwhelming redundancy.
+It's not a good fit for storage system.
+And it is not meant for storage.
+
+Filecoin and other pure incentive solutions try to bypass correlated failures with extremely low failure rates.
+That is not solving the problem.
+Also, that is not a sound solution, since failure rates cannot be reduced to zero in this way.
+
+\sgd{The following need to be appended to existing material.}
+As a conclusion, current decentralized storage systems overlook correlated failures.
+
+Correlated failures in a decentralized system deserve more serious consideration.
+Unlike managed infrastructures, decentralized system failures may exploit arbitrary correlations.
+There's no way to study the correlations in a permissionless system in a reliable and trusted way.
+Correlations in the wild are multidimensional.
+In datacenters storage nodes are carefully deployed to reduce the dimensions.
+This is impossible in permissionless systems.
+
+All the previous works tempt to \emph{mitigate} the unknown failure domains.
+Try to convert them into predetermined ones, or just pretend they are predetermined.
+In another word they are designing decentralized storage in the same way of designing centrally managed storage.
+Use extra measurement to polyfill the difference between the deployed environments.
+
+If we want to go beyond what durability centrally managed systems can provide with decentralized solution, we have to go another way.
+We will first model the correlated failures of our deploying environment, then design a system that \emph{natively} fit the model.
+\end{outline}
 
 \paragraph{\textbf{Prior distributed storage systems.}}
 There is a long line of work on centrally managed distributed storage systems~\cite{ceph,gfs,bigtable,dynamo,liquid}.
