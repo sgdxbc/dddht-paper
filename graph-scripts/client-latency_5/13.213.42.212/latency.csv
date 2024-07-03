@@ -1,3 +1,0 @@
-protocol,chunk_k,chunk_n,fragment_k,fragment_n,op,latency
-entropy,8,10,32,80,put,69.84034
-entropy,8,10,32,80,get,13.917318

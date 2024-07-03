@@ -72,6 +72,7 @@ Failure generator is assumed to be known ahead of time.
     \label{fig:store}
 \end{figure}
 
+\iffalse
 As shown in \autoref{fig:store}, \sys uses two layers of erasure coding to ensure object durability (\autoref{sec:approach:code}).
 When storing an object, a client first applies an outer-layer rateless code to generate a sequence of \emph{encoded chunks}.
 It then uses its private key and the object hash to deterministically select a set of chunks from the sequence.
@@ -564,7 +565,7 @@ Similarly, with the correct system parameters, we can ensure the adversaries' pr
 
 %\sgd{Maybe it is also worth to explain how well Bernoulli sampling works (the more total stakes, the more accurate how many stakes are actually selected).}
 
-
+\fi
 
 %%%%%%%%%%%%%%%%%%%
 % Unused material %
