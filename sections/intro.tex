@@ -1,7 +1,7 @@
 \begin{outline}
 The development direction of large scale public storage services has been changed several times due to the progress of hardware and software technologies.
 
-% At first the features, \eg durability, storage and bandwidth capacity, etc., of a centralized storage system has been insufficient to support reliably storing a desired amount of data with adequate performance, so people start to design decentralized storage systems, 
+% At first the features, \eg durability, storage and bandwidth capacity, etc., of a centralized storage system has been insufficient to support reliably storing a desired amount of data with adequate performance, so people start to design decentralized storage systems,
 % \sgd{TODO cite 20 year ago works}
 % collaboratively serving large amount of public data, \eg academic datasets, mail list archives, to go beyond the limit of single storage node, ensuring the whole system is more powerful and durable compared to any single point.
 
@@ -11,11 +11,18 @@ As long as a centralized storage system can provide satisfying storage capacity 
 
 Now we have come to an end that the limitations of public storage services are mostly by the centralized authorities.
 The capacity, accessibility and cost efficiency (to end users) are not pushed to the limits, but optimized according to the service providers' own consideration (mostly in the economic sense).
+\lijl{Not sure if we want to bring up this point.
+I agree this is likely true, just we don't have concrete evidence, and it is not easy to argue that decentralized solutions can effectively address this.
+We could just focus on durability.}
 For the durability it's even worse: although the service providers always claim to secure the stored data with sophisticated replication and erasure coding solutions, the durability guarantee subjectively depends on the trust level of the providers from end users.
 And it even depends on the durability of the providers themselves: if you trust your data can persist 100 years in Google Drive, you must first trust that Google itself is still there 100 years later.
+\lijl{If we could find news/anecdotes that centralized solutions lose user data, we can cite them here.}
 
 Luckily, with the ever-growing hardware/software capabilities, we now have a chance to revisit the idea of permissionless storage systems to overcome the limitations of a single service provider with acceptable overheads.
+\lijl{What is the causal relationship between hw/sw capabilities and enabling decentralized storage?}
 In a permissionless storage system, the durability guarantee is not bounded by the trust to or the durability of any individual.
+\lijl{Could clarify that there are many entities, each managing its storage devices.
+The entities are autonomous.}
 Instead, it will remain constant even in the presence of constant membership rotation.
 \sgd{TODO list achievements of recent p2p works}
 In one word, it is possible for a carefully designed permissionless storage system to provide better durability than all the centralized storage systems however built.
@@ -27,17 +34,26 @@ In one word, it is possible for a carefully designed permissionless storage syst
 \end{outline}
 
 \sgd{The following paragraphs are also new. I think they are formal enough to be called ``content'' instead of ``outline''.}
+\lijl{Could add one or two sentences explaining how to (or equivalently, the challenge of) ensure durability in a storage system.}
 With our new focusing on the durability, the most critical design consideration becomes how the permissionless storage system react to failures that permanently takes away the fragments stored on the failed storage nodes.
 We emphasize on the nature of permissionless systems that, unlike the centralized ones, the correlation among node failures cannot be feasibly reasoned about.
 While a centralized storage system can be designed with predetermined failure domains in mind, a permissionless storage system has to be designed against all kinds of correlated failures, and any assumption made to the failure domains may lead to unexpected data loss upon certain correlated failure.
+\lijl{We should first educate the readers about failures in a decentralized system.}
 
 \sgd{New.}
 We point out that the fault tolerance capability of a permissionless storage system cannot be discussed against a presumed set of failure domains, as a centralized system with planned failure domains.
+\lijl{This assertion would require some explanations.
+Probably okay after we expand on the failure discussion above.}
 Instead, we define the fault tolerance of a permissionless storage system in the notion of \emph{probabilistic failure domains}.
-We consider all combinations of storage nodes to be a possible failure domain, and every possible failure domain has its own \emph{failure rate} \ie the probability of failing in a time unit.
-(For those storage node combinations that never fail together \ie do not actually form a failure domain, their failure rates are 0.)
-The failure rates of the failure domains are assigned with a function $P(f) = g_f({n_1, n_2, \dots})$ where $n_1, n_2, ...$ are the nodes of the failure domain.
+We consider all combinations of storage nodes to be a possible failure domain, and every possible failure domain has its own \emph{failure rate}, \ie, the probability of failing in a time unit.
+(For those storage node combinations that never fail together, \ie, do not actually form a failure domain, their failure rates are 0.)
+The failure rates of the failure domains are assigned with a function $P(f) = g_f({n_1, n_2, \dots})$ where $n_1, n_2, \dots$ are the nodes of the failure domain.
 This function $g_f$ is called \emph{failure generator}.
+\lijl{The definition itself is probably not new.
+Just that in a centralized system, the failure rate of each possible failure domain is known/controlled by the admin.
+So the definition was applied in an implicit way.
+We could say that our contribution is formalizing this general theoretical framework for reasoning failure domains (which could be applied to centralized storage), and to define the right failure model under this framework for decentralized storage.
+}
 
 \sgd{With this definition we cannot model the failure domain whose failure likelihood changes over time. Be sure of that.}
 
@@ -54,6 +70,8 @@ A permissionless system is in turn modeled as a series of \emph{failure events} 
     The failure rates of the new failure domains are also assigned by the failure generator.
 \end{itemize}
 With this system model, the faulty degree of the system can be precisely described with the failure generator.
+\lijl{This is probably too much detail for intro.
+Can summarize the main point in a couple of sentences and elaborate in a later section.}
 
 \sgd{A complete black box failure generator is rigorous but not intuitive. White box it a little if possible.}
 
@@ -61,14 +79,19 @@ With this system model, the faulty degree of the system can be precisely describ
 
 \sgd{New.}
 With a properly defined fault model we then perform analysis on the prior storage systems.
+\lijl{Might need to summarize their durability techniques first.}
 In the analysis we simulate a permissionless network with various failure generators.
+\lijl{Either here or earlier, we should provide evidence that these failure generators are realistic in a decentralized environment.}
 We then populate data objects into the network and observe their persistency over time.
 Unsurprisingly, all previous works yield poor mean time to data lost (MTTDL), suggesting they are not able to truthfully tolerate faults.
-Further investigation reveals that they are \emph{failure domain sensitive}, meaning their performance may dramatically degrade because of the presence of certain failure domains.
+Further investigation reveals that they are \emph{failure domain sensitive}, meaning their performance \lijl{durability guarantees?} may dramatically degrade because of the presence of certain failure domains.
 Considering the unpredictable nature of failure domains in a permissionless system, this behavior is highly undesired since there's no way to prevent those ``bad'' failure domains from emerging.
 
 \sgd{New.}
+\lijl{Should clarify that this is a preliminary design.}
+\lijl{We can as well give the design principles that guarantees durability, and say this is a possible design instance that follows the principles.}
 Guided by the analysis we designed \sys, a permissionless storage system that truly tolerates storage node faults.
+\lijl{We need a more precise statement of our property.}
 Unlike previous works that all stick on static placement group policies and become vulnerable to corresponding correlated failures, \sys creates placement groups by independently random sampling over all the storage nodes.
 Sampling against storage nodes effectively equivalents to simultaneously sampling all failure domains.
 Leveraging large erasure coding,
