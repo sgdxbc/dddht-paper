@@ -62,6 +62,9 @@ The storage system needs to ensure data durability even when nodes fail and depa
 
 \begin{outline}
 \sgd{Most desired previous works are already here, just listing the expected flow.}
+\lijl{Merge background and related work in this section.}
+
+\lijl{We could give durability definition first, before introducing prior work.}
 
 First are the 20 years ago works that designed for extending single node's capacity.
 Either centrally managed or not, as that was not the key concern.
@@ -78,12 +81,16 @@ Blockchain bypasses correlated failures by overwhelming redundancy.
 It's not a good fit for storage system.
 And it is not meant for storage.
 
+\lijl{Probably don't need to say too much about blockchains, since they are not storage systems.
+Focus on IPFS, Filecoin, and AR.}
+
 Filecoin and other pure incentive solutions try to bypass correlated failures with extremely low failure rates.
 That is not solving the problem.
 Also, that is not a sound solution, since failure rates cannot be reduced to zero in this way.
 
 \sgd{The following need to be appended to existing material.}
 As a conclusion, current decentralized storage systems overlook correlated failures.
+\lijl{Should discuss correlated failures first, probably in the beginning of the section, before introducing prior work.}
 
 Correlated failures in a decentralized system deserve more serious consideration.
 Unlike managed infrastructures, decentralized system failures may exploit arbitrary correlations.
@@ -91,6 +98,9 @@ There's no way to study the correlations in a permissionless system in a reliabl
 Correlations in the wild are multidimensional.
 In datacenters storage nodes are carefully deployed to reduce the dimensions.
 This is impossible in permissionless systems.
+\lijl{We need concrete evidences to support these claims.
+We should check if there is any prior work that measure and characterize failures, particularly correlated failures, in decentralized systems.
+}
 
 All the previous works tempt to \emph{mitigate} the unknown failure domains.
 Try to convert them into predetermined ones, or just pretend they are predetermined.
@@ -99,6 +109,7 @@ Use extra measurement to polyfill the difference between the deployed environmen
 
 If we want to go beyond what durability centrally managed systems can provide with decentralized solution, we have to go another way.
 We will first model the correlated failures of our deploying environment, then design a system that \emph{natively} fit the model.
+\lijl{I assume this part is to transition to the next section.}
 \end{outline}
 
 \paragraph{\textbf{Prior distributed storage systems.}}
