@@ -26,8 +26,46 @@ Unlike replication systems where $f$ has been well studied and theoretically upp
 We expect future works on the bounded failure generators under certain constraints \eg a practical redundancy.
 
 \paragraph{Tolerate failure domains size class with random sampling.}
+As sketched in \autoref{sec:model}, the protocol in a durable storage system distributes encoded fragments to proper nodes and make timely detection and repairment to the failures, and in this work we mainly focus on the former point.
+\sgd{TODO sketch it}
+\sys distributes encoded fragments by random sampling.
+For each fragment all storage nodes are sampled with a uniform random distribution, and desired number (derived from targeted redundancy) of storage nodes are selected.
+\sgd{The selection is with replacement, because the law of large numbers is for with replacement and the way we do the selection is with replacement.
+However a storage system always desires selection without replacement.
+Explain the engineering details if has space.}
+Thanks to the law of large numbers, as the number of independent sampling $m$ increases to sufficiently large, the times a failure domain $f$ is sampled $m_f$ can be approximated by the total number of nodes $N$ and the size of the failure domain $n_f$
+$$
+\frac{m_f}{m} \sim \frac{n_f}{N}
+$$
+The greater sampling count results in better approximation.
+
+Given $n_f$, we can choose a proper sample count to ensure that with overwhelming probability there are sufficient encoded fragments to support repairment that do \emph{not} fall in a failure domain sized $n_f$.
+Since all failure domain sized $n_f$ are independent to each other, we are able to tolerate all of them, \ie a \emph{failure domains size class} in this way.
+
+\paragraph{Efficient and consistent sampling without coordination.}
+In the above illustration the samplings for a data object happen from a single point of view.
+This is impractical in real world for two reasons:
+a. it's infeasible to collect information of all storage nodes to perform samplings in a decentralized system, and
+b. during repair there's no consensus among involved storage nodes on which point of view the samplings should be performed from.
+If all storage nodes that currently store encoded fragment do the sampling and choose new storage node(s) for storing additional fragments, the decisions from different storage nodes will hardly be consistent without further coordination.
+
+\sys solves these challenges with a novel distributed sampling mechanism.
+Instead of sampling every node from a single point of view, \sys broadcast a sampling request to all storage nodes, and every storage node will sample itself according to the request.
+This requires some transformations to the parameters.
+Suppose we would like to sample $m$ nodes from a total of $N$ nodes, then in the distributed sampling procedure, each node should sample itself with $m/N+\epsilon$ probability.
+Again thanks to the law of big numbers, when $m$ is sufficiently large, an $m/N$ sample rate will get roughly $m$ nodes sampled, and the deviation decreases as $m$ goes large.
+The $\epsilon$ term is added as a safe margin to ensure that \emph{at least} $m$ nodes are sampling with overwhelming probability.
+
+\sgd{seems not need to mention the global newcomer sampling optimization for now}
+
+\paragraph{Encoding without coordination.}~\sgd{TODO}
 
 \paragraph{Tolerate the whole failure generator.}
+Now we can describe the overall solution.
+Given a failure generator, we classify the enabled failure domains into failure domain size classes.
+Then we choose the sample count to tolerate sufficient size classes of failure domains, ensuring the net probability of a failure event is tolerated is overwhelming.
+\sgd{This probably can lead to some formula and calculations.
+Not sure whether we want to do it inline, refer to appendix, or not do it.}
 
 \paragraph{Tolerate adversarial failure generators with confidential sampling.}
 
