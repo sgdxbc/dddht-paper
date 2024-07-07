@@ -4,6 +4,10 @@ Store with redundancy.
 Detect redundancy loss in time.
 Recover expected redundancy level in time.
 Durability proved by showing the recovery is always faster than the series of loss arriving at an independently random interval.
+\lijl{Does it matter if enough redundancies are lost due to independent failures or correlated failures in a time interval?
+In theory, both lead to data loss.
+Adding redundancy improve durability against independent failures effectively (exponentially?), but is ineffective against correlated failures.
+}
 
 The correlated failures affect the part of how redundancy loss.
 If it is lost all at once then no solution can recover the data.
@@ -13,6 +17,10 @@ We must consider \emph{all} possible correlated failures in a permissionless sys
 Every combination of nodes may fail together, while they may still fail by themselves.
 Different combinations may fail with different probabilities.
 But generally nothing is impossible, since we can assert nothing about the participant nodes.
+\lijl{This part would require some careful discussion.
+The audience has fairly well-established notions about correlated failures.
+We need to educate them what correlated failures are like in a decentralized system.
+This should be supported by some evidences (probably in the background section?).}
 
 Define failure generator.
 
@@ -25,10 +33,13 @@ The static reason is the inherent failure patterns of the correlated nodes.
 The dynamical/adversarial reason is that attackers may exploit system's assumptions on failure domains as vulnerabilities.
 The ability of attackers manipulating failure generator varies, the detailed security analysis is out of topic.
 The important piece is that the effect of two factors are indistinguishable.
-We cannot rely on things like ``it is an honest node but failed out of nature disaster so it is easier to be tolerated''.
+We cannot rely on things like ``it is an honest node but failed out of nature disaster, so it is easier to be tolerated''.
+\lijl{One thing to emphasize is the unpredictability of correlated failures.
+Prior work has discovered this fact.
+Characteristics of P2P networks make it even worse.}
 
 We don't have an explicit model for adversarial/arbitrary faults in this work.
-In our proposed protocol there's no coordination, so it (mostly) does not rely on \eg whether the interacted nodes behave correctly.
+In our proposed protocol there's no coordination, so it (mostly) does not rely on, \eg, whether the interacted nodes behave correctly.
 Those faulty behaviors are also covered by correlated failures.
 
 Discussion on authoritative storage systems.
@@ -36,16 +47,22 @@ Although we mostly claim that the authoritative storage systems have predetermin
 So we suggest modeling faults of authoritative storage systems with our fault model as well, with failure generators adjusted toward expected failure domains, but still leave some uncertainty.
 
 Discussion on correlations.
-The standard way to describe correlation is through a \emph{correlation coefficient}, usually denoted with $\rho$, in the range of $[-1, 1]$ where $\rho = 1$ means definite correlated \ie the two events always happen/not happen together, and $\rho = -1$ means definite anti-correlated \ie there's always exactly one event of the two happens.
+The standard way to describe correlation is through a \emph{correlation coefficient}, usually denoted with $\rho$, in the range of $[-1, 1]$ where $\rho = 1$ means definite correlated, \ie, the two events always happen/not happen together, and $\rho = -1$ means definite anti-correlated, \ie, there's always exactly one event of the two happens.
 
 The correlation coefficients of node failures in our fault model can be inferred from failure generators.
 For each pair of nodes, let $f_{all}$ be the sum of failure rates of the failure domains that contain at least one of the two nodes, $f_{both}$ be the sum of failure rates of the failure domains that contains both of the nodes, then $\rho = f_{both}/f_{all}$.
 Notice that the correlation coefficients in our fault mode is always non-negative.
 This is expected and matches the observation from previous works \sgd{cite}.
+\lijl{Where are we leveraging this correlation coefficient definition?
+In simulation?}
 
-The alternative definition of the fault model is in terms of the failure rate of individual storage nodes and the pairwise correlation coefficients (as long as all coefficients are non-negative). This alternation may be preferred over failure generators because the concept of correlation coefficient is widely adopted or determining the individual failure rates and the coefficients is easier than determining the failure generator of a system.
+The alternative definition of the fault model is in terms of the failure rate of individual storage nodes and the pairwise correlation coefficients (as long as all coefficients are non-negative).
+This alternation may be preferred over failure generators because the concept of correlation coefficient is widely adopted or determining the individual failure rates and the coefficients is easier than determining the failure generator of a system.
 \sgd{I don't know, should we use coefficients instead?}
 However, we take the failure generator approach \ie define the fault model directly with failure domains for its clear correspondence with storage placement groups.
+\lijl{I feel that the failure generator concept is easier to reason about.
+The failure rate of a single node is the likelihood of the hardware/software failure, power failure, and node leaving the system.
+The failure rate of a rack of nodes is the likelihood of rack power failure and ToR switch failure.}
 
 Analysis previous works with proposed fault model.
 
@@ -55,6 +72,8 @@ The failure rates of failure domains of same sizes are the same.
 The failure rates exponentially decrease as the failure domain size grows.
 This is not realistic as in the real world a storage node will not possibly fail together with every other node.
 But it's hard to make any assumption, and we should design systems that can deal with this.
+\lijl{Even for failure domains with the same size, some of them have higher failure rates.
+For example, the same number of nodes within the same room vs. nodes across the globe have different correlated failure rate.}
 
 A slightly ``friendly'' generator would be the one above with locality.
 Some node pairs are considered to be independent to each other, and every failure domain that contain both of them are removed.
