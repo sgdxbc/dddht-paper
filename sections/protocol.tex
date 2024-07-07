@@ -1,4 +1,58 @@
+\begin{outline}
+    A proof of concept design that gives decent MTTDL with constant, ahead of time configurable redundancy, against certain failure generator.
+    
+    Failure generator is assumed to be known ahead of time.
+    
+    The first principle is to random sampling. The solution to random failures is randomness.
+    
+    The second principle is to reduce public information.
+    This one is optional, only for defending active attacks.
+    
+    Protocol overview.
+\end{outline}
+
+Motivated by the extensive analysis from \autoref{sec:model}, we now propose \sys, a decentralized storage system design that is able to provide durability guarantee with overwhelming probability while only need to be given the failure generator ahead of time.
+We claim that \sys is a preliminary design; the details are neither well considered nor practical in some cases.
+However, we do believe that \sys demonstrates the correct direction of improving durability of decentralized storage systems - the effectiveness of our design principles are provable by both math and simulations.
+
+\paragraph{Failure generators are preconditions.}
+The requirement ``given the failure generators ahead of time'' sounds like being contradict to our argument of ``correlated failures are unpredictable'', which is the exact reason for proposing the failure generator concept.
+We certainly cannot give failure generators by predicting them ahead of time.
+Instead, the failure generators are expected to be chosen according to demands.
+If the users feel it not worth to pay for the redundancy to tolerate correlated failures of more than $n$ nodes, they can choose the failure generators that disable such failure domains \ie producing zero probabilities for them.
+
+This is similar to replication systems which typically claim to tolerate up to $f$ faulty nodes, while no one can predict how many faulty nodes there actually will be.
+Unlike replication systems where $f$ has been well studied and theoretically upper bounded, failure generators is effectively unbounded as all failure domains can be tolerated by sufficient redundancy (except the one that contains the whole system).
+We expect future works on the bounded failure generators under certain constraints \eg a practical redundancy.
+
+\paragraph{Tolerate failure domains size class with random sampling.}
+
+\paragraph{Tolerate the whole failure generator.}
+
+\paragraph{Tolerate adversarial failure generators with confidential sampling.}
+
+\paragraph{Discussion.}
+
+% \subsection{Design Overview}
+
+%\lijl{Does it matter if we use fixed-rate or rateless code for outer code?}
+%\sgd{A fixed-rate code will generate finite enumerable fixed-content fragments, which could be used to trace data object by attackers.}
+
+
 \iffalse
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/store}
+    \caption{\sys object store procedure.
+    %Client first applies a rateless code to generate a set of encoded chunks.
+    %A private key is used to select a subset of the chunks, and each chunk is then encoded into a stream of fragments using a second layer of rateless code.
+    %A selection procedure assigns each fragment to randomly chosen nodes in the system.
+    }
+    \Description{TODO}
+    \label{fig:store}
+\end{figure}
+
 In this section, we elaborate how \sys combines rateless erasure code and verifiable random peer selection to design a durable decentralized storage system.
 
 \subsection{System Model and Assumptions}
@@ -47,39 +101,7 @@ Note that using stake is not an inherent part of the protocol.
 %We also assume that adversaries have enough computational power to launch targeted attacks (e.g., DDoS attack) on a small percentage of nodes in the system.
 %These attacks can partition the victims from the network during the attack period.
 We also make standard cryptography assumptions, i.e., the probability of subverting cryptographic hash functions or public-key cryptography algorithms is negligible.
-\fi
 
-\begin{outline}
-A proof of concept design that gives decent MTTDL with constant, ahead of time configurable redundancy, against certain failure generator.
-
-Failure generator is assumed to be known ahead of time.
-
-The first principle is to random sampling. The solution to random failures is randomness.
-
-The second principle is to reduce public information.
-This one is optional, only for defending active attacks.
-
-Protocol overview.
-\end{outline}
-
-% \subsection{Design Overview}
-
-%\lijl{Does it matter if we use fixed-rate or rateless code for outer code?}
-%\sgd{A fixed-rate code will generate finite enumerable fixed-content fragments, which could be used to trace data object by attackers.}
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.9\linewidth]{figures/store}
-    \caption{\sys object store procedure.
-    %Client first applies a rateless code to generate a set of encoded chunks.
-    %A private key is used to select a subset of the chunks, and each chunk is then encoded into a stream of fragments using a second layer of rateless code.
-    %A selection procedure assigns each fragment to randomly chosen nodes in the system.
-    }
-    \Description{TODO}
-    \label{fig:store}
-\end{figure}
-
-\iffalse
 As shown in \autoref{fig:store}, \sys uses two layers of erasure coding to ensure object durability (\autoref{sec:approach:code}).
 When storing an object, a client first applies an outer-layer rateless code to generate a sequence of \emph{encoded chunks}.
 It then uses its private key and the object hash to deterministically select a set of chunks from the sequence.
