@@ -14,6 +14,7 @@
 Motivated by the extensive analysis from \autoref{sec:model}, we now propose \sys, a decentralized storage system design that is able to provide durability guarantee with overwhelming probability while only need to be given the failure generator ahead of time.
 We claim that \sys is a preliminary design; the details are neither well considered nor practical in some cases.
 However, we do believe that \sys demonstrates the correct direction of improving durability of decentralized storage systems - the effectiveness of our design principles are provable by both math and simulations.
+\sgd{Do we need to actually prove it somewhere?}
 
 \paragraph{Failure generators are preconditions.}
 The requirement ``given the failure generators ahead of time'' sounds like being contradict to our argument of ``correlated failures are unpredictable'', which is the exact reason for proposing the failure generator concept.
@@ -43,11 +44,11 @@ Given $n_f$, we can choose a proper sample count to ensure that with overwhelmin
 Since all failure domain sized $n_f$ are independent to each other, we are able to tolerate all of them, \ie a \emph{failure domains size class} in this way.
 
 \paragraph{Efficient and consistent sampling without coordination.}
-In the above illustration the samplings for a data object happen from a single point of view.
+In the above illustration the samplings for a data object happen from a single point of view \ie a \emph{coordinator}.
 This is impractical in real world for two reasons:
 a. it's infeasible to collect information of all storage nodes to perform samplings in a decentralized system, and
-b. during repair there's no consensus among involved storage nodes on which point of view the samplings should be performed from.
-If all storage nodes that currently store encoded fragment do the sampling and choose new storage node(s) for storing additional fragments, the decisions from different storage nodes will hardly be consistent without further coordination.
+b. during repair there's no consensus among involved storage nodes on who is the coordinator.
+If any storage node can act as coordinator, it still requires further coordination among them to ensure their sampling outcomes are consistent.
 
 \sys solves these challenges with a novel distributed sampling mechanism.
 Instead of sampling every node from a single point of view, \sys broadcast a sampling request to all storage nodes, and every storage node will sample itself according to the request.
@@ -58,7 +59,12 @@ The $\epsilon$ term is added as a safe margin to ensure that \emph{at least} $m$
 
 \sgd{seems not need to mention the global newcomer sampling optimization for now}
 
-\paragraph{Encoding without coordination.}~\sgd{TODO}
+\paragraph{Encoding without coordination.}
+The distributed sampling brings a new challenge: how to ensure each sampled node to store a unique encoded fragment without a centralized coordinator.
+\sys addresses this challenge with rateless erasure code.
+Rateless erasure code can encode near infinite different fragments for a data object, and every set of $k+\epsilon$ of unique fragments can recover the object.
+\sgd{Need to further explain the $\epsilon$ here?}
+The sampled nodes randomly encode a fragment according to the publicly known rateless erasure code, and the probability of conflict is negligible.
 
 \paragraph{Tolerate the whole failure generator.}
 Now we can describe the overall solution.
@@ -68,8 +74,27 @@ Then we choose the sample count to tolerate sufficient size classes of failure d
 Not sure whether we want to do it inline, refer to appendix, or not do it.}
 
 \paragraph{Tolerate adversarial failure generators with confidential sampling.}
+The solution described above can handle arbitrary failures modeled by the failure generator.
+However, it cannot defend against adversarial attacks, which may change the failure generator according to the real time behavior of the storage nodes, as discussed in \autoref{sec:model}.
+\sgd{TODO discuss it}
+In our preliminary design, the key to defend attacks evolving failure generators is to keep the sampling outcome secret to the sampling node itself, so no one can learn from public information about who are storing together for the same data object (even the storing nodes themselves cannot learn).
+As the result, attackers cannot evolve the failure generator toward the in-fact existing correlations by storing.
+
+We further focus on the confidential sampling during repair.
+Firstly, the newcomer storing nodes may get to know the previous nodes that send fragments to it for recovering, in turn conclude the correlation among them.
+The previous nodes can leverage confidential channels \eg VPNs to prevent revealing themselves to the newcomers.
+Secondly, the previous nodes may get to know the newcomer nodes gradually after assisting more and more repairs.
+This can be mitigated with intentional spurious fragment requests.
+Honest nodes may spuriously request fragments even if they are not sampled, and discard the received fragments.
+The faulty previous nodes will still get to know some probabilistic correlations among all requesting nodes, but it is more impractical to attack those nodes and affect durability.
+
+\sgd{The confidential data objects will certainly help as well. Should we mention that?}
 
 \paragraph{Discussion.}
+~\sgd{Need to know/estimate $N$ in real time to some precision.
+Optimization for put and repair.
+Get probably requires global broadcast.
+Make better use of the failure generator characteristics \eg not consider failure domains with same size equal.}
 
 % \subsection{Design Overview}
 
