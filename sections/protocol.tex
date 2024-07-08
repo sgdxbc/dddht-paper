@@ -1,16 +1,3 @@
-\begin{outline}
-    A proof of concept design that gives decent MTTDL with constant, ahead of time configurable redundancy, against certain failure generator.
-    
-    Failure generator is assumed to be known ahead of time.
-    
-    The first principle is to random sampling. The solution to random failures is randomness.
-    
-    The second principle is to reduce public information.
-    This one is optional, only for defending active attacks.
-    
-    Protocol overview.
-\end{outline}
-
 Motivated by the extensive analysis from \autoref{sec:model}, we now propose \sys, a decentralized storage system design that is able to provide durability guarantee with overwhelming probability while only need to be given the failure generator ahead of time.
 We claim that \sys is a preliminary design; the details are neither well considered nor practical in some cases.
 However, we do believe that \sys demonstrates the correct direction of improving durability of decentralized storage systems - the effectiveness of our design principles are provable by both math and simulations.
@@ -25,6 +12,14 @@ If the users feel it not worth to pay for the redundancy to tolerate correlated 
 This is similar to replication systems which typically claim to tolerate up to $f$ faulty nodes, while no one can predict how many faulty nodes there actually will be.
 Unlike replication systems where $f$ has been well studied and theoretically upper bounded, failure generators is effectively unbounded as all failure domains can be tolerated by sufficient redundancy (except the one that contains the whole system).
 We expect future works on the bounded failure generators under certain constraints \eg a practical redundancy.
+
+% \begin{figure}
+%     \centering
+%     \includegraphics[width=0.7\linewidth]{figures/selection}
+%     \caption{Randomized peer selection}
+%     \Description{TODO}
+%     \label{fig:selection}
+% \end{figure}
 
 \paragraph{Tolerate failure domains size class with random sampling.}
 As sketched in \autoref{sec:model}, the protocol in a durable storage system distributes encoded fragments to proper nodes and make timely detection and repairment to the failures, and in this work we mainly focus on the former point.

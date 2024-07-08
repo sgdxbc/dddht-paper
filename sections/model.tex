@@ -1,3 +1,134 @@
+
+In this section we present the fault model that captures the failure characteristics of a decentralized system.
+We start with the key rationales, following by a formal definition, and we also analysis the prior approaches with this fault model.
+
+\paragraph{The unpredictability of failure correlations.}
+~\sgd{Candidate of background.}
+The popular fault models tend to assume certain \emph{uniformity} of the storage network, that is, every storage node is more or less in the similar and \emph{clear} situation regarding correlated failures.
+Each storage node is more likely to fail together with some certain ``neighbor'' nodes, less likely to fail together with other ``local'' nodes, and highly unlikely to fail together with the rest nodes.
+The set of neighbor and local nodes are also ahead of time knowledge.
+This assumption is (basically) valid in a centrally managed system, where the administrator shall put a lot of efforts ensure that exact uniformity and clearness.
+(However, durability still get violated when unexpected correlations are introduced.)
+\sgd{TODO cite failed cases if there's any}
+
+In a decentralized system, the assumption is absolutely wrong: there's no sensible or trusted way to reason about the system uniformity, and in reality the systems are anything but uniform.
+\sgd{TODO cite or refer discussion in background}
+Suppose the encoded fragments of a data object is distributed across a group of storage nodes, the characteristics of the correlations among those nodes is totally unknown: they may sit in the same rack with extreme correlations, or they may spread across continents (if not planets) with negligible correlation (or at the same time equipped with disks from the same defected manufacture batches, which again exposes considerable correlation).
+Without a centralized careful orchestration of fragment distribution, we can only permit every of these possibilities to happen and, what's worse, we cannot know (in any trusted way) which one \emph{is happening} until the failure happens.
+The inability of identifying the failure domains ahead of time, or equivalently, the unpredictability of correlated failures, is the core characteristics of a decentralized system.
+
+\paragraph{Discussion on temporal reasoning.}
+As illustrated in \autoref{sec:background}, the protocol for fault tolerate in a storage system is essentially a chasing and escaping between data loss and data repairment: the repairment must be timely enough so that the data can always escape from (will be) failed nodes and keep in safe places.
+\sgd{TODO illustrate}
+The temporal correlations, \ie ``how much the data gets closer/further from being lost because of what happened in the last time unit'', has been the main topic being studied ever since.
+The studies are usually conducted by modeling the system with a temporal Markov state machine, where different states represent the data redundancy is lost to different extent, and the system probabilistically transitions among the states over the time.
+
+While such methodology precisely models the temporal characteristics of the failures (and their interactions with repairs), it is not good at modeling the correlations we discussed in \autoref{sec:background}.
+In a Markov state machine, a transition from a state to another state with $x$ less encoded fragments persisting corresponds to a correlated failure of \emph{at least} $x$ storage nodes.
+The \emph{at least} comes from the possibility of more nodes correlated failed, but the others are not storing the encoded fragments for the studied data object.
+What probability we should assign to this transition?
+It should be the net probability of all failure domains that holding exact $x$ encoded fragments, but we don't know which those failure domains are, since the state machine does not encode any location information about the fragments.
+
+Actually, the Markov state machine based reasoning makes strong assumption on \emph{system uniformity}: it assumes all storage nodes has the same probability to correlated failed with some number of other nodes (and when the number is zero it becomes an independent failure).
+Only so that it doesn't matter which storage nodes are actually holding the fragments, so we don't have to model it.
+As discussed above, such assumption is not valid in the studied decentralized systems.
+
+Our fault model, while expanding the ability of reasoning realistic correlated failures (as shown later), simplify the temporal reasoning to maintain practical complexity.
+Specifically, we assume no temporal correlation: whatever failure(s) happened in the predecessor time unit, as long as recoverable, will be fully recovered before the current time unit.
+The effect of a recoverable failure is not carried across time units at all.
+
+We believe this simplification is reasonable because: a. our proposed storage system, like all the other prior P2P systems, incurs long maintenance periods ranging in minutes to hours scale.
+The network latency is expected to be shorter in orders of magnitude, so the network activities for repairment are probably finalized long before the next maintenance period starts.
+b. this work targets the P2P networks with relatively low churn rates \ie the node failures happen in a single time unit is on average limited.
+\sgd{TODO concrete number for expected churn rate}
+(Note that this does not rule out large scale correlated failures.)
+In such networks it is feasible to tweak the responsiveness of failures to match our assumption with acceptable overhead \eg network bandwidth.
+
+Nevertheless, in the future more sophisticated temporal reasoning can always be integrated back to our model.
+
+\paragraph{The on-by-default failure domains.}
+Because of the unpredictability of correlated failures, in our model we don't assume any specific pattern of failure domain distribution.
+Instead, we adapt the on-by-default failure domains, that is, every combination of the storage nodes subset forms a failure domain.
+Noticeably:
+\begin{itemize}
+    \item The failure domains consist of individual storage nodes correspond to independent failures.
+    \item Failure domains overlap.
+    In another word, every storage node belongs to multiple failure domains.
+    This is in line with the multidimensional failure correlations described in \autoref{sec:background}.
+    ~\sgd{TODO describe}
+    \item As the nodes constantly join and fail, the present failure domains evolve accordingly.
+    Every failed node eliminates the (remaining) failure domains that contain it, and every joining node immediately form all the failure domains that contain it.
+\end{itemize}
+
+\paragraph{The failure generator.}
+The failure domains are not created equal.
+In any sensible system, the larger correlated failures are less likely to happen than the smaller ones.
+Especially, we probably want to disable the failure domain that contains the whole system, as it's meaningless to attempt to tolerate it.
+And even for the failure domains of the same size, the probabilities for them to fail are almost certainly different (considering the imaginary example in the beginning of the section).
+The \emph{failure generator} $f_g$ is defined as a function that assigns the failure rates to every failure domain ever exists
+$$
+P(d) = f_g(d), d = {n_1, n_2, \dots}
+$$
+where $d$ is a failure domain consists of nodes $n_1, n_2, \dots$, and $P(d)$ is the probability for $d$ to fail in every time unit.
+Failure generator may disable a failure domain by assigning zero probability to it.
+Notice the lack of time variable.
+We assume the failure rate of failure domains keep constant to simplify the model.
+This can be extended in the future works.
+
+With the definition of failure generator, we can formally illustrate the operation model of the storage network.
+In each time unit, we enumerate all failure domains that consist of only existing nodes, and sample them according to their failure rate assigned by the failure generator.
+The failed nodes are the union of all the sampled failure domains.
+For simplicity, we only study the systems of constant sizes, so all failed nodes are immediately rotated into fresh nodes and rejoin the system.
+Then for the running protocol, they are informed about the rotated nodes, and they may perform arbitrary behaviors within the time unit.
+Then the procedure is repeated for every time unit.
+
+\sgd{According to failure generator definition, failure generator is eligible to assign different failure rate to the newly-formed failure domains after the nodes are rotated.
+Leaving this flexibility just in case.
+We probably will always reuse the previous failure rates \ie the rotated nodes will be one-to-one mapped to their old identities regarding failure domains in our simulations.}
+
+As the operation model shows, the failure events in the storage network is completely driven or ``generated'' by the failure generator.
+Thus, failure generator is a \emph{total} measurement of the failure characteristics of storage networks, so we propose it as the fault model for decentralized storage.
+Being the fault model does not imply it can be determined in reality; instead, it should be treated as a hypothesis model and as (part of) the precondition of a protocol to ensure durability.
+\autoref{sec:protocol} has further discussion on this.
+
+Before analysis with failure generator, we would discuss some related topics.
+
+\paragraph{Constant failure generator.}
+Other than the constant failure rates given by the failure generator, in our fault model the failure generator itself is also constant.
+Although this simplifies the reasoning using the fault model, it may not match the reality, especially in the presence of adversarial attacks.
+The attackers may observe the real time behavior of storage nodes, \eg who are they frequently contacting, identify the artificial correlations made by the protocol as opportunities for attacking, and perform attacks to evolve the failure generator toward the artificial correlations \ie compromise the storage nodes that store together to fail together.
+It is protocol's responsibility to either prevent or tolerate the adversarial evolution of failure generators.
+If failure generator is treated as the precondition of durability, the protocol should make sure the precondition is not changed because of itself.
+
+\paragraph{Arbitrary faulty behaviors.}
+The fault model mainly talks about only one kind of failure: the node permanently leaves the system.
+In reality, the faulty nodes may pretend to be honest and correctly storing the fragments, only reveal the fault at a later time.
+The fault model considers it as failed at the point when its behavior diverges from honest node.
+It makes no difference to the situation of a protocol between it distributes fragment to a faulty node which later refuse to provide the fragment, and it distributes fragment to an honest node which later permanently leave the system.
+However, arbitrary faults may still perform subtle effects if the honest nodes cannot detect the faulty behavior efficiently.
+This is left as future work.
+
+\paragraph{The use in reasoning centrally managed storage.}
+Although the fault model is tailored for decentralized systems, \sgd{TODO elaborate if this point is meaningful.}
+
+\paragraph{Alternative representation with pairwise coefficients.}
+The standard way to describe correlation is through a \emph{correlation coefficient}, usually denoted with $\rho$, in the range of $[-1, 1]$ where $\rho = 1$ means definite correlated, \ie, the two events always happen/not happen together, and $\rho = -1$ means definite anti-correlated, \ie, there's always exactly one event of the two happens.
+
+The correlation coefficients of node failures in our fault model can be inferred from failure generators.
+For each pair of nodes, let $f_{all}$ be the sum of failure rates of the failure domains that contain at least one of the two nodes, $f_{both}$ be the sum of failure rates of the failure domains that contains both of the nodes, then $\rho = f_{both}/f_{all}$.
+Notice that the correlation coefficients in our fault mode is always non-negative.
+This is expected and matches the observation from previous works \sgd{cite}.
+
+The alternative definition of the fault model is in terms of the failure rate of individual storage nodes and the pairwise correlation coefficients (as long as all coefficients are non-negative), leveraging the already widely adopted notations.
+However, we take the failure generator approach \ie define the fault model directly with failure domains for its close relation to the failure events.
+On the contrary, a coefficient based model is harder to reason about, as both the individual failure rate and the coefficients are the cumulative likelihood of a blanket of various factors including hardware/software failure, power failure, etc.
+\sgd{Tried to adapt the comment into text.
+By the way is it ok that some mentioned factors are probably transient failures here?}
+\lijl{I feel that the failure generator concept is easier to reason about.
+The failure rate of a single node is the likelihood of the hardware/software failure, power failure, and node leaving the system.
+The failure rate of a rack of nodes is the likelihood of rack power failure and ToR switch failure.}
+
+\iffalse
 \begin{outline}
 The storage systems do essentially same things to ensure durability.
 Store with redundancy.
@@ -64,6 +195,9 @@ However, we take the failure generator approach \ie define the fault model direc
 The failure rate of a single node is the likelihood of the hardware/software failure, power failure, and node leaving the system.
 The failure rate of a rack of nodes is the likelihood of rack power failure and ToR switch failure.}
 
+\fi
+
+\begin{outline}
 Analysis previous works with proposed fault model.
 
 Design proper failure generators.
@@ -85,3 +219,4 @@ And there are tailored generators for special cases. \sgd{Not sure whether this 
 Each previous work is evaluated with redundancy adjusted to different levels.
 They must be impractically redundant \ie blockchain like in order to be somehow fault tolerance.
 \end{outline}
+    
