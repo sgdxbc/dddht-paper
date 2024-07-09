@@ -89,6 +89,9 @@ Each erasure code strip (or replicas of an object) is mapped to one \emph{placem
 % To reduce the risk of data losses, placement groups are chosen to minimize correlated failures, where factors such as failure domains and annualized failure rate (AFR) of the storage devices~\cite{pacemaker,tiger} are usually considered.
 The placement groups are expected to have minimal correlations, to avoid data loss because of the correlated failures within placement groups.
 
+\paragraph{Correlated failures in decentralized systems.}
+~\sgd{Consider move the text from next section to here.}
+
 \paragraph{\textbf{State of the art decentralized storage.}}
 ~\sgd{edited}
 With the popularization of peer-to-peer file sharing networks in the late 90s, designing storage and file systems from a network of decentralized, untrusted computers was an active research topic at the time.
@@ -114,9 +117,32 @@ File content in IPFS is only stored on the original file publishers;
 the protocol has no explicit redundancy mechanism to enforce file content durability.
 \sgd{In another word, it relies on external services for dealing with placement groups, and eventually providing durability.}
 
-\paragraph{Correlated failures in decentralized systems.}
-~\sgd{Consider move the text from next section to here.}
+\paragraph{Failure correlations are not tackled in a systematical way.}
+~\sgd{added}
+For the decentralized storage that claims to provide durability, the unique challenging characteristics of correlated failures in decentralized systems are not specially handled.
+The DHT-based works distribute fragments in a static pattern \eg evenly spaced on the ring of nodes, clustered among the nodes whose IDs are the closest to the content hash, etc.
+\sgd{TODO cite}
+The object level randomness is deployed but mostly for load balancing.
+Essentially, those works \emph{assume} there's no correlation among the distributed nodes without any evidence.
+\sgd{TODO preview the simulation results}
 
+\sgd{There seems to be some works considering geological information, but that was for fast routing i remembered?}
+
+\sgd{added}
+On the other hand, Filecoin~\cite{filecoin} and Arweave~\cite{ar} both use tokens to incentivize nodes to store objects longer, expecting to overcome the correlated failures by minimizing the overall failure rate.
+The cost is eventually passed on to the end user, resulting in less attractive expensive storage services.
+And what's worse, the probabilities of unintentional correlated failures caused by \eg power outage, nature disasters, etc. will not decrease according to the incentive.
+The systems actually relies on individual storage nodes to bring them own solutions to tolerate these correlated failures, which are usually centrally managed.
+The defeats the purpose of extending durability with decentralization; users are essentially trusting the fault tolerance solutions of the individual nodes that store them data.
+
+\paragraph{Methodology of designing durable decentralized storage.}
+~\sgd{added}
+Motivated by the overlook of correlated failures of the previous works, we propose not only a storage system that we believe to be significantly more durable, but also a whole framework for designing and reasoning the durability of storage systems in the presence of unpredictable correlated failures.
+In \autoref{sec:model}, we formalize the unpredictability into a fault model and perform several analyses to previous solutions with it.
+Which is followed by \autoref{sec:protocol}, where we propose a reference design that can ensure durability with bounded redundancy according to the fault model.
+The decentralized system is the most dangerous place for data because of its unpredictable correlations; however, as soon as we make proper design against it, the decentralized nature will instead make it the safest, and we would be granted with durability for the least trust ever.
+
+\iffalse
 \begin{outline}
 % \sgd{Most desired previous works are already here, just listing the expected flow.}
 % \lijl{Merge background and related work in this section.}
@@ -170,7 +196,6 @@ We will first model the correlated failures of our deploying environment, then d
 \lijl{I assume this part is to transition to the next section.}
 \end{outline}
 
-\iffalse
 \paragraph{\textbf{Prior distributed storage systems.}}
 There is a long line of work on centrally managed distributed storage systems~\cite{ceph,gfs,bigtable,dynamo,liquid}.
 These systems commonly divide objects into equal-sized chunks, and deploy a large pool of nodes to store those chunks.
