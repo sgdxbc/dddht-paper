@@ -72,48 +72,93 @@ another study~\cite{bitcoin_churn} shows similar churn rate in the Bitcoin netwo
 The storage system needs to ensure data durability even when nodes fail and depart at such high rate.
 \fi
 
+\paragraph{The principals of durable storage.}
+~\sgd{added}
+No matter being centrally managed or decentralized, distributed storage systems more or less work in the similar way to ensure durability.
+\sgd{Rephrase the text so we can cite the decentralized storage works here.}
+The data objects are encoded into fragments and distributed to different storage nodes, so that that failure of any single storage node would not immediately result in data loss.
+Then the system constantly detect for storage failures, and repair the fragments to bring the situation back to the same as before the failure happened.
+
+\sgd{edited}
+The simplest encoding is replication, where the encoded fragments are just plain copies of the original object.
+However, replication introduces large redundancy, negatively impacting the overall storage efficiency.
+To reduce storage redundancy without compromising data reliability, modern storage systems apply erasure coding~\cite{google_storage,was,hitchhiker,xor}.
+In particular, maximum distance separable (MDS) codes, e.g., Reed-Solomon code~\cite{reed-solomon}, are a common choice.
+% Being centrally managed, the system administrator defines \emph{placement groups}.
+Each erasure code strip (or replicas of an object) is mapped to one \emph{placement group}, \ie the group of storage nodes each of which stores a fragment for the data object, defined either by the system administrator in a centrally managed storage or automatically by protocol in a decentralized storage.
+% To reduce the risk of data losses, placement groups are chosen to minimize correlated failures, where factors such as failure domains and annualized failure rate (AFR) of the storage devices~\cite{pacemaker,tiger} are usually considered.
+The placement groups are expected to have minimal correlations, to avoid data loss because of the correlated failures within placement groups.
+
+\paragraph{\textbf{State of the art decentralized storage.}}
+~\sgd{edited}
+With the popularization of peer-to-peer file sharing networks in the late 90s, designing storage and file systems from a network of decentralized, untrusted computers was an active research topic at the time.
+Representative work during this period of time include xFS~\cite{xfs}, Farsite~\cite{farsite}, and OceanStore~\cite{oceanstore}.
+Departing from centralized deployment, handling unreliable and malicious participants is a key design goal.
+% To provide data availability and consistency in the presence of Byzantine failures, they apply BFT protocols~\cite{pbft} to replicate file data and metadata to groups of servers.
+% BFT protocols, however, require less than $1/3$ of the replication group to be Byzantine faulty.
+% These solutions often sidestep the issue and sometimes rely on centralized, trusted certification authorities~\cite{farsite}, equivalent to a permissioned setting.
+Limited by the hardware resources, those works focused on extending capabilities of single machine while still maintaining adequate durability.
+The trend was quickly superseded by the centrally managed solutions as part of the emergence of cloud services.
+
+Recently, there has been renewed interest in decentralized storage, following the success of blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
+\sgd{We don't need datacenters for providing serious services; ordinary personal devices are getting really powerful.}
+One recent successful example is IPFS~\cite{ipfs}, a widely deployed decentralized storage network that consists of more than 400 thousand peers globally.
+IPFS divides user files into uniquely identified chunks.
+File metadata is represented as a Merkle Directed Acyclic Graph (DAG)~\cite{merkle_dag} constructed from the constituent file chunks.
+IPFS uses content addressing through Kademlia~\cite{kademlia}, a distributed hash table (DHT)~\cite{chash,chord}.
+By writing to the DHT, peers storing a file chunk announce a publisher record which maps the chunk to the peer identifier.
+The DHT replicates the publisher record to peers in proximity in the hash space and handles peer failures through gossip.
+Retrieving a file involves querying the DHT for the publisher records and the address of the publishers for each file chunk.
+IPFS, however, does not offer any file durability guarantee.
+File content in IPFS is only stored on the original file publishers;
+the protocol has no explicit redundancy mechanism to enforce file content durability.
+\sgd{In another word, it relies on external services for dealing with placement groups, and eventually providing durability.}
+
+\paragraph{Correlated failures in decentralized systems.}
+~\sgd{Consider move the text from next section to here.}
+
 \begin{outline}
-\sgd{Most desired previous works are already here, just listing the expected flow.}
-\lijl{Merge background and related work in this section.}
+% \sgd{Most desired previous works are already here, just listing the expected flow.}
+% \lijl{Merge background and related work in this section.}
 
-\lijl{We could give durability definition first, before introducing prior work.}
-\sgd{Definition is given in the first paragraph.}
+% \lijl{We could give durability definition first, before introducing prior work.}
+% \sgd{Definition is given in the first paragraph.}
 
-First are the 20 years ago works that designed for extending single node's capacity.
-Either centrally managed or not, as that was not the key concern.
-While the unmanaged solutions had the opportunity of achieving supreme durability, their design actually cannot.
-Later analysis prove this.
+% First are the 20 years ago works that designed for extending single node's capacity.
+% Either centrally managed or not, as that was not the key concern.
+% While the unmanaged solutions had the opportunity of achieving supreme durability, their design actually cannot.
+% Later analysis prove this.
 
-In the next period most works are centrally managed.
-Their durability are bounded by the managing organization, as stated before.
+% In the next period most works are centrally managed.
+% Their durability are bounded by the managing organization, as stated before.
 
-Recent works start to revisit unmanaged solutions mostly for web3 uses.
-Most noticeable ones are blockchains and Filecoin.
+% Recent works start to revisit unmanaged solutions mostly for web3 uses.
+% Most noticeable ones are blockchains and Filecoin.
 
-Blockchain bypasses correlated failures by overwhelming redundancy.
-It's not a good fit for storage system.
-And it is not meant for storage.
+% Blockchain bypasses correlated failures by overwhelming redundancy.
+% It's not a good fit for storage system.
+% And it is not meant for storage.
 
-\lijl{Probably don't need to say too much about blockchains, since they are not storage systems.
-Focus on IPFS, Filecoin, and AR.}
+% \lijl{Probably don't need to say too much about blockchains, since they are not storage systems.
+% Focus on IPFS, Filecoin, and AR.}
 
-Filecoin and other pure incentive solutions try to bypass correlated failures with extremely low failure rates.
-That is not solving the problem.
-Also, that is not a sound solution, since failure rates cannot be reduced to zero in this way.
+% Filecoin and other pure incentive solutions try to bypass correlated failures with extremely low failure rates.
+% That is not solving the problem.
+% Also, that is not a sound solution, since failure rates cannot be reduced to zero in this way.
 
-\sgd{The following need to be appended to existing material.}
-As a conclusion, current decentralized storage systems overlook correlated failures.
-\lijl{Should discuss correlated failures first, probably in the beginning of the section, before introducing prior work.}
+% \sgd{The following need to be appended to existing material.}
+% As a conclusion, current decentralized storage systems overlook correlated failures.
+% \lijl{Should discuss correlated failures first, probably in the beginning of the section, before introducing prior work.}
 
-Correlated failures in a decentralized system deserve more serious consideration.
-Unlike managed infrastructures, decentralized system failures may exploit arbitrary correlations.
-There's no way to study the correlations in a permissionless system in a reliable and trusted way.
-Correlations in the wild are multidimensional.
-In datacenters storage nodes are carefully deployed to reduce the dimensions.
-This is impossible in permissionless systems.
-\lijl{We need concrete evidences to support these claims.
-We should check if there is any prior work that measure and characterize failures, particularly correlated failures, in decentralized systems.
-}
+% Correlated failures in a decentralized system deserve more serious consideration.
+% Unlike managed infrastructures, decentralized system failures may exploit arbitrary correlations.
+% There's no way to study the correlations in a permissionless system in a reliable and trusted way.
+% Correlations in the wild are multidimensional.
+% In datacenters storage nodes are carefully deployed to reduce the dimensions.
+% This is impossible in permissionless systems.
+% \lijl{We need concrete evidences to support these claims.
+% We should check if there is any prior work that measure and characterize failures, particularly correlated failures, in decentralized systems.
+% }
 
 All the previous works tempt to \emph{mitigate} the unknown failure domains.
 Try to convert them into predetermined ones, or just pretend they are predetermined.
@@ -125,6 +170,7 @@ We will first model the correlated failures of our deploying environment, then d
 \lijl{I assume this part is to transition to the next section.}
 \end{outline}
 
+\iffalse
 \paragraph{\textbf{Prior distributed storage systems.}}
 There is a long line of work on centrally managed distributed storage systems~\cite{ceph,gfs,bigtable,dynamo,liquid}.
 These systems commonly divide objects into equal-sized chunks, and deploy a large pool of nodes to store those chunks.
@@ -175,4 +221,5 @@ To store a file chunk, peers deposit tokens to the network.
 During the lifetime of the chunk, other peers in the network issue cryptographic challenges to the node prove its storage of the chunk content.
 The challenge can only be solved if the chunk is stored for the time duration.
 Unsuccessful proofs result in slashing of the token deposit, disincentivizing nodes to lose stored data.
+\fi
 \fi
