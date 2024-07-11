@@ -6,6 +6,7 @@ We provide key rationales and formal definitions of the model.
 Using this new model, we run simulations to evaluate durability guarantees of prior approaches.
 
 \subsection{Failure Characteristics of Decentralized Storage Systems}
+\label{sec:model:character}
 
 \lijl{Some of these discussions can be moved to the background?}
 The durability guarantee of a storage system hinges on the failure characteristics of its deployment: An object is \emph{permanently lost} once the number of data fragments (or copies) on non-failing storage devices drops below a threshold~\footnote{We only consider permanent failures.
@@ -28,8 +29,8 @@ for security and privacy concerns, they do not expose sensitive information such
 Consequently, no single entity in the system has complete, prior knowledge about the failure domains of all storage devices.
 For instance, two nodes might locate within the same rack or reside in two continents;
 no system participant, however, can \emph{reliably} determine the true case.
-Failure correlations are only revealed after simultaneous failures occur.
-Unfortunately, such information is already too late to prevent durability violations.
+Failure correlations are only revealed after simultaneous failures actually occur.
+Unfortunately, such information is already \emph{too late} to prevent durability violations.
 
 \lijl{Do we have concrete evidence to support the above paragraph?
 It would be more convincing if we have empirical studies or proper references to validate our claims.}
@@ -51,40 +52,35 @@ Without a centralized careful orchestration of fragment distribution, we can onl
 The inability of identifying the failure domains ahead of time, or equivalently, the unpredictability of correlated failures, is the core characteristics of a decentralized system.
 \fi
 
-\subsection{Our Fault Model Definition}
+\subsection{A Fault Model for Decentralized Storage}
 
-Formal definition of our fault model.
+A fault model that reflects characteristics of real decentralized deployments is critical to reason about the durability guarantee of a decentralized storage system.
+As discussed in \autoref{sec:model:character}, failure domains are not known \emph{a priori} in such environment.
+Prior decentralized storage solutions~\cite{} essentially shunned issue, and assume that node and device failures are effectively independent.
+\lijl{The claim is probably too strong.
+They still try to apply some mechanisms to make failures independent, but just not enough.
+Might want to clarify this point.}
+Such optimism, however, can easily lead to data losses in practice: The placement policy may select nodes with strong failure correlation, which is unknown to the policy, for storing a critical number of fragments of an object.
+\lijl{We might want to illustrate this point using an example or diagram.}
 
-\paragraph{Discussion on temporal reasoning.}
-As illustrated in \autoref{sec:background}, the protocol for fault tolerate in a storage system is essentially a chasing and escaping between data loss and data repairment: the repairment must be timely enough so that the data can always escape from (will be) failed nodes and keep in safe places.
-\sgd{TODO illustrate}
-The temporal correlations, \ie ``how much the data gets closer/further from being lost because of what happened in the last time unit'', has been the main topic being studied ever since.
-The studies are usually conducted by modeling the system with a temporal Markov state machine, where different states represent the data redundancy is lost to different extent, and the system probabilistically transitions among the states over the time.
+How do we properly model failure domains, given that they are unpredictable and unknown?
+The answer is intuitive: We rely on a \emph{probabilistic} failure domain model.
+To our best knowledge, ours is the first work that considers such a model for decentralized storage.
+As demonstrate later, our new definition accurately models realistic decentralized deployments, and reveals poor durability guarantees of prior systems.
 
-While such methodology precisely models the temporal characteristics of the failures (and their interactions with repairs), it is not good at modeling the correlations we discussed in \autoref{sec:background}.
-In a Markov state machine, a transition from a state to another state with $x$ less encoded fragments persisting corresponds to a correlated failure of \emph{at least} $x$ storage nodes.
-The \emph{at least} comes from the possibility of more nodes correlated failed, but the others are not storing the encoded fragments for the studied data object.
-What probability we should assign to this transition?
-It should be the net probability of all failure domains that holding exact $x$ encoded fragments, but we don't know which those failure domains are, since the state machine does not encode any location information about the fragments.
+\subsubsection{Failure domain definition}
 
-Actually, the Markov state machine based reasoning makes strong assumption on \emph{system uniformity}: it assumes all storage nodes has the same probability to correlated failed with some number of other nodes (and when the number is zero it becomes an independent failure).
-Only so that it doesn't matter which storage nodes are actually holding the fragments, so we don't have to model it.
-As discussed above, such assumption is not valid in the studied decentralized systems.
+The model assigns a failure domain to \emph{every combination} of nodes which ever join the system.
+For instance, if there are three nodes $n_1, n_2, n_3$, the model considers $3! = 6$ failure domains ($\lbrace n_1 \rbrace$, $\lbrace n_2 \rbrace$, $\lbrace n_3 \rbrace$, $\lbrace n_1, n_2 \rbrace$, $\lbrace n_2, n_3 \rbrace$, $\lbrace n_1, n_3 \rbrace$, $\lbrace n_1, n_2, n_3 \rbrace$).
+Note that failure domains can overlap --- $n_1$ belongs to four failure domains.
+This is consistent with failure correlations in real deployments: a device might reside in the same rack with other devices, but also share the same make and model with another group of devices.
+The model also accounts for nodes joining and leaving the system.
+A failure domain is only being considered if all its nodes are alive.
+\lijl{Alternatively, all other failure domains have failure rate 0.}
+For example, when $n_1$ initially joins the system, the only failure domain is $\lbrace n_1 \rbrace$.
+Once $n_2$ joins the system, the set of considered failure domains extends to $\lbrace n_1 \rbrace$, $\lbrace n_2 \rbrace$, and $\lbrace n_1, n_2 \rbrace$.
 
-Our fault model, while expanding the ability of reasoning realistic correlated failures (as shown later), simplify the temporal reasoning to maintain practical complexity.
-Specifically, we assume no temporal correlation: whatever failure(s) happened in the predecessor time unit, as long as recoverable, will be fully recovered before the current time unit.
-The effect of a recoverable failure is not carried across time units at all.
-
-We believe this simplification is reasonable because: a. our proposed storage system, like all the other prior P2P systems, incurs long maintenance periods ranging in minutes to hours scale.
-The network latency is expected to be shorter in orders of magnitude, so the network activities for repairment are probably finalized long before the next maintenance period starts.
-b. this work targets the P2P networks with relatively low churn rates \ie the node failures happen in a single time unit is on average limited.
-\sgd{TODO concrete number for expected churn rate}
-(Note that this does not rule out large scale correlated failures.)
-In such networks it is feasible to tweak the responsiveness of failures to match our assumption with acceptable overhead \eg network bandwidth.
-
-Nevertheless, in the future more sophisticated temporal reasoning can always be integrated back to our model.
-
-
+\iffalse
 \paragraph{The on-by-default failure domains.}
 Because of the unpredictability of correlated failures, in our model we don't assume any specific pattern of failure domain distribution.
 Instead, we adapt the on-by-default failure domains, that is, every combination of the storage nodes subset forms a failure domain.
@@ -98,6 +94,7 @@ Noticeably:
     \item As the nodes constantly join and fail, the present failure domains evolve accordingly.
     Every failed node eliminates the (remaining) failure domains that contain it, and every joining node immediately form all the failure domains that contain it.
 \end{itemize}
+\fi
 
 \paragraph{The failure generator.}
 The failure domains are not created equal.
@@ -166,6 +163,37 @@ By the way is it ok that some mentioned factors are probably transient failures 
 \lijl{I feel that the failure generator concept is easier to reason about.
 The failure rate of a single node is the likelihood of the hardware/software failure, power failure, and node leaving the system.
 The failure rate of a rack of nodes is the likelihood of rack power failure and ToR switch failure.}
+
+\paragraph{Discussion on temporal reasoning.}
+As illustrated in \autoref{sec:background}, the protocol for fault tolerate in a storage system is essentially a chasing and escaping between data loss and data repairment: the repairment must be timely enough so that the data can always escape from (will be) failed nodes and keep in safe places.
+\sgd{TODO illustrate}
+The temporal correlations, \ie ``how much the data gets closer/further from being lost because of what happened in the last time unit'', has been the main topic being studied ever since.
+The studies are usually conducted by modeling the system with a temporal Markov state machine, where different states represent the data redundancy is lost to different extent, and the system probabilistically transitions among the states over the time.
+
+While such methodology precisely models the temporal characteristics of the failures (and their interactions with repairs), it is not good at modeling the correlations we discussed in \autoref{sec:background}.
+In a Markov state machine, a transition from a state to another state with $x$ less encoded fragments persisting corresponds to a correlated failure of \emph{at least} $x$ storage nodes.
+The \emph{at least} comes from the possibility of more nodes correlated failed, but the others are not storing the encoded fragments for the studied data object.
+What probability we should assign to this transition?
+It should be the net probability of all failure domains that holding exact $x$ encoded fragments, but we don't know which those failure domains are, since the state machine does not encode any location information about the fragments.
+
+Actually, the Markov state machine based reasoning makes strong assumption on \emph{system uniformity}: it assumes all storage nodes has the same probability to correlated failed with some number of other nodes (and when the number is zero it becomes an independent failure).
+Only so that it doesn't matter which storage nodes are actually holding the fragments, so we don't have to model it.
+As discussed above, such assumption is not valid in the studied decentralized systems.
+
+Our fault model, while expanding the ability of reasoning realistic correlated failures (as shown later), simplify the temporal reasoning to maintain practical complexity.
+Specifically, we assume no temporal correlation: whatever failure(s) happened in the predecessor time unit, as long as recoverable, will be fully recovered before the current time unit.
+The effect of a recoverable failure is not carried across time units at all.
+
+We believe this simplification is reasonable because: a. our proposed storage system, like all the other prior P2P systems, incurs long maintenance periods ranging in minutes to hours scale.
+The network latency is expected to be shorter in orders of magnitude, so the network activities for repairment are probably finalized long before the next maintenance period starts.
+b. this work targets the P2P networks with relatively low churn rates \ie the node failures happen in a single time unit is on average limited.
+\sgd{TODO concrete number for expected churn rate}
+(Note that this does not rule out large scale correlated failures.)
+In such networks it is feasible to tweak the responsiveness of failures to match our assumption with acceptable overhead \eg network bandwidth.
+
+Nevertheless, in the future more sophisticated temporal reasoning can always be integrated back to our model.
+
+
 
 \iffalse
 \begin{outline}
