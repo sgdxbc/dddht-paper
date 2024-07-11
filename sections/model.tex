@@ -1,9 +1,40 @@
-\section{A Sensible Fault Model for Permissionless Storage Systems}
+\section{A New Fault Model for Decentralized Storage}
 \label{sec:model}
 
-In this section we present the fault model that captures the failure characteristics of a decentralized system.
-We start with the key rationales, following by a formal definition, and we also analysis the prior approaches with this fault model.
+In this section, we present a new fault model that properly captures the failure characteristics of a decentralized system.
+We provide key rationales and formal definitions of the model.
+Using this new model, we run simulations to evaluate durability guarantees of prior approaches.
 
+\subsection{Failure Characteristics of Decentralized Storage Systems}
+
+\lijl{Some of these discussions can be moved to the background?}
+The durability guarantee of a storage system hinges on the failure characteristics of its deployment: An object is \emph{permanently lost} once the number of data fragments (or copies) on non-failing storage devices drops below a threshold~\footnote{We only consider permanent failures.
+Recoverable failures only impact data availability, not durability.}.
+A critical such characteristic is the \emph{failure domains} of the deployment.
+Devices within a failure domain are subjected to correlated failures, \ie, failure events that impact all devices in the domain simultaneously.
+A storage system therefore need to place object fragments into multiple, independent failure domains to avoid data losses induced by correlated failures.
+Independent failures, on the other hand, are easier to handle.
+Since the probability
+
+How to determine the failure domains of a storage system?
+In centrally managed systems, the administrators has complete knowledge about the deployment: makes, models, and batches of disks, identity of servers that reside in the same rack/pod/cluster, the network topology, power distribution and redundancy, etc.
+They can, therefore, derive a good estimation of all the failure domains and their relative failure probability.
+For instance, servers within the same rack have a higher correlated failure rate than those from distinct racks;
+disks from the same make and model are more likely to fail simultaneously than those from different vendors.
+
+In contrary, a decentralized system lacks such centralized, accurate information to deduce failure correlation.
+Participants are from distinct administrative and management domains;
+for security and privacy concerns, they do not expose sensitive information such as location, identities, and system configurations.
+Consequently, no single entity in the system has complete, prior knowledge about the failure domains of all storage devices.
+For instance, two nodes might locate within the same rack or reside in two continents;
+no system participant, however, can \emph{reliably} determine the true case.
+Failure correlations are only revealed after simultaneous failures occur.
+Unfortunately, such information is already too late to prevent durability violations.
+
+\lijl{Do we have concrete evidence to support the above paragraph?
+It would be more convincing if we have empirical studies or proper references to validate our claims.}
+
+\iffalse
 \paragraph{The unpredictability of failure correlations.}
 ~\sgd{Candidate of background.}
 The popular fault models tend to assume certain \emph{uniformity} of the storage network, that is, every storage node is more or less in the similar and \emph{clear} situation regarding correlated failures.
@@ -18,6 +49,11 @@ In a decentralized system, the assumption is absolutely wrong: there's no sensib
 Suppose the encoded fragments of a data object is distributed across a group of storage nodes, the characteristics of the correlations among those nodes is totally unknown: they may sit in the same rack with extreme correlations, or they may spread across continents (if not planets) with negligible correlation (or at the same time equipped with disks from the same defected manufacture batches, which again exposes considerable correlation).
 Without a centralized careful orchestration of fragment distribution, we can only permit every of these possibilities to happen and, what's worse, we cannot know (in any trusted way) which one \emph{is happening} until the failure happens.
 The inability of identifying the failure domains ahead of time, or equivalently, the unpredictability of correlated failures, is the core characteristics of a decentralized system.
+\fi
+
+\subsection{Our Fault Model Definition}
+
+Formal definition of our fault model.
 
 \paragraph{Discussion on temporal reasoning.}
 As illustrated in \autoref{sec:background}, the protocol for fault tolerate in a storage system is essentially a chasing and escaping between data loss and data repairment: the repairment must be timely enough so that the data can always escape from (will be) failed nodes and keep in safe places.
@@ -47,6 +83,7 @@ b. this work targets the P2P networks with relatively low churn rates \ie the no
 In such networks it is feasible to tweak the responsiveness of failures to match our assumption with acceptable overhead \eg network bandwidth.
 
 Nevertheless, in the future more sophisticated temporal reasoning can always be integrated back to our model.
+
 
 \paragraph{The on-by-default failure domains.}
 Because of the unpredictability of correlated failures, in our model we don't assume any specific pattern of failure domain distribution.
