@@ -29,40 +29,41 @@ Controllable redundancy.
 \sgd{Original content below.}
 \fi
 
-\paragraph{Problem definition.}
-~\sgd{edited}
-We consider the problem of designing a \emph{durable} object storage system in a fully \emph{decentralized} environment.
-The system provides a simple object store and retrieval interface to end users.
-Each object contains a blob of binary data of arbitrary size.
-The system provides \emph{durability}: Once an object is successfully stored, the object can be \emph{eventually} recovered with its original content until expiration, even if part of the system fails.
-Notice the guarantee is weakened compared to \emph{availability}; the recovery may be lagged by the effects of transient failures or network partitioning, but the data is guaranteed to be recoverable, and the recovery will eventually succeed.
+\subsection{Problem Definition}
+
+We consider the problem of \emph{durable} object storage system.
+The system exposes a simple object store and retrieval interface to end users.
+Each object contains a blob of binary data.
+The system provides \emph{durability}: Once an object is successfully stored, the object can be \emph{eventually} recovered with its original content, even if part of the system fails.
+Note that the guarantee differs from \emph{availability}, which ensures objects can always be retrieved in a timely fashion.
+
+%the recovery may be lagged by the effects of transient failures or network partitioning, but the data is guaranteed to be recoverable, and the recovery will eventually succeed.
 
 Objects are \emph{immutable}, i.e., users cannot modify an object after it is stored.
 The system presents a \emph{flat view} of all objects; it does not offer explicit hierarchies such as those in a file system.
 It serves as a base persistent storage layer where higher-level functionalities, such as files and relational databases, can be built atop.
 
-\sgd{Current text not mention the work \emph{archival} at all. Should we?}
+Within the overall storage stack, we target the \emph{cold storage} layer which emphasizes \emph{data durability}, \emph{storage capacity}, and \emph{cost}, as opposed to the warm~\cite{f4} or the hot storage~\cite{haystack} layers.
+Amazon Glacier~\cite{amazon_glacier,amazon_s3} and Google Coldline~\cite{google_coldline}/Archive~\cite{google_archive} storage are popular production-level, centrally managed systems in this category.
+Performance and availability are not key design metrics of the system.
 
-\sgd{edited}
-We target the \emph{cold storage} layer of the storage stack which emphasizes on \emph{data durability}, \emph{storage capacity}, and \emph{cost}, as opposed to the warm~\cite{f4} or the hot storage~\cite{haystack} layers.
-Amazon Glacier~\cite{amazon_glacier,amazon_s3} and Google Coldline~\cite{google_coldline}/Archive~\cite{google_archive} storage are popular production-level systems in this category.
-In this scenario, performance and availability are not key design metrics of the system.
-
-\paragraph{The decentralized deployment.}
-~\sgd{edited}
+\paragraph{Decentralized deployment}
 Our target deployment environment is a fully \emph{decentralized} and \emph{open} network.
-The decentralization focuses on the trust model \ie participants, while do not trust any individual other participant, trust the storage network as a whole (based on some preconditions).
-Such system is usually also geologically decentralized, though this property is not directly leveraged and the work does not focus on the challenges caused by it.
+%The decentralization focuses on the trust model \ie participants, while do not trust any individual other participant, trust the storage network as a whole (based on some preconditions).
+%Such system is usually also geologically decentralized, though this property is not directly leveraged and the work does not focus on the challenges caused by it.
 The deployment model mirrors existing permissionless blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
 There is no central entity to manage or administer the system.
-The network is \emph{permissionless}, i.e., anyone can join the network without any authorization required.
+Participants of the network belong to different administrative organizations, and do not trust entities outside their own organizations.
+The network is \emph{permissionless}, \ie, anyone can join the network without any authorization required, and can leave at any instance.
 
 Each participating node has some local storage for storing data, as well as network access to the wide area network.
 There is, however, no requirement on the type, speed, or quality of their physical storage or network devices.
+Storage devices can fail due to hardware issues or external events (\eg, natural disasters).
+Recoverable transient failures do not impact storage durability.
 Participants can be either \emph{honest} or \emph{adversarial}.
-Honest nodes follow the protocol exactly, while adversarial nodes can deviate arbitrarily from the protocol.
-\sgd{Honest nodes, though honest, still fails from time to time; noticeably, all nodes eventually fail.}
-Adversaries may also collude and attack the system.
+Honest nodes follow the storage protocol exactly, while adversarial nodes can deviate arbitrarily from the protocol.
+%\sgd{Honest nodes, though honest, still fails from time to time; noticeably, all nodes eventually fail.}
+Adversaries may also collude and launch attacks to compromise other participants.
 
 \iffalse
 Our target environment demands stronger fault tolerance.
@@ -72,8 +73,11 @@ another study~\cite{bitcoin_churn} shows similar churn rate in the Bitcoin netwo
 The storage system needs to ensure data durability even when nodes fail and depart at such high rate.
 \fi
 
+\subsection{Ensuring Durability}
+
 \paragraph{The principals of durable storage.}
-~\sgd{added}
+Something.
+\sgd{added}
 No matter being centrally managed or decentralized, distributed storage systems more or less work in the similar way to ensure durability.
 \sgd{Rephrase the text so we can cite the decentralized storage works here.}
 The data objects are encoded into fragments and distributed to different storage nodes, so that that failure of any single storage node would not immediately result in data loss.
@@ -92,8 +96,10 @@ The placement groups are expected to have minimal correlations, to avoid data lo
 \paragraph{Correlated failures in decentralized systems.}
 ~\sgd{Consider move the text from next section to here.}
 
-\paragraph{\textbf{State of the art decentralized storage.}}
-~\sgd{edited}
+\subsection{State-of-the-Art Systems}
+
+Something.
+\sgd{edited}
 With the popularization of peer-to-peer file sharing networks in the late 90s, designing storage and file systems from a network of decentralized, untrusted computers was an active research topic at the time.
 Representative work during this period of time include xFS~\cite{xfs}, Farsite~\cite{farsite}, and OceanStore~\cite{oceanstore}.
 Departing from centralized deployment, handling unreliable and malicious participants is a key design goal.
