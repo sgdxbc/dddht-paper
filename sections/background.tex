@@ -45,7 +45,7 @@ It serves as a base persistent storage layer where higher-level functionalities,
 
 Within the overall storage stack, we target the \emph{cold storage} layer which emphasizes \emph{data durability}, \emph{storage capacity}, and \emph{cost}, as opposed to the warm~\cite{f4} or the hot storage~\cite{haystack} layers.
 Amazon Glacier~\cite{amazon_glacier,amazon_s3} and Google Coldline~\cite{google_coldline}/Archive~\cite{google_archive} storage are popular production-level, centrally managed systems in this category.
-Performance and availability are not key design metrics of the system.
+Performance and availability are not key design metrics.
 
 \paragraph{Decentralized deployment}
 Our target deployment environment is a fully \emph{decentralized} and \emph{open} network.
@@ -54,7 +54,7 @@ Our target deployment environment is a fully \emph{decentralized} and \emph{open
 The deployment model mirrors existing permissionless blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
 There is no central entity to manage or administer the system.
 Participants of the network belong to different administrative organizations, and do not trust entities outside their own organizations.
-The network is \emph{permissionless}, \ie, anyone can join the network without any authorization required, and can leave at any instance.
+The network is \emph{permissionless}, \ie, anyone can join the network without any authorization required, and can leave at any time.
 
 Each participating node has some local storage for storing data, as well as network access to the wide area network.
 There is, however, no requirement on the type, speed, or quality of their physical storage or network devices.
@@ -75,9 +75,26 @@ The storage system needs to ensure data durability even when nodes fail and depa
 
 \subsection{Ensuring Durability}
 
-\paragraph{The principals of durable storage.}
-Something.
-\sgd{added}
+Durability requires that stored objects are never \emph{lost}.
+Data losses occur when the device storing an object fails, the node hosting the device permanently fails or leaves the system, or when the object is intentionally erased.
+Since these events occur regularly in large deployments, storage systems distribute copies of each object to multiple storage devices.
+As long as not all devices storing a copy fail simultaneously, the object can be recovered.
+To maintain the desired fault tolerance level, storage systems perform periodic repair to redistribute lost copies due to failures.
+
+Simply replicating objects introduces large redundancy, which impacts the overall storage efficiency.
+To reduce redundancy without compromising durability, modern storage systems apply erasure coding~\cite{google_storage,was,hitchhiker,xor}.
+Erasure coding encodes an object into fragments.
+A subset of fragments can be used to recover the original object.
+In particular, maximum distance separable (MDS) codes, e.g., Reed-Solomon code~\cite{reed-solomon}, are a common choice.
+Replication, in fact, is a simple form of erasure coding.
+
+\emph{Placement group} is a critical design decision for storage systems.
+A placement group consists of a set of storage devices.
+The encoded fragments (or copies) of an object are distributed to devices within a placement group.
+To ensure that the fragments are not lost simultaneously which leads to data loss, devices in a placement group should have low failure correlation.
+The placement groups are either assigned by an operator in a centrally managed system, or decided by the storage protocol in a decentralized deployment.
+
+\iffalse
 No matter being centrally managed or decentralized, distributed storage systems more or less work in the similar way to ensure durability.
 \sgd{Rephrase the text so we can cite the decentralized storage works here.}
 The data objects are encoded into fragments and distributed to different storage nodes, so that that failure of any single storage node would not immediately result in data loss.
@@ -95,11 +112,10 @@ The placement groups are expected to have minimal correlations, to avoid data lo
 
 \paragraph{Correlated failures in decentralized systems.}
 ~\sgd{Consider move the text from next section to here.}
+\fi
 
 \subsection{State-of-the-Art Systems}
 
-Something.
-\sgd{edited}
 With the popularization of peer-to-peer file sharing networks in the late 90s, designing storage and file systems from a network of decentralized, untrusted computers was an active research topic at the time.
 Representative work during this period of time include xFS~\cite{xfs}, Farsite~\cite{farsite}, and OceanStore~\cite{oceanstore}.
 Departing from centralized deployment, handling unreliable and malicious participants is a key design goal.
