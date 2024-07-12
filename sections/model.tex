@@ -53,6 +53,7 @@ The inability of identifying the failure domains ahead of time, or equivalently,
 \fi
 
 \subsection{A Fault Model for Decentralized Storage}
+\label{sec:model:model}
 
 A fault model that reflects characteristics of real decentralized deployments is critical to reason about the durability guarantee of a decentralized storage system.
 As discussed in \autoref{sec:model:character}, failure domains are not known \emph{a priori} in such environment.
@@ -75,10 +76,10 @@ For instance, if there are three nodes $n_1, n_2, n_3$, the model considers $3! 
 Note that failure domains can overlap --- $n_1$ belongs to four failure domains.
 This is consistent with failure correlations in real deployments: a device might reside in the same rack with other devices, but also share the same make and model with another group of devices.
 The model also accounts for nodes joining and leaving the system.
-A failure domain is only being considered if all its nodes are alive.
+A failure domain is only considered \emph{active} if all its nodes are alive.
 \lijl{Alternatively, all other failure domains have failure rate 0.}
-For example, when $n_1$ initially joins the system, the only failure domain is $\lbrace n_1 \rbrace$.
-Once $n_2$ joins the system, the set of considered failure domains extends to $\lbrace n_1 \rbrace$, $\lbrace n_2 \rbrace$, and $\lbrace n_1, n_2 \rbrace$.
+For example, when $n_1$ initially joins the system, the only active failure domain is $\lbrace n_1 \rbrace$.
+Once $n_2$ joins the system, the set of active failure domains extends to $\lbrace n_1 \rbrace$, $\lbrace n_2 \rbrace$, and $\lbrace n_1, n_2 \rbrace$.
 
 \iffalse
 \paragraph{The on-by-default failure domains.}
@@ -96,7 +97,32 @@ Noticeably:
 \end{itemize}
 \fi
 
-\paragraph{The failure generator.}
+\subsubsection{The failure generator.}
+
+Each failure domain, as defined above, has a different failure rate.
+Correlated failures that impact large number of devices are less likely than those of smaller scales;
+devices within the same rack have higher chance to failing simultaneously than those geographically distributed;
+servers that share the same vulnerabilities are more likely to experience correlated failures than those with distinct defense mechanisms.
+\lijl{Should provide some evidences and citations here.}
+Given their complex nature, accurate reasoning or prediction of the failure rate of a domain is challenging, particularly in decentralized deployments~\cite{irisstore}.
+
+To account for failure domain heterogeneity, we define a generic \emph{failure generator} $f_g$ in our model.
+The generator is a function that assigns the failure rates of each failure domain:
+$$
+P(d) = f_g(d), d = \lbrace n_1, n_2, \dots \rbrace
+$$
+where $d$ is a failure domain consisting of $n_1, n_2, \dots$, and $P(d)$ denotes the probability that all nodes in $d$ fail simultaneously~\footnote{``Simultaneous'' here means failing within a short time interval.
+Critically, the interval is too short for participants to perform recovery actions.}.
+\lijl{Why is $P(d)$ on the left side of the equal sign?
+Are we not defining $f_g(d)$?}
+The generator could assign failure rate $0$ to a failure domain, indicating that simultaneous failure of the entire domain is impossible.
+Note that the generator is time-independent.
+In a real deployment, failure rate of a domain changes over time.
+For instance, the failure probability and the lifetime of storage devices are positively correlated;
+adversaries may choose victims to compromise based on runtime information.
+We leave time-dependent failure generators as future work.
+
+\iffalse
 The failure domains are not created equal.
 In any sensible system, the larger correlated failures are less likely to happen than the smaller ones.
 Especially, we probably want to disable the failure domain that contains the whole system, as it's meaningless to attempt to tolerate it.
@@ -110,7 +136,19 @@ Failure generator may disable a failure domain by assigning zero probability to 
 Notice the lack of time variable.
 We assume the failure rate of failure domains keep constant to simplify the model.
 This can be extended in the future works.
+\fi
 
+\subsubsection{Putting things together}
+
+With our definition of failure domains and failure generators, we can define an \emph{operation model} for storage networks.
+The model consists of an infinite number of nodes and a failure generator $f_g$.
+Initially, the model assigns $N$ nodes to join the system.
+In each time unit, the model enumerates all \emph{active} failure domains, and samples domains to fail based on probability given by the failure generator.
+The set of failed nodes is the union of all the sampled failure domains.
+Note that independent failures are also modeled: The set of failure domains includes the singleton set.
+For simplicity, new nodes immediately join the system, so that the system size remains constant at $N$.
+
+\iffalse
 With the definition of failure generator, we can formally illustrate the operation model of the storage network.
 In each time unit, we enumerate all failure domains that consist of only existing nodes, and sample them according to their failure rate assigned by the failure generator.
 The failed nodes are the union of all the sampled failure domains.
@@ -121,12 +159,21 @@ Then the procedure is repeated for every time unit.
 \sgd{According to failure generator definition, failure generator is eligible to assign different failure rate to the newly-formed failure domains after the nodes are rotated.
 Leaving this flexibility just in case.
 We probably will always reuse the previous failure rates \ie the rotated nodes will be one-to-one mapped to their old identities regarding failure domains in our simulations.}
+\fi
 
-As the operation model shows, the failure events in the storage network is completely driven or ``generated'' by the failure generator.
-Thus, failure generator is a \emph{total} measurement of the failure characteristics of storage networks, so we propose it as the fault model for decentralized storage.
-Being the fault model does not imply it can be determined in reality; instead, it should be treated as a hypothesis model and as (part of) the precondition of a protocol to ensure durability.
-\autoref{sec:protocol} has further discussion on this.
+An implication of our model definition is that failure events in a storage network is completely driven by the failure generator.
+Thus, the failure generator is a \emph{total} measurement of the failure characteristics of the network.
+We therefore define it as the fault model for decentralized storage.
+\lijl{Could discuss how it applies to both centralized and decentralized storage.}
+Crucially, the actual failure domains and their failure rates are hidden from system participants, as discussed earlier in the section.
+The fault model is only a precondition for a protocol to ensure durability, similar to prior approaches.
+\lijl{I think we should elaborate this last point.}
+%Being the fault model does not imply it can be determined in reality;
+%instead, it should be treated as a hypothesis model and as (part of) the precondition of a protocol to ensure durability.
 
+%\autoref{sec:protocol} has further discussion on this.
+
+\iffalse
 Before analysis with failure generator, we would discuss some related topics.
 
 \paragraph{Constant failure generator.}
@@ -163,8 +210,10 @@ By the way is it ok that some mentioned factors are probably transient failures 
 \lijl{I feel that the failure generator concept is easier to reason about.
 The failure rate of a single node is the likelihood of the hardware/software failure, power failure, and node leaving the system.
 The failure rate of a rack of nodes is the likelihood of rack power failure and ToR switch failure.}
+\fi
 
-\paragraph{Discussion on temporal reasoning.}
+\subsubsection{Why not Markov model?}
+
 As illustrated in \autoref{sec:background}, the protocol for fault tolerate in a storage system is essentially a chasing and escaping between data loss and data repairment: the repairment must be timely enough so that the data can always escape from (will be) failed nodes and keep in safe places.
 \sgd{TODO illustrate}
 The temporal correlations, \ie ``how much the data gets closer/further from being lost because of what happened in the last time unit'', has been the main topic being studied ever since.
