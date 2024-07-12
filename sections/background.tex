@@ -1,3 +1,6 @@
+\section{Background and Motivation}
+\label{sec:background}
+
 \iffalse
 \sgd{Alternative flow for background \& motivation section.}
 
@@ -30,6 +33,7 @@ Controllable redundancy.
 \fi
 
 \subsection{Problem Definition}
+\label{sec:background:problem}
 
 We consider the problem of \emph{durable} object storage system.
 The system exposes a simple object store and retrieval interface to end users.
@@ -74,9 +78,10 @@ The storage system needs to ensure data durability even when nodes fail and depa
 \fi
 
 \subsection{Ensuring Durability}
+\label{sec:background:durability}
 
 Durability requires that stored objects are never \emph{lost}.
-Data losses occur when the device storing an object fails, the node hosting the device permanently fails or leaves the system, or when the object is intentionally erased.
+Data losses occur when the device storing an object fails, when the node hosting the device permanently fails or leaves the system, or when the object is intentionally erased.
 Since these events occur regularly in large deployments, storage systems distribute copies of each object to multiple storage devices.
 As long as not all devices storing a copy fail simultaneously, the object can be recovered.
 To maintain the desired fault tolerance level, storage systems perform periodic repair to redistribute lost copies due to failures.
@@ -114,33 +119,50 @@ The placement groups are expected to have minimal correlations, to avoid data lo
 ~\sgd{Consider move the text from next section to here.}
 \fi
 
-\subsection{State-of-the-Art Systems}
+\subsection{Prior Solutions}
+\label{sec:background:relwk}
 
-With the popularization of peer-to-peer file sharing networks in the late 90s, designing storage and file systems from a network of decentralized, untrusted computers was an active research topic at the time.
-Representative work during this period of time include xFS~\cite{xfs}, Farsite~\cite{farsite}, and OceanStore~\cite{oceanstore}.
+With the popularity of peer-to-peer file sharing networks in the late 90s, designing storage systems from a network of decentralized computers was an active research topic at the time.
+Representative work during this period include xFS~\cite{xfs}, Farsite~\cite{farsite}, OceanStore~\cite{oceanstore}, CFS~\cite{cfs}, Glacier~\cite{glacier}, Carbonite~\cite{carbonite}, and IrisStore~\cite{irisstore}.
+These systems aggregate storage capacity on computers across geographical locations to provide durable and available storage services.
+Storage devices in the system are managed by mutually untrusted entities.
+Distributed hash tables (DHT)~\cite{chash, chord} are commonly used to place and locate objects.
+To handle correlated failures, some systems~\cite{oceanstore} apply introspection to predict failure correlations.
+
+\iffalse
 Departing from centralized deployment, handling unreliable and malicious participants is a key design goal.
-% To provide data availability and consistency in the presence of Byzantine failures, they apply BFT protocols~\cite{pbft} to replicate file data and metadata to groups of servers.
-% BFT protocols, however, require less than $1/3$ of the replication group to be Byzantine faulty.
-% These solutions often sidestep the issue and sometimes rely on centralized, trusted certification authorities~\cite{farsite}, equivalent to a permissioned setting.
+ To provide data availability and consistency in the presence of Byzantine failures, they apply BFT protocols~\cite{pbft} to replicate file data and metadata to groups of servers.
+ BFT protocols, however, require less than $1/3$ of the replication group to be Byzantine faulty.
+ These solutions often sidestep the issue and sometimes rely on centralized, trusted certification authorities~\cite{farsite}, equivalent to a permissioned setting.
 Limited by the hardware resources, those works focused on extending capabilities of single machine while still maintaining adequate durability.
 The trend was quickly superseded by the centrally managed solutions as part of the emergence of cloud services.
+\fi
 
 Recently, there has been renewed interest in decentralized storage, following the success of blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
-\sgd{We don't need datacenters for providing serious services; ordinary personal devices are getting really powerful.}
-One recent successful example is IPFS~\cite{ipfs}, a widely deployed decentralized storage network that consists of more than 400 thousand peers globally.
+One example is IPFS~\cite{ipfs}, a widely deployed decentralized storage network that consists of more than 400 thousand peers globally.
 IPFS divides user files into uniquely identified chunks.
 File metadata is represented as a Merkle Directed Acyclic Graph (DAG)~\cite{merkle_dag} constructed from the constituent file chunks.
-IPFS uses content addressing through Kademlia~\cite{kademlia}, a distributed hash table (DHT)~\cite{chash,chord}.
+IPFS uses content addressing through the Kademlia~\cite{kademlia} DHT.
 By writing to the DHT, peers storing a file chunk announce a publisher record which maps the chunk to the peer identifier.
 The DHT replicates the publisher record to peers in proximity in the hash space and handles peer failures through gossip.
 Retrieving a file involves querying the DHT for the publisher records and the address of the publishers for each file chunk.
 IPFS, however, does not offer any file durability guarantee.
 File content in IPFS is only stored on the original file publishers;
 the protocol has no explicit redundancy mechanism to enforce file content durability.
+
 \sgd{In another word, it relies on external services for dealing with placement groups, and eventually providing durability.}
 
-\paragraph{Failure correlations are not tackled in a systematical way.}
-~\sgd{added}
+\paragraph{Handling correlated failures}
+As discussed in \autoref{sec:background:durability}, correlated failures can lead to data losses even when the storage system applies erasure coding and object repairs.
+In a centrally managed systems, failure correlations are known to the operators;
+they can therefore reason about failure domains with high accuracy in their deployments.
+Decentralized environment, however, lacks global failure correlation information.
+Without a reliable notion of failure domains, prior systems~\cite{xfs,farsite,cfs,glacier,carbonite,irisstore} assume failures in decentralized environments are independent.
+As we demonstrated in \autoref{sec:simulation}, such assumptions can lead to significant data losses.
+OceanStore~\cite{oceanstore} leverages introspection to predict correlated failures.
+Prior research~\cite{glacier} has shown that accurate prediction of failure correlation is unrealistic in decentralized systems.
+
+\iffalse
 For the decentralized storage that claims to provide durability, the unique challenging characteristics of correlated failures in decentralized systems are not specially handled.
 The DHT-based works distribute fragments in a static pattern \eg evenly spaced on the ring of nodes, clustered among the nodes whose IDs are the closest to the content hash, etc.
 \sgd{TODO cite}
@@ -148,21 +170,25 @@ The object level randomness is deployed but mostly for load balancing.
 Essentially, those works \emph{assume} there's no correlation among the distributed nodes without any evidence.
 \sgd{TODO preview the simulation results}
 
-\sgd{There seems to be some works considering geological information, but that was for fast routing i remembered?}
+\sgd{There seems to be some works considering geological information, but that was for fast routing I remembered?}
+\fi
 
-\sgd{added}
-On the other hand, Filecoin~\cite{filecoin} and Arweave~\cite{ar} both use tokens to incentivize nodes to store objects longer, expecting to overcome the correlated failures by minimizing the overall failure rate.
-The cost is eventually passed on to the end user, resulting in less attractive expensive storage services.
-And what's worse, the probabilities of unintentional correlated failures caused by \eg power outage, nature disasters, etc. will not decrease according to the incentive.
-The systems actually relies on individual storage nodes to bring them own solutions to tolerate these correlated failures, which are usually centrally managed.
-The defeats the purpose of extending durability with decentralization; users are essentially trusting the fault tolerance solutions of the individual nodes that store them data.
+Another line of work~\cite{filecoin,ar} uses incentive-based approach to maintain durability.
+By incentivizing participates to store objects longer, the systems aim to reduce the overall rate of failures and adversarial behaviors.
+%The cost is eventually passed on to the end user, resulting in less attractive expensive storage services.
+However, the probability of correlated failures caused by external events, \eg, power outages and nature disasters, is not affected by incentives.
+In fact, the systems rely on participants to provide their own solutions to tolerate correlated failures.
+These solutions are typically centrally-managed, which defeats the purpose of extending durability using decentralization.
+Users effectively have to trust the fault tolerance solutions of the individual participants that store their data.
 
+\iffalse
 \paragraph{Methodology of designing durable decentralized storage.}
 ~\sgd{added}
 Motivated by the overlook of correlated failures of the previous works, we propose not only a storage system that we believe to be significantly more durable, but also a whole framework for designing and reasoning the durability of storage systems in the presence of unpredictable correlated failures.
 In \autoref{sec:model}, we formalize the unpredictability into a fault model and perform several analyses to previous solutions with it.
 Which is followed by \autoref{sec:protocol}, where we propose a reference design that can ensure durability with bounded redundancy according to the fault model.
 The decentralized system is the most dangerous place for data because of its unpredictable correlations; however, as soon as we make proper design against it, the decentralized nature will instead make it the safest, and we would be granted with durability for the least trust ever.
+\fi
 
 \iffalse
 \begin{outline}
