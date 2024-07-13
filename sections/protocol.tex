@@ -113,13 +113,17 @@ The sample count is used an input to the protocol.
 
 \subsection{Confidential Sampling to Tolerate Adversarial Failure Generators}
 
-The solution described above can handle arbitrary failures modeled by the failure generator.
-However, it cannot defend against adversarial attacks, which may change the failure generator according to the real time behavior of the storage nodes, as discussed in \autoref{sec:model}.
+The protocol described above handles any arbitrary failures modeled by a failure generator.
+However, it does not account for active adversarial attacks.
+These adversaries may compromise storage nodes based on runtime information, effectively changing the failure generator dynamically (\autoref{sec:model}).
 \sgd{TODO discuss it}
-In our preliminary design, the key to defend attacks evolving failure generators is to keep the sampling outcome secret to the sampling node itself, so no one can learn from public information about who are storing together for the same data object (even the storing nodes themselves cannot learn).
-As the result, attackers cannot evolve the failure generator toward the in-fact existing correlations by storing.
+In our preliminary protocol design, the key principle to defend such attacks is to make sampling outcomes \emph{private information}.
+The storage nodes never reveal information about which objects they have been sampled, even among nodes that store fragments for the same object.
+Consequently, adversaries can not do better than random guessing in targeting nodes that are responsible for a particular object.
 
-We further focus on the confidential sampling during repair.
+Our confidential sampling mechanism makes object repair harder.
+We propose the following protocol to address this challenge.
+\lijl{I really don't understand the text below. Might need to rewrite.}
 Firstly, the newcomer storing nodes may get to know the previous nodes that send fragments to it for recovering, in turn conclude the correlation among them.
 The previous nodes can leverage confidential channels \eg VPNs to prevent revealing themselves to the newcomers.
 Secondly, the previous nodes may get to know the newcomer nodes gradually after assisting more and more repairs.
