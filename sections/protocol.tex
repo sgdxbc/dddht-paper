@@ -1,4 +1,4 @@
-As shown in \autoref{sec:simulation}, prior decentralized storage systems suffer from data losses under realistic fault models.
+As shown in \autoref{sec:simulation}, prior decentralized storage systems are vulnerable to data losses under realistic fault models.
 In this section, we present a preliminary design of a new decentralized storage protocol, \sys.
 Though some design details are not fully ironed out, we believe the design principles of \sys are a significant step forward in providing strong durability guarantees in decentralized storage deployments.
 
@@ -29,7 +29,29 @@ We expect future works on the bounded failure generators under certain constrain
 %     \label{fig:selection}
 % \end{figure}
 
-\paragraph{Tolerate failure domains size class with random sampling.}
+\subsection{Random Sampling to Tolerate Unknown Failure Domains}
+
+\lijl{We should discuss which parameters are given to the protocol as inputs.}
+
+\lijl{I do not quite understand the protocol described here.
+So I'm mostly just following the original text.}
+
+How do we ensure encoded fragments of an object are not lost simultaneously due to correlated failures, when the failure domains of the system are unknown?
+Given that failure domains are probabilistic in our fault model, \sys leverages \emph{random sampling} to address this durability challenge in decentralized settings.
+First, let us target a failure domain of a particular size, $n_f$.
+We will later generalize the protocol to handle failure domain of all sizes.
+
+For each encoded fragment of an object, every storage node in the system is sampled with a \emph{uniform random distribution}.
+The distribution parameter is chosen such that the expected number of selected nodes matches the targeted redundancy.
+\lijl{Are we storing redundant fragments?}
+Due to the law of large numbers, as the independent sampling count $m$ increases, the sample count $m_f$ of a failure domain $f$ can be approximated by the system size $N$ and the failure domain size $n_f$:
+$$
+\frac{m_f}{m} \sim \frac{n_f}{N}
+$$
+Given $n_f$, we can choose a proper sample count to ensure that, with overwhelming probability, sufficient number of encoded fragments are \emph{not} stored within \emph{any} failure domain of size $n_f$ to recover the original object.
+Since there is no failure correlation across failure domains, the scheme is able to tolerate correlated failures of all failure domains of size $n_f$.
+
+\iffalse
 As sketched in \autoref{sec:model}, the protocol in a durable storage system distributes encoded fragments to proper nodes and make timely detection and repairment to the failures, and in this work we mainly focus on the former point.
 \sgd{TODO sketch it}
 \sys distributes encoded fragments by random sampling.
@@ -42,9 +64,7 @@ $$
 \frac{m_f}{m} \sim \frac{n_f}{N}
 $$
 The greater sampling count results in better approximation.
-
-Given $n_f$, we can choose a proper sample count to ensure that with overwhelming probability there are sufficient encoded fragments to support repairment that do \emph{not} fall in a failure domain sized $n_f$.
-Since all failure domain sized $n_f$ are independent to each other, we are able to tolerate all of them, \ie a \emph{failure domains size class} in this way.
+\fi
 
 \paragraph{Efficient and consistent sampling without coordination.}
 In the above illustration the samplings for a data object happen from a single point of view \ie a \emph{coordinator}.
@@ -76,7 +96,8 @@ Then we choose the sample count to tolerate sufficient size classes of failure d
 \sgd{This probably can lead to some formula and calculations.
 Not sure whether we want to do it inline, refer to appendix, or not do it.}
 
-\paragraph{Tolerate adversarial failure generators with confidential sampling.}
+\subsection{Confidential Sampling to Tolerate Adversarial Failure Generators}
+
 The solution described above can handle arbitrary failures modeled by the failure generator.
 However, it cannot defend against adversarial attacks, which may change the failure generator according to the real time behavior of the storage nodes, as discussed in \autoref{sec:model}.
 \sgd{TODO discuss it}
@@ -93,11 +114,13 @@ The faulty previous nodes will still get to know some probabilistic correlations
 
 \sgd{The confidential data objects will certainly help as well. Should we mention that?}
 
+\iffalse
 \paragraph{Discussion.}
 ~\sgd{Need to know/estimate $N$ in real time to some precision.
 Optimization for put and repair.
 Get probably requires global broadcast.
 Make better use of the failure generator characteristics \eg not consider failure domains with same size equal.}
+\fi
 
 % \subsection{Design Overview}
 
