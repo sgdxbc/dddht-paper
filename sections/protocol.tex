@@ -1,8 +1,15 @@
+As shown in \autoref{sec:simulation}, prior decentralized storage systems suffer from data losses under realistic fault models.
+In this section, we present a preliminary design of a new decentralized storage protocol, \sys.
+Though some design details are not fully ironed out, we believe the design principles of \sys are a significant step forward in providing strong durability guarantees in decentralized storage deployments.
+
+\iffalse
 Motivated by the extensive analysis from \autoref{sec:model}, we now propose \sys, a decentralized storage system design that is able to provide durability guarantee with overwhelming probability while only need to be given the failure generator ahead of time.
 We claim that \sys is a preliminary design; the details are neither well considered nor practical in some cases.
 However, we do believe that \sys demonstrates the correct direction of improving durability of decentralized storage systems - the effectiveness of our design principles are provable by both math and simulations.
 \sgd{Do we need to actually prove it somewhere?}
+\fi
 
+\iffalse
 \paragraph{Failure generators are preconditions.}
 The requirement ``given the failure generators ahead of time'' sounds like being contradict to our argument of ``correlated failures are unpredictable'', which is the exact reason for proposing the failure generator concept.
 We certainly cannot give failure generators by predicting them ahead of time.
@@ -12,6 +19,7 @@ If the users feel it not worth to pay for the redundancy to tolerate correlated 
 This is similar to replication systems which typically claim to tolerate up to $f$ faulty nodes, while no one can predict how many faulty nodes there actually will be.
 Unlike replication systems where $f$ has been well studied and theoretically upper bounded, failure generators is effectively unbounded as all failure domains can be tolerated by sufficient redundancy (except the one that contains the whole system).
 We expect future works on the bounded failure generators under certain constraints \eg a practical redundancy.
+\fi
 
 % \begin{figure}
 %     \centering
