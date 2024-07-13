@@ -67,18 +67,28 @@ The greater sampling count results in better approximation.
 \fi
 
 \paragraph{Efficient and consistent sampling without coordination.}
+The above protocol assumes that the sampling process is done centrally, \eg, by a coordinator.
+This ``centralized'' approach, however, is impractical for two reasons.
+First, in a decentralized environment, it is infeasible to gather accurate global information to perform sampling.
+Second, electing a coordinator requires \emph{consensus}, which is costly in a decentralized system.
+If we allow multiple nodes to act as the coordinator, they would still require coordination to ensure their sampling outcomes are consistent.
+
+\iffalse
 In the above illustration the samplings for a data object happen from a single point of view \ie a \emph{coordinator}.
 This is impractical in real world for two reasons:
 a. it's infeasible to collect information of all storage nodes to perform samplings in a decentralized system, and
 b. during repair there's no consensus among involved storage nodes on who is the coordinator.
 If any storage node can act as coordinator, it still requires further coordination among them to ensure their sampling outcomes are consistent.
+\fi
 
 \sys solves these challenges with a novel distributed sampling mechanism.
-Instead of sampling every node from a single point of view, \sys broadcast a sampling request to all storage nodes, and every storage node will sample itself according to the request.
-This requires some transformations to the parameters.
-Suppose we would like to sample $m$ nodes from a total of $N$ nodes, then in the distributed sampling procedure, each node should sample itself with $m/N+\epsilon$ probability.
-Again thanks to the law of big numbers, when $m$ is sufficiently large, an $m/N$ sample rate will get roughly $m$ nodes sampled, and the deviation decreases as $m$ goes large.
-The $\epsilon$ term is added as a safe margin to ensure that \emph{at least} $m$ nodes are sampling with overwhelming probability.
+\sys forgoes a central sampling coordinator.
+Instead, it broadcasts a sampling request to all storage nodes.
+Each storage node then performs \emph{independent sampling} based on the request.
+To ensure such distributed approach can give similar sampling outcome above, we perform the following transformation on the parameters.
+Suppose we aim to sample $m$ nodes from a total of $N$ nodes, in the distributed procedure, each node should sample itself with $m/N+\epsilon$ probability.
+Again, due to the law of large numbers, when $m$ is sufficiently large, a sample rate of $m/N$ will result in roughly $m$ nodes being sampled, and the deviation decreases as $m$ becomes large.
+$\epsilon$ is added as a safe margin to ensure that \emph{at least} $m$ nodes are sampled with overwhelming probability.
 
 \sgd{seems not need to mention the global newcomer sampling optimization for now}
 
@@ -89,7 +99,7 @@ Rateless erasure code can encode near infinite different fragments for a data ob
 \sgd{Need to further explain the $\epsilon$ here?}
 The sampled nodes randomly encode a fragment according to the publicly known rateless erasure code, and the probability of conflict is negligible.
 
-\paragraph{Tolerate the whole failure generator.}
+\paragraph{Generalizing to all failure domain sizes}
 Now we can describe the overall solution.
 Given a failure generator, we classify the enabled failure domains into failure domain size classes.
 Then we choose the sample count to tolerate sufficient size classes of failure domains, ensuring the net probability of a failure event is tolerated is overwhelming.
