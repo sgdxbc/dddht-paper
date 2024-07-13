@@ -102,11 +102,14 @@ When a node is sampled to store an object, it encodes a random fragment in the i
 As such, the probability of two sampled nodes storing the same fragment is negligible.
 
 \paragraph{Generalizing to all failure domain sizes}
-Now we can describe the overall solution.
-Given a failure generator, we classify the enabled failure domains into failure domain size classes.
-Then we choose the sample count to tolerate sufficient size classes of failure domains, ensuring the net probability of a failure event is tolerated is overwhelming.
+Now we generalize our protocol to handle failure domain of all sizes.
+Given a failure generator, \sys finds all failure domains with non-zero failure rates, and groups them according to their failure domain sizes.
+Next, \sys chooses an appropriate sample count such that the \emph{net probability} of an object loss event due to correlated failures is below a threshold, aggregating all the failure domain sizes.
+%Then we choose the sample count to tolerate sufficient size classes of failure domains, ensuring the net probability of a failure event is tolerated is overwhelming.
+\lijl{This part is too hand-wavy and would require more explanation.}
 \sgd{This probably can lead to some formula and calculations.
 Not sure whether we want to do it inline, refer to appendix, or not do it.}
+The sample count is used an input to the protocol.
 
 \subsection{Confidential Sampling to Tolerate Adversarial Failure Generators}
 
