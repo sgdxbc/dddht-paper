@@ -42,8 +42,7 @@ First, let us target a failure domain of a particular size, $n_f$.
 We will later generalize the protocol to handle failure domain of all sizes.
 
 For each encoded fragment of an object, every storage node in the system is sampled with a \emph{uniform random distribution}.
-The distribution parameter is chosen such that the expected number of selected nodes matches the targeted redundancy.
-\lijl{Are we storing redundant fragments?}
+The distribution parameter is chosen such that the expected number of selected nodes matches the target redundancy level.
 Due to the law of large numbers, as the independent sampling count $m$ increases, the sample count $m_f$ of a failure domain $f$ can be approximated by the system size $N$ and the failure domain size $n_f$:
 $$
 \frac{m_f}{m} \sim \frac{n_f}{N}
@@ -92,12 +91,15 @@ $\epsilon$ is added as a safe margin to ensure that \emph{at least} $m$ nodes ar
 
 \sgd{seems not need to mention the global newcomer sampling optimization for now}
 
-\paragraph{Encoding without coordination.}
-The distributed sampling brings a new challenge: how to ensure each sampled node to store a unique encoded fragment without a centralized coordinator.
-\sys addresses this challenge with rateless erasure code.
-Rateless erasure code can encode near infinite different fragments for a data object, and every set of $k+\epsilon$ of unique fragments can recover the object.
+\paragraph{Encoding without coordination}
+Our distributed sampling mechanism introduces a new challenge: Without coordination, how to ensure each sampled node stores a \emph{unique} encoded fragment?
+\sys addresses this issue using \emph{rateless erasure code}.
+Unlike traditional fixed rate codes, rateless erasure code produces an \emph{infinite} sequence of fragments for a data object;
+every set of $k+\epsilon$ unique fragments can recover the object.
 \sgd{Need to further explain the $\epsilon$ here?}
-The sampled nodes randomly encode a fragment according to the publicly known rateless erasure code, and the probability of conflict is negligible.
+\sys picks a rateless erasure code as public information in the protocol.
+When a node is sampled to store an object, it encodes a random fragment in the infinite fragment sequence based on the public rateless code.
+As such, the probability of two sampled nodes storing the same fragment is negligible.
 
 \paragraph{Generalizing to all failure domain sizes}
 Now we can describe the overall solution.
