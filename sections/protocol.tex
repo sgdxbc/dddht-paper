@@ -29,6 +29,7 @@ We expect future works on the bounded failure generators under certain constrain
 %     \label{fig:selection}
 % \end{figure}
 
+\iffalse
 \subsection{Random Sampling to Tolerate Unknown Failure Domains}
 
 \lijl{We should discuss which parameters are given to the protocol as inputs.}
@@ -110,6 +111,35 @@ Next, \sys chooses an appropriate sample count such that the \emph{net probabili
 \sgd{This probably can lead to some formula and calculations.
 Not sure whether we want to do it inline, refer to appendix, or not do it.}
 The sample count is used an input to the protocol.
+\fi
+
+\subsection{To a First approximation: Store on All Nodes}
+
+The simulation in \autoref{sec:simulation} hints the importance of large scale placement groups.
+Thus, the ideal solution would be pushing the idea to the extreme: store fragments of each data object on every storage node, effectively maximizing every placement group.
+As the result, correlated failures are tolerated with the best possible efforts; every node outside the failed domain can assist the repair.
+We first describe the general idea of this approach, and discuss its practical deployment later.
+
+\paragraph{Rateless erasure coding.}
+This approach is akin to blockchain storage which also populate every data object to the whole network.
+However, unlike blockchain that suffers from poor scalability because of its unbounded redundancy, \sys maintains bounded and practical redundancy by deploying erasure code.
+With $N$ storage nodes, \sys encodes each data object into $N$ fragments, while every set $k$ fragments can recover the original data object.
+The overall redundancy level is $N/k$, which is tunable by varying $k$, which effectively trades redundancy with durability guarantee: \sys can tolerate only up to $N - k$ simultaneous node failures \ie is invulnerable to failure domains consist of up to $N - k$ nodes.
+Notice that this threshold is proportional to the total number of storage nodes $N$, showing that \sys is able to provide better durability guarantees without incurring additional redundancy as the system scales up.
+
+Our use of erasure code exposes two challenges.
+Erasure code requires each storage node to store a unique encoded fragment to ensure expected recoverability.
+As $N$ is expected to be large (\eg in the scale of 10K-100K), coordinating the storage nodes to store unique fragments efficiently is challenging.
+Moreover, \sys must continuously schedule the encoding for repairment as the storage nodes constantly leave and join the network.
+It is highly challenging if not impossible to ensure the uniqueness of fragments in such dynamical condition in a decentralized system.
+
+\sys addresses these issues using \emph{rateless erasure code}.
+Unlike traditional fixed rate codes, rateless erasure code produces an \emph{infinite} sequence of fragments for a data object;
+every set of $k+\epsilon$ unique fragments can recover the object.
+\sgd{Need to further explain the $\epsilon$ here?}
+\sys picks a rateless erasure code as public information in the protocol.
+Each storage node encodes a random fragment in the infinite fragment sequence based on the public rateless code.
+As such, the probability of two storage nodes storing the same fragment is negligible.
 
 \subsection{Confidential Sampling to Tolerate Adversarial Failure Generators}
 
