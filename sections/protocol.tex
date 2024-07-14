@@ -120,13 +120,13 @@ Thus, the ideal solution would be pushing the idea to the extreme: store fragmen
 As the result, correlated failures are tolerated with the best possible efforts; every node outside the failed domain can assist the repair.
 We first describe the general idea of this approach, and discuss its practical deployment later.
 
-\paragraph{Rateless erasure coding.}
 This approach is akin to blockchain storage which also populate every data object to the whole network.
 However, unlike blockchain that suffers from poor scalability because of its unbounded redundancy, \sys maintains bounded and practical redundancy by deploying erasure code.
 With $N$ storage nodes, \sys encodes each data object into $N$ fragments, while every set $k$ fragments can recover the original data object.
 The overall redundancy level is $N/k$, which is tunable by varying $k$, which effectively trades redundancy with durability guarantee: \sys can tolerate only up to $N - k$ simultaneous node failures \ie is invulnerable to failure domains consist of up to $N - k$ nodes.
 Notice that this threshold is proportional to the total number of storage nodes $N$, showing that \sys is able to provide better durability guarantees without incurring additional redundancy as the system scales up.
 
+\paragraph{Rateless erasure coding.}
 Our use of erasure code exposes two challenges.
 Erasure code requires each storage node to store a unique encoded fragment to ensure expected recoverability.
 As $N$ is expected to be large (\eg in the scale of 10K-100K), coordinating the storage nodes to store unique fragments efficiently is challenging.
@@ -140,6 +140,25 @@ every set of $k+\epsilon$ unique fragments can recover the object.
 \sys picks a rateless erasure code as public information in the protocol.
 Each storage node encodes a random fragment in the infinite fragment sequence based on the public rateless code.
 As such, the probability of two storage nodes storing the same fragment is negligible.
+
+\paragraph{Communication.}
+The approach requires constant whole-network communication for periodical maintenance work of every data object, which incurs unacceptable amount of network traffic and does not scale well as the system grows.
+We notice that the individual encoded fragments are in relatively small size (\eg MiB scale) for a practical redundancy configuration with decent amount of storage nodes.
+We then address this issue by performing \emph{per-node batching}.
+Instead of performing data-oriented communication, \sys performs single global communication per node joining that bootstraps the fresh node with existing fragments.
+As the result, the whole-network communication only happens when nodes joining and when new data are stored.
+(Data retrieval also requires system-scale communication, but that is expected to almost never happen.)
+Though this communication overhead is still significantly higher than \eg DHT-based systems, it is acceptable for an archival storage system that is designed for extreme durability.
+
+\paragraph{System scale variation.}
+As a decentralized system, \sys must work with varying number of storage nodes from time to time.
+As the fragment size is fixed, the changing in the number of nodes results in varying redundancy.
+\sgd{I really would like to see erasure code with variable fragment size, may search for that later.}
+The measurement for unnecessary extra redundancy by system growth is discussed in the following.
+On the other hand, if the system shrinks, the lower redundancy may become vulnerability of durability.
+
+As a baseline design, \sys timely notifies client when redundancy level drops below preset threshold.
+Client may choose to retrieve and re-store the data object with expected redundancy level, or accept the degraded durability guarantee (\eg for economic compensation).
 
 \subsection{Confidential Sampling to Tolerate Adversarial Failure Generators}
 
