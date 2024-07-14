@@ -30,9 +30,51 @@ In one word, it is possible for a carefully designed permissionless storage syst
 % \sgd{It is still possible to mention the web3 industry somewhere, but feels unnecessary in the current flow.
 % The storyline is becoming ``this is a better storage system for everyone including those currently using centralized solutions'', not ``web3 demands everything to be decentralized so there must be a decentralized solution also for durable storage''.
 % It's more risky, but its acceptance is independent to the reviewers' thoughts regarding web3, so I think it worth taking the risk.}
-
 \end{outline}
 
+We are witnessing a technological paradigm shift to move away from service centralization, a hallmark of the cloud computing and web services industries in the past two decades.
+This \emph{decentralization} movement is catalyzed by the growing concern over content censorship~\cite{twitter_censorship}, data misuse~\cite{fb_misuse}, monopolistic practices~\cite{google_antitrust}, and single point of organization failure~\cite{ftx_debacle}.
+Following the wild success of the Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum} blockchains, a burgeoning of decentralized services are being deployed, including exchanges~\cite{uniswap}, content delivery network~\cite{meson}, domain name service~\cite{handshake}, messaging~\cite{matrix}, and computation~\cite{dfinity}.
+
+An attractive avenue for decentralization is data storage~\cite{ipfs, filecoin, ar, storj}.
+Compared to centrally managed systems~\cite{amazon_s3, google_cloudstore, dynamo}, decentralized storage is better positioned to address the issues of data breaches, censorship, content availability, and high storage cost.
+In particular, by storing data across administrative domains, decentralization theoretically can provide storage lifetime longer than any single organization.
+We have already seen successful large deployment of decentralized storage systems:
+The InterPlanetary File System (IPFS)~\cite{ipfs} has over 300 thousand active participating peers globally, collectively storing more than 1000 PB of data.
+
+A critical requirement for any storage system is \emph{data durability}, \ie, any data stored in the system can be eventually recovered.
+To handle frequent server and device failures in large distributed deployments, replication~\cite{smr,pb,pbft} and erasure coding~\cite{reed-solomon} techniques have become an integral part of these systems.
+Both techniques use \emph{redundancy} to tolerate failures of individual components, an effective approach when enough copies or encoding symbols survive.
+They work well in centrally managed systems, where central operators have full knowledge and control over the failure domains and placement groups to minimize correlated failures.
+
+A decentralized deployment presents fundamental challenges to the durability guarantees of a storage system.
+There is no central authority to manage the behavior and trustworthiness of the participants;
+nodes join and leave the system at high churn rate;
+there is no reliable source of information regarding configurations and location of participants;
+adversarial behaviors are prevalent.
+In such open and asynchronous environment, traditional replication, erasure coding, and repair schemes lose their effectiveness in preventing data losses.
+Recently, more than 1600 TiB of data on the Filecoin~\cite{filecoin} network lost all replica copies simultaneously~\cite{filecoin_loss}.
+
+In this work, we present a vision to offer \emph{true durability} in decentralized storage.
+To do so, we first develop a new fault model that accurately models failure patterns in a decentralized deployment.
+The key contribution of our model is \emph{probabilistic failure domains}.
+Unlike centrally managed deployments, failure correlation among system participants is not known \emph{a priori}, and is impossible to predict or learn accurately during runtime~\cite{irisstore}.
+To account for this uncertainty, our model considers every \emph{combination} of storage devices a failure domain.
+The model incorporates a \emph{failure generator} which is a function that assigns a failure rate to each domain.
+Crucially, the failure generator, \ie, the exact failure rate of each domain, is unknown to any participants in the system.
+
+Using our newly defined fault model, we develop a new simulation framework to evaluate the durability guarantee of decentralized storage systems.
+The simulator takes a failure generator as input.
+At every time unit, the simulator samples all failure domains based on the failure rate assigned by the generator.
+The union of all storage devices in the sampled failure domains are removed from the simulation, and their stored data are considered lost.
+We apply our simulator to evaluate existing decentralized storage systems~\cite{irisstore,glacier,cfs,carbonite,ipfs,xfs,oceanstore}.
+\lijl{Summarize evaluation results and insights here.}
+
+Based on the insights we learned from simulations, we propose a new decentralized storage design that provides strong durability guarantees.
+\lijl{Summarize design here.}
+
+
+\iffalse
 \sgd{The following paragraphs are also new. I think they are formal enough to be called ``content'' instead of ``outline''.}
 \lijl{Could add one or two sentences explaining how to (or equivalently, the challenge of) ensure durability in a storage system.}
 With our new focusing on the durability, the most critical design consideration becomes how the permissionless storage system react to failures that permanently takes away the fragments stored on the failed storage nodes.
@@ -103,62 +145,6 @@ We then determine the erasure coding parameters to tolerate all the failure doma
 
 \sgd{TODO elaboration. (Probably not necessary for a vision paper. Neither the evaluation brief below.)}
 
-\iffalse
-
-We are witnessing a technological paradigm shift to move away from service centralization, a hallmark of the cloud computing and web services industries in the past two decades.
-This \emph{decentralization} movement is catalyzed by the growing concern over content censorship~\cite{twitter_censorship}, data misuse~\cite{fb_misuse}, monopolistic practices~\cite{google_antitrust}, and single point of organization failure~\cite{ftx_debacle}.
-Following the success of the Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum} blockchains, a burgeoning of decentralized services are being deployed, including cryptocurrency exchanges~\cite{uniswap,coinbase}, content delivery network~\cite{meson}, domain name service~\cite{handshake}, messaging~\cite{matrix}, and computation~\cite{dfinity}.
-
-An attractive avenue for decentralization is data storage~\cite{ipfs,filecoin,ar,storj}.
-Compared to their centralized counterparts~\cite{amazon_s3,google_cloudstore,dynamo,dropbox}, decentralized storage is better positioned to address the issues of data breaches, censorship, content availability, and high storage cost.
-We have already seen successful large deployment of decentralized storage systems:
-The InterPlanetary File System (IPFS)~\cite{ipfs} has over 300 thousand active participating peers globally, collectively storing more than 1000 PB of data.
-
-A critical requirement for decentralized storage systems is \emph{data durability}, particularly for deployments that store data which represents high-value assets.
-Ethereum, for instance, holds account records that are worth more than \$233 billion in total~\cite{eth_market_cap}.
-Non-fungible tokens (NFT) listed on blockchains such as Solana~\cite{solana}, Polygon~\cite{polygon}, and Arbitrum~\cite{arbitrum} are already worth tens of billions of dollars~\cite{nft_stats} and quickly growing.
-These high-value data cannot be stored on centralized systems due to anti-censorship requirements; neither can they be stored on best-effort P2P solutions like BitTorrent~\cite{bittorrent} and IPFS, as any data loss will have high financial implications.
-
-Decentralization presents fundamental challenges to the durability guarantees of a storage system.
-To handle data loss caused by failures, redundancy-based approaches such as replication~\cite{smr,pb,pbft} and erasure coding~\cite{reed-solomon} are commonly used.
-These solutions work well in a centralized deployment, where operators have full control over the infrastructure, failure domains, and placement groups with minimum correlated failures.
-A decentralized system, on the contrary, has no central authority to manage the behavior and trustworthiness of the participants;
-nodes join and leave the system at high churn rate;
-there exists high variance in node performance, reliability, and network conditions;
-adversarial behaviors are prevalent.
-In such open and asynchronous environment, traditional redundancy schemes lose their effectiveness in preventing data losses.
-Recently, more than 1600 TiB of data on the Filecoin~\cite{filecoin} network lost all replica copies simultaneously~\cite{filecoin_loss}.
-
-In this work, we propose a new decentralized storage system, \sys, to address this durability challenge.
-At the core of our approach is two durability principles we identified for decentralized storage, namely \emph{information asymmetry} and \emph{data uniformity}.
-The information asymmetry principle states that, in the presence of targeted adversarial attacks, data durability can only be guaranteed if some metadata information is asymmetrical in the system.
-The intuition behind the principle is that if adversaries have equal and complete view of storage metadata, they can concentrate attack powers on specific nodes to break durability of certain objects.
-The data uniformity principle says that to maximize durability, encoding of all stored objects should be distributed uniformly random across storage nodes.
-The principle hinges on the unpredictability of churning and adversarial behaviors in an open, decentralized system.
-
-Following the information asymmetry principle, \sys uses a \emph{rateless erasure code} to generate a virtual stream of encoding chunks for each object.
-To create asymmetry, a client uses its \emph{private key} to materialize the infinite stream into a finite set of randomly selected chunks.
-Critically, the mapping between the materialized chunks and the original object is \emph{opaque} to all participants except the client.
-With sufficient objects stored in the system, adversaries have negligible probability to attack enough materialized chunks of the same object to compromise durability.
-
-This opaque object-to-chunk mapping, unfortunately, also precludes object repair.
-To ensure long-term durability of the object, \sys applies erasure coding a second time for each encoding chunk with only public information.
-Here \sys chooses to use rateless code again: Compared to conventional maximum distance separable code (MDS), rateless code offers better fault tolerance properties in a highly asynchronous network and faulty environment.
-Rateless code support efficient \emph{large code} encoding.
-The large number of code symbols improves statistical reliability of the chunk without increasing redundancy.
-More importantly, it eschews the need for time-sensitive encoding repair --- an impractical requirement in a decentralized network --- and permits repair at a steady average-rate.
-The bigger symbol space also facilitates nodes to perform repair \emph{independently}, avoiding costly coordination.
-
-To comply with the data uniformity principle, \sys applies \emph{verifiable randomness} to select randomly distributed nodes to store code symbols.
-The procedure avoids centralization by using verifiable random function~\cite{vrf} to determine participant eligibility.
-Selection results are unforgeable and publicly verifiable.
-Randomness and verifiability of the selection outcome ensures that sufficient code symbols are stored on non-faulty nodes, even when significant portion of the participants are adversarial.
-
-%\lijl{Maybe add homomorphic hashing and other optimizations here.}
-
-% \lijl{Update evaluation results here.}
-\fi
-
 \sys is of a practical design.
 % We implement \sys on top of libp2p and deploy \sys on 10,000 nodes across 5 continents on AWS.
 We implement \sys prototype and deploy \sys on 10,000 nodes across 5 continents on AWS.
@@ -168,15 +154,4 @@ Critically, \sys significantly improves fault tolerance to Byzantine participant
 Even when using a coding scheme with small redundancy level, \sys guarantees data durability with more than 33\% Byzantine participants, and more than 10\% of the nodes under targeted attacks.
 %\sys performs data object \store and \query with 1.6x-3.1x lower latency compare to existing decentralized storage, while achieving similar scalability over thousands of peers.
 \sys performs data object \store with 1.2x-2.2x latency and \query with 0.5-0.9x latency compare to replicated baseline system, while achieving similar scalability over thousands of peers.
-
-% Obsolete text
-\iffalse
-
-The nature of long-term storage exposes fragment-to-node mapping to adversaries.
-To defend against targeted attacks aiming to erase objects, \sys applies an additional layer of erasure coding.
-This \emph{outer} layer code uses keyed encoding to first encode an object into multiple chunks.
-Critically, object to chunk mapping is opaque and indistinguishable to adversaries, but transparent to the client.
-\sys then applies an \emph{inner} layer rateless code to encode each chunk into stream of encoding fragments.
-Our \emph{dual-layer} encoding scheme ensures negligible probability of adversaries attacking sufficient chunks of the same object to compromise durability.
-
 \fi
