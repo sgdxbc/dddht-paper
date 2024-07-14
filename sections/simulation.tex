@@ -23,7 +23,11 @@ And there are tailored generators for special cases. \sgd{Not sure whether this 
 Each previous work is evaluated with redundancy adjusted to different levels.
 They must be impractically redundant \ie blockchain like in order to be somehow fault tolerance.
 \end{outline}
-    
+
+\paragraph{What are we simulating?}
+The simulated failures are not based on reality, as the realistic failure domains are hard to determine.
+The simulated failures are probably more critical than in real, so it could act as an \emph{envelope} to the reality.
+
 \paragraph{Simulation overview.}
 Our simulation program consists of the operational model described in \autoref{sec:model} and an evaluated protocol that attempt to repair for the failures.
 The simulation is performed in \emph{steps}, which is the virtual time unit determined by the responsiveness of the protocol.
@@ -34,13 +38,6 @@ The simulation starts by populating certain number of data objects into storage 
 Then the simulation repeatedly steps the system until maximum number of steps is reached or all data objects are lost.
 
 \paragraph{Failure generator.}
-The failure generator for simulation is under certain restrictions to enable practically efficient simulation.
-Roughly speaking, in every step, the joining fresh nodes and the failed nodes are \emph{equivalent in the sense of failure domain}.
-That is, there is a one-to-one mapping between the joining fresh nodes and the failed nodes so that, for each failed node, there is a joining node that take place in the failure domains that the failed node belonged to.
-The failure rates of the failure domains are unchanged.
-This simplification enables the simulation to be performed with failure domains set up a priori, and the nodes rotated in replace upon failures.
-The simulation of systems with evolving failure generators \eg varying correlation degree or average failure rate would be upcoming research topic.
-
 In simulation is failure generator generates two kinds of failure domains.
 The first kind is for independent failures, one failure domain for each node and contains only that single node.
 The failure rate is the same across all first kind domains.
@@ -50,23 +47,31 @@ The sizes of the failure domains follow geometrical distribution, so larger doma
 The failure rates of the failure domains follow exponential distribution, so higher failure rate is more unlikely.
 Notice that failure rate is independent to the domain size: it is possible for large domain to have high failure rate.
 
+We performed the simulation with different average domain size while keep the average node failure rate constant by adjusting the failure rate distribution accordingly.
+With this setup the evaluated protocol experiences systems with similar churn rates, only varying correlations.
+
 \paragraph{Evaluated protocol.}
 We implement a decentralized storage protocol, similar to \sgd{cite}.
-In this protocol, the fragments are stored on the $n$ storage nodes whose IDs are successive to the data hash.
+In this protocol, the fragments are stored on the $n$ consecutive storage nodes whose IDs are immediately after to the data hash, and the data is recoverable as long as $k$ of them is alive.
 Most previous protocols if not all select placement groups with similar strategies that are optimized for performance.
+We evaluate the protocol with different $n$ and $k$, simulating different placement group sizes and redundancies.
 We also simulate a baseline protocol that only initially populates fragments to random nodes and does not repair.
 
 \paragraph{Tolerate independent failures.}
 Compare to baseline, the evaluated protocol tolerate independent failures perfectly.
 Failure of individual nodes cannot cause data loss and the protocol immediately repairs for the failure in the same step.
-There are chances that multiple independent failures happen in the same step, but probabilistic of simultaneous failures in the same placement group decreases exponentially as the number of failures grows.
+There are chances that multiple independent failures happen in the same step, but the probability of simultaneous failures in the same placement group decreases exponentially as the number of failures grows.
 
 \paragraph{Correlated failures.}
 The evaluated protocol cannot tolerate correlated failures well.
 Noticeably, as long as the average failure domain size is large enough, data loss happens even if the average node failure per step is less than the size of placement group.
 In such case, although the failures rarely happen, each failure event may have large impact on the whole placement group to cause permanent data loss.
 
-\paragraph{Discussion.}
-More redundancy helps, but more fragments help more significantly.
-To one's surprise, increase number of fragments help even without increasing redundancy (so each fragment get smaller).
-By distributing to more nodes, the impact of each domain decreases quickly.
+\paragraph{More redundancy barely helps.}
+\sgd{Describe some data here.}
+
+\paragraph{Increasing placement group size is especially helpful.}
+\sgd{More data.}
+
+\paragraph{Takeaway.}
+More nodes to distribute is much more effective than more redundancy.
