@@ -160,8 +160,25 @@ On the other hand, if the system shrinks, the lower redundancy may become vulner
 As a baseline design, \sys timely notifies client when redundancy level drops below preset threshold.
 Client may choose to retrieve and re-store the data object with expected redundancy level, or accept the degraded durability guarantee (\eg for economic compensation).
 
+\subsection{Probabilistic Placement Groups Through Fragment Sampling}
+
+The ideal solution described above can archive theoretically optimal durability.
+\sgd{need to prove?}
+However, it is impractical to deploy in reality for several reasons.
+Firstly, contacting every current storage node synchronously, or even just to determine all current storage nodes, is not always possible, as some nodes may experience transient failures.
+Secondly, the design assumes unbounded storage capacity on each storage node.
+A more practical design would be only utilizing bounded capacity per node, while the physical machine with abundant storage resources can join the system as multiple virtual nodes.
+
+To solve these issues we modify the ideal solution as follows.
+Instead of enforcing fragments to reach the whole system deterministically, we change the procedure so that they are \emph{probabilistically} scattered to the whole system.
+That is, the fragments may not be present on all storage nodes in reality, but it is possible for fragments to be present on every storage node in the system, and the probability of the fragments to appear at anywhere in the system is uniformly distributed.
+\footnote{If considering the storage network as a close physical system and the fragments as particles, the system reaches maximum possible entropy with our design. This is how \sys get its name.}
+In our preliminary design, this property is achieved through independent random sampling over candidate fragments for storing on each storage node.
+The exact solution for perfect uniformity under certain imperfect network conditions will be discussed in the future.
+
 \subsection{Confidential Sampling to Tolerate Adversarial Failure Generators}
 
+\iffalse
 The protocol described above handles any arbitrary failures modeled by a failure generator.
 However, it does not account for active adversarial attacks.
 These adversaries may compromise storage nodes based on runtime information, effectively changing the failure generator dynamically (\autoref{sec:model}).
@@ -181,6 +198,7 @@ Honest nodes may spuriously request fragments even if they are not sampled, and 
 The faulty previous nodes will still get to know some probabilistic correlations among all requesting nodes, but it is more impractical to attack those nodes and affect durability.
 
 \sgd{The confidential data objects will certainly help as well. Should we mention that?}
+\fi
 
 \iffalse
 \paragraph{Discussion.}
