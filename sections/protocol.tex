@@ -200,6 +200,15 @@ The faulty previous nodes will still get to know some probabilistic correlations
 \sgd{The confidential data objects will certainly help as well. Should we mention that?}
 \fi
 
+In the ideal solution, adversarial attacks has no effect: every storage node can assist to repair every data object, so it makes no difference to attack which node.
+With probabilistic placement groups, the situation is slightly changed: although the ground truth placement groups are still expected to be in large scale, attacks may monitor network activities and to their best efforts identify the placement group members.
+The reduction in the economics cost of attacks brings more vulnerabilities to the system.
+
+In our preliminary protocol design, the key principle to defend such attacks is to make sampling outcomes \emph{private information}.
+The storage nodes never reveal information about which objects they have been sampled, even among nodes that store fragments for the same object.
+Consequently, adversaries can not do better than random guessing in targeting nodes that are responsible for a particular object.
+This \emph{asymmetrical information} property, though exposing open challenges to \sys, is crucial to maintain failure generator as expectation.
+
 \iffalse
 \paragraph{Discussion.}
 ~\sgd{Need to know/estimate $N$ in real time to some precision.
