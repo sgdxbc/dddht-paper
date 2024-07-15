@@ -113,25 +113,38 @@ Not sure whether we want to do it inline, refer to appendix, or not do it.}
 The sample count is used an input to the protocol.
 \fi
 
-\subsection{To a First approximation: Store on All Nodes}
+\subsection{Base Design: System-Wide Placement Group}
 
-The simulation in \autoref{sec:simulation} hints the importance of large scale placement groups.
-Thus, the ideal solution would be pushing the idea to the extreme: store fragments of each data object on every storage node, effectively maximizing every placement group.
-As the result, correlated failures are tolerated with the best possible efforts; every node outside the failed domain can assist the repair.
-We first describe the general idea of this approach, and discuss its practical deployment later.
+Our simulation results in \autoref{sec:simulation} demonstrate strong correlation between placement group size and object durability.
+The observation has guided us to the following ideal but extreme design:
+enlarge the placement group to the size of the system.
+Effectively, the system stores fragments of each object on \emph{every} storage node.
+Without prior knowledge on failure domains, the design tolerates arbitrary failure correlations below a certain size --- regardless of the correlated failure, there will be enough nodes who survive the failure to recover the object.
 
-This approach is akin to blockchain storage which also populate every data object to the whole network.
-However, unlike blockchain that suffers from poor scalability because of its unbounded redundancy, \sys maintains bounded and practical redundancy by deploying erasure code.
-With $N$ storage nodes, \sys encodes each data object into $N$ fragments, while every set $k$ fragments can recover the original data object.
-The overall redundancy level is $N/k$, which is tunable by varying $k$, which effectively trades redundancy with durability guarantee: \sys can tolerate only up to $N - k$ simultaneous node failures \ie is invulnerable to failure domains consist of up to $N - k$ nodes.
-Notice that this threshold is proportional to the total number of storage nodes $N$, showing that \sys is able to provide better durability guarantees without incurring additional redundancy as the system scales up.
+Our approach is akin to blockchain storage which distributes a copy of every data object to all the participants.
+The critical difference is the following: The durability guarantee of \sys is not at the expense of increased redundancy.
+%However, unlike blockchain that suffers from poor scalability because of its unbounded redundancy, \sys maintains bounded and practical redundancy by deploying erasure code.
+With $N$ storage nodes, \sys encodes each data object into $N$ fragments using erasure coding;
+any $k$ unique fragments can recover the original data object.
+The overall redundancy level is $N/k$, which can be tuned by changing $k$.
+This allows us to effectively trades redundancy with durability guarantees.
+The approach tolerates up to $N - k$ simultaneous node failures, \ie, maximum failure domain of size of $N - k$.
+%\ie is invulnerable to failure domains consist of up to $N - k$ nodes.
+The threshold is proportional to the system size $N$, indicating that \sys can provide better durability guarantees without incurring additional redundancy as the system scales up.
+\lijl{Not sure if I understand this sentence.
+Isn't the redundancy $N/k$ which is proportional to $N$?
+Is $k$ also proportional to $N$?}
 
 \paragraph{Rateless erasure coding.}
-Our use of erasure code exposes two challenges.
-Erasure code requires each storage node to store a unique encoded fragment to ensure expected recoverability.
-As $N$ is expected to be large (\eg in the scale of 10K-100K), coordinating the storage nodes to store unique fragments efficiently is challenging.
-Moreover, \sys must continuously schedule the encoding for repairment as the storage nodes constantly leave and join the network.
-It is highly challenging if not impossible to ensure the uniqueness of fragments in such dynamical condition in a decentralized system.
+Using erasure code in our design exposes two challenges.
+First, erasure code requires each storage node to store a unique encoded fragment to ensure the expected recoverability.
+%As $N$ is expected to be large (\eg in the scale of 10K-100K),
+For large deployments, coordinating all storage nodes to store unique fragments is a non-trivial task.
+Second, nodes constantly join and leave the network in a decentralized environment;
+the repair protocol periodically produces new fragment segments.
+Coordination to guarantee uniqueness is an even harder challenge.
+%\sys must continuously schedule the encoding for repairment as the storage nodes constantly leave and join the network.
+%It is highly challenging if not impossible to ensure the uniqueness of fragments in such dynamical condition in a decentralized system.
 
 \sys addresses these issues using \emph{rateless erasure code}.
 Unlike traditional fixed rate codes, rateless erasure code produces an \emph{infinite} sequence of fragments for a data object;
@@ -142,39 +155,50 @@ Each storage node encodes a random fragment in the infinite fragment sequence ba
 As such, the probability of two storage nodes storing the same fragment is negligible.
 
 \paragraph{Communication.}
-The approach requires constant whole-network communication for periodical maintenance work of every data object, which incurs unacceptable amount of network traffic and does not scale well as the system grows.
-We notice that the individual encoded fragments are in relatively small size (\eg MiB scale) for a practical redundancy configuration with decent amount of storage nodes.
-We then address this issue by performing \emph{per-node batching}.
-Instead of performing data-oriented communication, \sys performs single global communication per node joining that bootstraps the fresh node with existing fragments.
-As the result, the whole-network communication only happens when nodes joining and when new data are stored.
-(Data retrieval also requires system-scale communication, but that is expected to almost never happen.)
-Though this communication overhead is still significantly higher than \eg DHT-based systems, it is acceptable for an archival storage system that is designed for extreme durability.
+Our base design requires system-wide communication to maintain each data object.
+The communication complexity grows with the system size.
+%The approach requires constant whole-network communication for periodical maintenance work of every data object, which incurs unacceptable amount of network traffic and does not scale well as the system grows.
+Our observation is that individual encoded fragments can be small (\eg, a few MiBs) for practical redundancy configurations.
+The communication overhead can be addressed by \emph{per-node batching}.
+Instead of data-oriented communication, \sys performs system-wide communication only when bootstrapping a node joining the system, or when an object is stored.
+\lijl{What is data-oriented communication?
+The argument here is that there is no periodic, system-wide repair traffic?}
+%As the result, the whole-network communication only happens when nodes joining and when new data are stored.
+%(Data retrieval also requires system-scale communication, but that is expected to almost never happen.)
+Though the communication overhead is still higher than traditional DHT-based systems, it is acceptable for an archival storage system that is designed for durability.
 
-\paragraph{System scale variation.}
-As a decentralized system, \sys must work with varying number of storage nodes from time to time.
-As the fragment size is fixed, the changing in the number of nodes results in varying redundancy.
+\paragraph{Dynamic system sizes.}
+A key property of decentralized deployments is dynamic membership.
+Since the encoding fragment size is fixed, dynamic system sizes result in varying redundancy in our approach.
 \sgd{I really would like to see erasure code with variable fragment size, may search for that later.}
-The measurement for unnecessary extra redundancy by system growth is discussed in the following.
-On the other hand, if the system shrinks, the lower redundancy may become vulnerability of durability.
+On one hand, growing system sizes would lead to unnecessary redundancy.
+%The measurement for unnecessary extra redundancy by system growth is discussed in the following.
+On the other hand, the lower redundancy resulting from a shrinking system might jeopardize system durability.
 
-As a baseline design, \sys timely notifies client when redundancy level drops below preset threshold.
-Client may choose to retrieve and re-store the data object with expected redundancy level, or accept the degraded durability guarantee (\eg for economic compensation).
+As a basic design, \sys timely notifies clients when the redundancy level drops below a preset threshold.
+Clients may choose to retrieve and re-store the data object with the expected redundancy level, or accept the degraded durability guarantee (\eg, for economic compensation).
+
 
 \subsection{Probabilistic Placement Groups Through Fragment Sampling}
 
-The ideal solution described above can archive theoretically optimal durability.
+Our base design described above achieves theoretically optimal durability for a given redundancy level.
 \sgd{need to prove?}
-However, it is impractical to deploy in reality for several reasons.
-Firstly, contacting every current storage node synchronously, or even just to determine all current storage nodes, is not always possible, as some nodes may experience transient failures.
-Secondly, the design assumes unbounded storage capacity on each storage node.
-A more practical design would be only utilizing bounded capacity per node, while the physical machine with abundant storage resources can join the system as multiple virtual nodes.
+The design, however, lacks practicality.
+First, global, network-wide communication in a synchronous manner is typically infeasible in a decentralized environment, as nodes are subject to frequent transient failures.
+%First, contacting every current storage node synchronously, or even just to determine all current storage nodes, is not always possible, as some nodes may experience transient failures.
+Second, the design assumes unbounded storage capacity on each storage node.
+A more practical design would only utilize bounded capacity per node, while participants divide their larger physical storage resources among multiple virtual nodes.
+%while the physical machine with abundant storage resources can join the system as multiple virtual nodes.
 
-To solve these issues we modify the ideal solution as follows.
-Instead of enforcing fragments to reach the whole system deterministically, we change the procedure so that they are \emph{probabilistically} scattered to the whole system.
-That is, the fragments may not be present on all storage nodes in reality, but it is possible for fragments to be present on every storage node in the system, and the probability of the fragments to appear at anywhere in the system is uniformly distributed.
-\footnote{If considering the storage network as a close physical system and the fragments as particles, the system reaches maximum possible entropy with our design. This is how \sys get its name.}
-In our preliminary design, this property is achieved through independent random sampling over candidate fragments for storing on each storage node.
-The exact solution for perfect uniformity under certain imperfect network conditions will be discussed in the future.
+%To solve these issues we modify the ideal solution as follows.
+We refine the base protocol to address the issues above.
+Instead of deterministically storing fragments on all the nodes, the refined protocol \emph{probabilistically} selects responsible participants to store the fragments.
+The probability is uniformly random, which implies that the fragments are uniformly distributed in the network.
+%That is, the fragments may not be present on all storage nodes in reality, but it is possible for fragments to be present on every storage node in the system, and the probability of the fragments to appear at anywhere in the system is uniformly distributed.
+\footnote{If we consider the storage network as a close physical system and the fragments as particles, the system reaches maximum possible entropy with our design. This is how \sys get its name.}
+In our preliminary design, this property is achieved through independent random sampling over candidate fragments on each storage node.
+The exact solution for perfect uniformity under imperfect network conditions will be left as future work.
+
 
 \subsection{Confidential Sampling to Tolerate Adversarial Failure Generators}
 
@@ -200,14 +224,16 @@ The faulty previous nodes will still get to know some probabilistic correlations
 \sgd{The confidential data objects will certainly help as well. Should we mention that?}
 \fi
 
-In the ideal solution, adversarial attacks has no effect: every storage node can assist to repair every data object, so it makes no difference to attack which node.
-With probabilistic placement groups, the situation is slightly changed: although the ground truth placement groups are still expected to be in large scale, attacks may monitor network activities and to their best efforts identify the placement group members.
-The reduction in the economics cost of attacks brings more vulnerabilities to the system.
+In the base design, adversarial attacks do not impact overall system durability: Every node is equivalent in providing recoverability for any object, so no single participant poses disproportional durability vulnerabilities.
+With our refined probabilistic placement groups, this uniformity guarantee is violated.
+Although the size of the sampled placement groups are still expected to be large, adversaries may monitor network activities and identify placement group members with high probability.
+The reduced cost of attacks introduces more vulnerabilities to the system.
 
 In our preliminary protocol design, the key principle to defend such attacks is to make sampling outcomes \emph{private information}.
 The storage nodes never reveal information about which objects they have been sampled, even among nodes that store fragments for the same object.
 Consequently, adversaries can not do better than random guessing in targeting nodes that are responsible for a particular object.
 This \emph{asymmetrical information} property, though exposing open challenges to \sys, is crucial to maintain failure generator as expectation.
+\lijl{What does this last sentence mean?}
 
 \iffalse
 \paragraph{Discussion.}
