@@ -229,10 +229,10 @@ With our refined probabilistic placement groups, this uniformity guarantee is vi
 Although the size of the sampled placement groups are still expected to be large, adversaries may monitor network activities and identify placement group members with high probability.
 The reduced cost of attacks introduces more vulnerabilities to the system.
 
-In our preliminary protocol design, the key principle to defend such attacks is to make sampling outcomes \emph{private information}.
+The key principle to defend such attacks is to make sampling outcomes \emph{private information}.
 The storage nodes never reveal information about which objects they have been sampled, even among nodes that store fragments for the same object.
 Consequently, adversaries can not do better than random guessing in targeting nodes that are responsible for a particular object.
-This \emph{asymmetrical information} property, though exposing open challenges to \sys, is crucial to maintain failure generator as expectation.
+This \emph{asymmetrical information} property, though exposing open challenges to \sys, is crucial to maintain durability under active attacks.
 \lijl{What does this last sentence mean?}
 
 \iffalse
