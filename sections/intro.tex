@@ -67,12 +67,17 @@ Using our newly defined fault model, we develop a new simulation framework to ev
 The simulator takes a failure generator as input.
 At every time unit, the simulator samples all failure domains based on the failure rate assigned by the generator.
 The union of all storage devices in the sampled failure domains are removed from the simulation, and their stored data are considered lost.
-We apply our simulator to evaluate existing decentralized storage systems~\cite{irisstore,glacier,cfs,carbonite,ipfs,xfs,oceanstore}.
-\lijl{Summarize evaluation results and insights here.}
+We apply our simulator to evaluate a decentralized storage system that represents fault tolerance approach of prior solution~\cite{irisstore,glacier,cfs,carbonite,ipfs,xfs,oceanstore}.
+The system offer strong durability under independent failures.
+However, as soon as the generator introduces correlated failures, the system experiences significant data losses.
+Increasing the redundancy has marginally benefit beyond a certain point and impacts the overall system storage capacity.
 
-Based on the insights we learned from simulations, we propose a new decentralized storage design that provides strong durability guarantees.
-\lijl{Summarize design here.}
-
+Based on the insights we learned from simulations, we propose a preliminary new decentralized storage design that provides strong durability guarantees.
+By expanding the object placement group size to the entire system, our base design can tolerate arbitrary correlated failures within the redundancy limit.
+Critically, the larger placement group is not at the expense of reduced storage capacity.
+The design additionally applies a \emph{rateless erasure code} to address the fragment uniqueness challenge in a decentralized network.
+To improve the practicality of the design, we refine our protocol to use independent sampling to achieve \emph{probabilistic selection} of the placement group.
+We also propose \emph{confidential sampling} to defend against active adversaries.
 
 \iffalse
 \sgd{The following paragraphs are also new. I think they are formal enough to be called ``content'' instead of ``outline''.}
