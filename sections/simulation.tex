@@ -24,43 +24,60 @@
 % They must be impractically redundant \ie blockchain like in order to be somehow fault tolerance.
 % \end{outline}
 
+Do state-of-the-art storage systems offer strong durability guarantees in our newly defined fault model?
+To test our hypothesis, we run simulations with correlated failures  modeled after our failure generators (\autoref{sec:model:model}).
+Note that these simulated failure correlations are not based on any real-world traces, as realistic failure domains are hard to determine.
+We, however, believe our simulations are representative of correlated failures in decentralized environment.
+
+\iffalse
 \paragraph{What are we simulating?}
 The simulated failures are not based on reality, as the realistic failure domains are hard to determine.
 The simulated failures are probably more critical than in real, so it could act as an \emph{envelope} to the reality.
+\fi
 
-\paragraph{Simulation overview.}
-Our simulation program consists of the operational model described in \autoref{sec:model} and an evaluated protocol that attempt to repair for the failures.
-The simulation is performed in \emph{steps}, which is the virtual time unit determined by the responsiveness of the protocol.
-Each step is simulated with two phases.
-In the first phase, nodes fail and fresh nodes join according to the failure generator; in the second phase, the evaluated protocol performs arbitrary maintenance works.
-The simulation collects key statistics per step, including average number of node failures per step (which derives average churn rate), redundancy \ie number of existing fragments of data, and most importantly, the number of alive data \ie data whose existing fragments can support recovery.
-The simulation starts by populating certain number of data objects into storage network (along with other initialization, discussed later), which exact procedure is specified by the evaluated protocol.
-Then the simulation repeatedly steps the system until maximum number of steps is reached or all data objects are lost.
+\subsection{Simulation Overview}
 
-\paragraph{Failure generator.}
-In simulation is failure generator generates two kinds of failure domains.
-The first kind is for independent failures, one failure domain for each node and contains only that single node.
-The failure rate is the same across all first kind domains.
-This kind of failures are the ``background'' failures that ensure every node eventually leave the system.
-The second kind of failure domains contain at least two nodes and represent correlated failures.
-The sizes of the failure domains follow geometrical distribution, so larger domains are rarer than smaller ones.
-The failure rates of the failure domains follow exponential distribution, so higher failure rate is more unlikely.
-Notice that failure rate is independent to the domain size: it is possible for large domain to have high failure rate.
+Our simulation program consists of an operational fault model as described in \autoref{sec:model:model} and a target protocol that attempts to perform repairs to recover durability.
+The simulation is performed in discrete \emph{steps}.
+The step interval is determined by the responsiveness of the protocol.
+Each step is simulated in two phases.
+In the first phase, nodes fail and join according to the failure generator.
+Next, the target system performs any maintenance protocol.
+The simulation collects key statistics per step, including average churn rate, the redundancy level, and most importantly, the fraction of durable data, \ie, objects whose non-failing fragments are above the recovery threshold.
+The simulation starts by populating some data objects into the storage network.
+No new objects are subsequently stored into the network.
+The simulation then follows the above procedure until a maximum number of steps is reached, or when all data objects are lost.
 
-We performed the simulation with different average domain size while keep the average node failure rate constant by adjusting the failure rate distribution accordingly.
-With this setup the evaluated protocol experiences systems with similar churn rates, only varying correlations.
+\paragraph{Failure generator}
+The failure generator generates two types of failure domains.
+%The first kind is for independent failures, one failure domain for each node and contains only that single node.
+Independent failures, \ie, failure domain size of one, have a fixed failure rate.
+They are essentially the ``background'' failures that ensure every node eventually leave the system.
+%The second kind of failure domains contain at least two nodes and represent correlated failures.
+For failure domains with more than one node, the size of the failure domain follows a geometrical distribution.
+The distribution models the realistic expectation that larger domains are rarer than the smaller ones.
+The failure rate of a failure domain follows an exponential distribution.
+%, such that higher failure rate is more unlikely.
+Note that the failure rate is domain size agnostic: It is entirely possible for large domains to have high failure rates.
 
-\paragraph{Evaluated protocol.}
-We implement a decentralized storage protocol, similar to \sgd{cite}.
-In this protocol, the fragments are stored on the $n$ consecutive storage nodes whose IDs are immediately after to the data hash, and the data is recoverable as long as $k$ of them is alive.
-Most previous protocols if not all select placement groups with similar strategies that are optimized for performance.
-We evaluate the protocol with different $n$ and $k$, simulating different placement group sizes and redundancies.
-We also simulate a baseline protocol that only initially populates fragments to random nodes and does not repair.
+We vary the average domain size while keeping the average node failure rate constant by adjusting the failure rate distribution accordingly.
+With this setup, the target protocol undergoes executions with comparable churn rates, with only varying correlations.
 
-\paragraph{Common system parameters.}
-In the following, we simulate a storage system with 1K nodes.
-All simulations last at most 1M steps and a $10^{-5}$ independent failure rate is applied to all storage nodes, in addition to the correlated failure rates.
-Without further mentioning, a $n = 8$, $k = 5$ erasure code is deployed in both evaluated protocol and baseline.
+\paragraph{Evaluated protocols}
+We implement a representative decentralized storage protocol, similar to Glacier~\cite{glacier}.
+In this protocol, the fragments are stored on the $n$ consecutive storage nodes whose IDs are immediately adjacent to the object hash.
+The object is recoverable as long as $k$ fragments are alive.
+Other decentralized storage solutions share similar placement group selection policies.
+%Prior decentralized storage systems pick placement groups with similar strategies that are optimized for performance.
+We vary $n$ and $k$ to simulate different placement group sizes and redundancies.
+We also simulate a baseline protocol that distributes fragments to random nodes and never performs repair.
+
+\subsection{Simulation results}
+
+We simulate a storage system with 1K nodes.
+All simulations last at most 1 million steps.
+A constant $10^{-5}$ independent failure rate is applied to all storage nodes.
+By default, an $n = 8$, $k = 5$ erasure code is used in both the target protocol and the baseline.
 
 % \begin{figure}
 %     \addgraph{repair}
@@ -80,13 +97,11 @@ Without further mentioning, a $n = 8$, $k = 5$ erasure code is deployed in both 
     \label{fig:simulation-all}
 \end{figure}
 
-The simulation results as shown in \autoref{fig:simulation-all}.
-
-\paragraph{Tolerate independent failures.}
-We first simulate the case where only independent failures happen.
-The evaluated protocol completely tolerates the independent failures, aligning the conclusion from previous works.
-Failure of individual nodes cannot cause data loss and the protocol immediately repairs for the failure in the same step.
-There are chances that multiple independent failures happen in the same step, but the probability of simultaneous failures in the same placement group decreases exponentially as the number of failures grows.
+\paragraph{Tolerating independent failures}
+We first simulate only independent failures.
+As shown in \autoref{fig:simulation-all}, the target protocol tolerates independent failures effectively, confirming claims from previous works.
+Failure of individual nodes does not lead to data losses, as the protocol performs repair to recover the redundancy level within the same step.
+Multiple independent failures can happen in the same simulation step, but the probability of simultaneous failures in the same placement group decreases exponentially as the number of failures increases.
 
 % \begin{figure}
 %     \addgraph{domain-scale}
@@ -96,10 +111,10 @@ There are chances that multiple independent failures happen in the same step, bu
 % \end{figure}
 
 \paragraph{Correlated failures.}
-In the next simulations, we add correlated failures with different average domain sizes, but keep the average churn rate per step to 2\% of the total number of nodes.
-The simulation shows adding minimal correlated failures immediately results in data loss in the evaluated protocol.
-The impact of correlated failure is huge.
-When more than 1\% of storage nodes have correlations, the system fails catastrophically.
+We now add correlated failures with different average domain sizes, but keep the average churn rate per step to 2\% of the system size.
+As shown in \autoref{fig:simulation-all}, introducing correlated failures immediately results in data losses in the target protocol.
+%The impact of correlated failure is huge.
+When more than 1\% of storage nodes have correlations, the system fails catastrophically to maintain durability.
 
 % \begin{figure}
 %     \addgraph{redundancy}
@@ -108,14 +123,14 @@ When more than 1\% of storage nodes have correlations, the system fails catastro
 %     \label{fig:redundancy}
 % \end{figure}
 
-\paragraph{Scale up redundancy.}
-In the next simulation we study the effect of increasing redundancy by scaling up $n$ while fixing $k$.
-Adding more redundancy works, but it also exposes storage overhead to the system.
-In our simulation the system is only durable in 1M steps when redundancy is increased over 37\%, results in significant degradation in capacity.
+\paragraph{Increase redundancy.}
+Next, we study the impact of increased redundancy by scaling up $n$ while fixing $k$.
+Adding more redundancy improves durability, but at the expense of higher storage overhead.
+Our simulation shows that the system is only durable in 1 million steps when the overall redundancy level is above 37\%, which is a significant degradation in overall capacity.
 
-Can we affect durability without more redundancy?
-We notice that as $n$ increases, not only redundancy but also placement group sizes is affected.
-Larger placement group sizes help distribute fragments more widely, which also mitigates the impact of correlated failures.
+Can we improve durability without increasing redundancy?
+We notice that, as $n$ increases, both the redundancy level and the placement group sizes are affected.
+Larger placement group sizes help distribute fragments to more nodes, which mitigates the impact of correlated failures.
 Based on this observation, we perform the next simulation.
 
 % \begin{figure}
@@ -126,13 +141,14 @@ Based on this observation, we perform the next simulation.
 % \end{figure}
 
 \paragraph{Scale up placement groups.}
-In this simulation we keep a constant 1.6x redundancy, and increase both $n$ and $k$.
-As shown in the simulation, the durability indeed gets better.
-In our case, with $n = 24$ and $k = 15$ erasure code, the evaluated protocol is durable in the simulated duration without incurring additional redundancy.
+In this simulation, we keep a constant 1.6x redundancy, and increase both $n$ and $k$.
+As shown in \autoref{fig:simulation-all}, the durability of the system indeed improves.
+With an $n = 24$ and $k = 15$ erasure code, the target protocol is perfectly durable in the simulated duration without incurring additional redundancy.
 
-\paragraph{Takeaway.}
-Both redundancy and placement group size are the key factors of tolerating correlated failures.
-Though redundancy is effective, it sacrifices system capacity, and previous studies also shows the effectiveness becomes marginal as redundancy grows.
-\sgd{cite}.
-On the other hand, increasing the placement group size does not affect the overall capacity.
-Larger placement groups help the data objects ``escape'' correlated failures of smaller scales.
+\paragraph{Takeaways.}
+Our simulation results demonstrate that both redundancy levels and placement group sizes impact system tolerance to correlated failures.
+Though adding redundancy can be effective, it comes at the cost of reduced system capacity.
+Moreover, previous studies~\cite{irisstore} have shown that its effectiveness becomes marginal as redundancy grows.
+On the other hand, enlarging placement groups effectively reduces the impact of smaller-scale correlated failures.
+It, however, has no impact on the overall storage capacity.
+%Larger placement groups help the data objects ``escape'' correlated failures of smaller scales.
