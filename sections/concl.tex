@@ -1,3 +1,12 @@
+In this work, we introduce a novel fault model that captures the nature of correlated failures in decentralized environments.
+Using this model, we run simulations to demonstrate surprising shortcomings in existing decentralized storage solutions in providing durability.
+Based on the simulation insights, we propose a new storage protocol, \sys.
+\sys leverages system-wide placement groups to tolerate arbitrary correlated failures.
+It also applies rateless erasure codes and confidential sampling to improve practicality in large deployments.
+We believe our approach offers a promising direction for achieving the ``holy-grail'' of decentralized storage --- provably durability under adversarial network conditions.
+
+\iffalse
 We propose \sys, a novel decentralized storage system with strong durability guarantees even in the presence of strong adversaries.
 \sys combines rateless erasure code, verifiable randomness, dual-layer encoding, and decentralized repair to ensure object persistence without relying on centralization.
 Simulation and global-scale experiments show that compared to prior systems, \sys provides stronger tolerance to Byzantine failures and targeted attacks, while attaining comparable performance and data repair overhead.
+\fi
