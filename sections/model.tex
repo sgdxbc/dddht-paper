@@ -32,6 +32,15 @@ no system participant, however, can \emph{reliably} determine the true case.
 Failure correlations are only revealed after simultaneous failures actually occur.
 Unfortunately, such information is already \emph{too late} to prevent durability violations.
 
+\begin{figure*}
+    \includegraphics[width=\textwidth]{figures/correlations.png}
+    \caption{The hypothetical correlations among four storage nodes.
+    The left side shows how multiple potential correlations additively make intersecting failure domains.
+    The right side is an example of a $(3, 2)$ erasure code deployed on three of the nodes, and the red colored failure domains are the ones critical to data loss \ie the data will be lost if any of them fail.}
+    \Description{TODO}
+    \label{fig:correlations}
+\end{figure*}
+
 \lijl{Do we have concrete evidence to support the above paragraph?
 It would be more convincing if we have empirical studies or proper references to validate our claims.}
 
