@@ -1,18 +1,13 @@
 \begin{abstract}
 
-Building permissionless storage system that is open to everyone to provide storage resource can benefit users by decoupling the durability reasoning of the system with the trust to individual operators.
+Building decentralized storage system that is open to everyone to provide storage resource can benefit users by decoupling the durability reasoning of the system with the trust to individual operators.
 However, the permissionless setup also bring its unique challenge of dealing with unpredictable correlated failures.
-% The ability of making promise on tolerating these correlated failures is the key step to moving from a voluntary best effort storage service to a reliable and production-ready one.
-% This is highly demanded by real world decentralized applications for durably storing high-value digital assets in a permissionless way to incorporate their trust model.
-In this work, we proposed a proper definition of fault tolerance of permissionless storage systems, as the key measure of the durability of such systems.
-This novel fault model precisely captures the inability of modeling or predicting correlated failures \ie failure domains in a permissionless system.
+In this work, we proposed a proper definition of fault tolerance of decentralized storage systems, as the key measure of the durability of such systems.
+This novel fault model precisely captures the inability of modeling or predicting correlated failures \ie failure domains in a decentralized system.
 
-Motivated by the vulnerability of data loss of prior works under this fault model, we designed \sys, a permissionless storage system that can tolerate realistic correlated failures with a correlation-oblivious design.
-With large code, \sys performs large number of independent random samplings to distribute erasure code fragments, ensuring the data object is distributed into sufficient failure domains with overwhelming probability regardless of the ground truth failure domains.
-Moreover, \sys deploys rateless erasure code to enable fragment repairing of large code in a permissionless system without explicit coordination, and we specially designed an unpredictable random sampling solution to defend adversarial attacks.
-
-We show the effectiveness of \sys's durability by both deriving the relation between the probability of data loss with the erasure code configuration, showing \sys can practically tolerate correlated failures with reasonable redundancy, and evaluating the system performance with simulations.
-We also implement \sys and evaluate its real world performance with a worldwide deployment.
-\sys shows performance degradation within \XXX\% compare to baseline systems which cannot reliably tolerate correlated failures, which proves that \sys is able to secure real world applications with acceptable overhead.
-
+Motivated by the vulnerability of data loss of prior works under this fault model, we designed \sys, a decentralized storage system that can tolerate realistic correlated failures with a correlation-oblivious design.
+Unlike previous works, \sys distributes encoded fragments to as much storage nodes as possible, ensuring the data object is distributed into sufficient failure domains with overwhelming probability regardless of the ground truth failure domains.
+Moreover, \sys deploys rateless erasure code to enable fragment repairing of large code in a permissionless system without explicit coordination.
+We also discuss on confidential sampling as a measurement against adversarial attacks.
+We believe \sys can serve as a good starting point of designing sophisticated durable decentralized storage system against unpredictable correlated failures.
 \end{abstract}
