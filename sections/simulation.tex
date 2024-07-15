@@ -62,43 +62,55 @@ In the following, we simulate a storage system with 1K nodes.
 All simulations last at most 1M steps and a $10^{-5}$ independent failure rate is applied to all storage nodes, in addition to the correlated failure rates.
 Without further mentioning, a $n = 8$, $k = 5$ erasure code is deployed in both evaluated protocol and baseline.
 
+% \begin{figure}
+%     \addgraph{repair}
+%     \caption{Simulation with $10^{-5}$ independent failure rate.}
+%     \Description{TODO}
+%     \label{fig:repair}
+% \end{figure}
+
 \begin{figure}
-    \addgraph{repair}
-    \caption{Simulation with $10^{-5}$ independent failure rate.}
+    \addgraph{all-in-one}
+    \caption{Results from simulations.
+    Upper left: with no correlated failure and $10^{-5}$ independent failure rate.
+    Upper right: with 2\% churn rate per step and various average \% failure domain sizes.
+    Bottom left: with 3\% average failure domain size and various redundancy configurations.
+    Bottom right: with 3\% average failure domain size, 1.6x redundancy and various placement group sizes.}
     \Description{TODO}
-    \label{fig:repair}
+    \label{fig:simulation-all}
 \end{figure}
+
+The simulation results as shown in \autoref{fig:simulation-all}.
 
 \paragraph{Tolerate independent failures.}
 We first simulate the case where only independent failures happen.
-As shown in \autoref{fig:repair}, the evaluated protocol effectively tolerates the independent failures, aligning the conclusion from previous works.
+The evaluated protocol completely tolerates the independent failures, aligning the conclusion from previous works.
 Failure of individual nodes cannot cause data loss and the protocol immediately repairs for the failure in the same step.
 There are chances that multiple independent failures happen in the same step, but the probability of simultaneous failures in the same placement group decreases exponentially as the number of failures grows.
 
-\begin{figure}
-    \addgraph{domain-scale}
-    \caption{Simulation with 2\% churn rate per step and various average \% failure domain sizes.}
-    \Description{TODO}
-    \label{fig:domain-scale}
-\end{figure}
+% \begin{figure}
+%     \addgraph{domain-scale}
+%     \caption{Simulation with 2\% churn rate per step and various average \% failure domain sizes.}
+%     \Description{TODO}
+%     \label{fig:domain-scale}
+% \end{figure}
 
 \paragraph{Correlated failures.}
 In the next simulations, we add correlated failures with different average domain sizes, but keep the average churn rate per step to 2\% of the total number of nodes.
-As shown in \autoref{fig:domain-scale}, adding minimal correlated failures immediately results in data loss in the evaluated protocol.
+The simulation shows adding minimal correlated failures immediately results in data loss in the evaluated protocol.
 The impact of correlated failure is huge.
 When more than 1\% of storage nodes have correlations, the system fails catastrophically.
 
-\begin{figure}
-    \addgraph{redundancy}
-    \caption{Simulation with 3\% average failure domain size and various redundancy configurations.}
-    \Description{TODO}
-    \label{fig:redundancy}
-\end{figure}
+% \begin{figure}
+%     \addgraph{redundancy}
+%     \caption{Simulation with 3\% average failure domain size and various redundancy configurations.}
+%     \Description{TODO}
+%     \label{fig:redundancy}
+% \end{figure}
 
 \paragraph{Scale up redundancy.}
 In the next simulation we study the effect of increasing redundancy by scaling up $n$ while fixing $k$.
-The result is shown in \autoref{fig:redundancy}.
-Adding more redundancy works, but it also storage overhead to the system.
+Adding more redundancy works, but it also exposes storage overhead to the system.
 In our simulation the system is only durable in 1M steps when redundancy is increased over 37\%, results in significant degradation in capacity.
 
 Can we affect durability without more redundancy?
@@ -106,16 +118,16 @@ We notice that as $n$ increases, not only redundancy but also placement group si
 Larger placement group sizes help distribute fragments more widely, which also mitigates the impact of correlated failures.
 Based on this observation, we perform the next simulation.
 
-\begin{figure}
-    \addgraph{group-scale}
-    \caption{Simulation with 3\% average failure domain size, 1.6x redundancy and various placement group sizes.}
-    \Description{TODO}
-    \label{fig:group-scale}
-\end{figure}
+% \begin{figure}
+%     \addgraph{group-scale}
+%     \caption{Simulation with 3\% average failure domain size, 1.6x redundancy and various placement group sizes.}
+%     \Description{TODO}
+%     \label{fig:group-scale}
+% \end{figure}
 
 \paragraph{Scale up placement groups.}
 In this simulation we keep a constant 1.6x redundancy, and increase both $n$ and $k$.
-As shown in \autoref{group-scale}, the durability indeed gets better.
+As shown in the simulation, the durability indeed gets better.
 In our case, with $n = 24$ and $k = 15$ erasure code, the evaluated protocol is durable in the simulated duration without incurring additional redundancy.
 
 \paragraph{Takeaway.}
