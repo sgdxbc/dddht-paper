@@ -1,13 +1,15 @@
 \begin{abstract}
 
-Building decentralized storage system that is open to everyone to provide storage resource can benefit users by decoupling the durability reasoning of the system with the trust to individual operators.
-However, the permissionless setup also bring its unique challenge of dealing with unpredictable correlated failures.
-In this work, we proposed a proper definition of fault tolerance of decentralized storage systems, as the key measure of the durability of such systems.
-This novel fault model precisely captures the inability of modeling or predicting correlated failures \ie failure domains in a decentralized system.
+Building open decentralized storage system across administrative domains benefit end users by decoupling the durability guarantee from the trust to individual operators.
+However, the permissionless setup also brings its unique challenges of dealing with unpredictable correlated failures.
+In this work, we propose a proper fault model for decentralized storage systems as the key measure of the durability of such systems.
+This novel fault model precisely captures the unpredictability of failure correlation, or equivalently, failure domains, in a decentralized system.
 
-Motivated by the vulnerability of data loss of prior works under this fault model, we designed \sys, a decentralized storage system that can tolerate realistic correlated failures with a correlation-oblivious design.
-Unlike previous works, \sys distributes encoded fragments to as much storage nodes as possible, ensuring the data object is distributed into sufficient failure domains with overwhelming probability regardless of the ground truth failure domains.
-Moreover, \sys deploys rateless erasure code to enable fragment repairing of large code in a permissionless system without explicit coordination.
-We also discuss on confidential sampling as a measurement against adversarial attacks.
-We believe \sys can serve as a good starting point of designing sophisticated durable decentralized storage system against unpredictable correlated failures.
+Under this new fault model, our simulation results demonstrate that prior storage systems are vulnerable to data losses.
+%Motivated by the vulnerability of data loss of prior works under this fault model
+We then design \sys, a decentralized storage system that can tolerate realistic correlated failures with a failure-domain-agnostic design.
+Unlike previous solutions, \sys distributes encoded fragments to as many storage nodes as possible, ensuring that data objects are distributed into sufficient failure domains with overwhelming probability.
+Moreover, \sys deploys rateless erasure code to enable fragment repair of large erasure codes in an open network without explicit coordination.
+We also discuss a confidential sampling approach to tolerate active adversaries.
+We believe \sys can serve as a promising direction for designing durable decentralized storage system against unpredictable correlated failures.
 \end{abstract}
