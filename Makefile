@@ -22,6 +22,12 @@ $(PAPER).pdf $(SUPPL).pdf: FORCE
 	@rm -f $@
 	$(LATEX) $(addsuffix .tex, $(basename $@)) -O .latex.out -o $@
 
+watch:
+	while true; do \
+	    $(MAKE); \
+	    inotifywait -qre close_write .; \
+	done
+
 arxiv: arxiv.tar.gz
 
 arxiv.tar.gz: $(PAPER).pdf

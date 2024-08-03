@@ -1,37 +1,4 @@
-\begin{outline}
-The development direction of large scale public storage services has been changed several times due to the progress of hardware and software technologies.
-
-% At first the features, \eg durability, storage and bandwidth capacity, etc., of a centralized storage system has been insufficient to support reliably storing a desired amount of data with adequate performance, so people start to design decentralized storage systems,
-% \sgd{TODO cite 20 year ago works}
-% collaboratively serving large amount of public data, \eg academic datasets, mail list archives, to go beyond the limit of single storage node, ensuring the whole system is more powerful and durable compared to any single point.
-
-Later than \sgd{some good old days}, the increasing power that can be owned by centralized storage systems terminated the previous trend of designing decentralized systems.
-As long as a centralized storage system can provide satisfying storage capacity and accessibility, it can easily defeat decentralized solutions in most other aspects \eg access latencies, durability, and cost efficiency.
-\sgd{TODO list some outstanding achievements of centralized solutions regarding these aspects.}
-
-Now we have come to an end that the limitations of public storage services are mostly by the centralized authorities.
-The capacity, accessibility and cost efficiency (to end users) are not pushed to the limits, but optimized according to the service providers' own consideration (mostly in the economic sense).
-\lijl{Not sure if we want to bring up this point.
-I agree this is likely true, just we don't have concrete evidence, and it is not easy to argue that decentralized solutions can effectively address this.
-We could just focus on durability.}
-For the durability it's even worse: although the service providers always claim to secure the stored data with sophisticated replication and erasure coding solutions, the durability guarantee subjectively depends on the trust level of the providers from end users.
-And it even depends on the durability of the providers themselves: if you trust your data can persist 100 years in Google Drive, you must first trust that Google itself is still there 100 years later.
-\lijl{If we could find news/anecdotes that centralized solutions lose user data, we can cite them here.}
-
-Luckily, with the ever-growing hardware/software capabilities, we now have a chance to revisit the idea of permissionless storage systems to overcome the limitations of a single service provider with acceptable overheads.
-\lijl{What is the causal relationship between hw/sw capabilities and enabling decentralized storage?}
-In a permissionless storage system, the durability guarantee is not bounded by the trust to or the durability of any individual.
-\lijl{Could clarify that there are many entities, each managing its storage devices.
-The entities are autonomous.}
-Instead, it will remain constant even in the presence of constant membership rotation.
-\sgd{TODO list achievements of recent p2p works}
-In one word, it is possible for a carefully designed permissionless storage system to provide better durability than all the centralized storage systems however built.
-
-% \sgd{It is still possible to mention the web3 industry somewhere, but feels unnecessary in the current flow.
-% The storyline is becoming ``this is a better storage system for everyone including those currently using centralized solutions'', not ``web3 demands everything to be decentralized so there must be a decentralized solution also for durable storage''.
-% It's more risky, but its acceptance is independent to the reviewers' thoughts regarding web3, so I think it worth taking the risk.}
-\end{outline}
-
+\sgd{Save three paragraphs (hopefully).}
 We are witnessing a technological paradigm shift to move away from service centralization, a hallmark of the cloud computing and web services industries in the past two decades.
 This \emph{decentralization} movement is catalyzed by the growing concern over content censorship~\cite{twitter_censorship}, data misuse~\cite{fb_misuse}, monopolistic practices~\cite{google_antitrust}, and single point of organization failure~\cite{ftx_debacle}.
 Following the wild success of the Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum} blockchains, a burgeoning of decentralized services are being deployed, including exchanges~\cite{uniswap}, content delivery network~\cite{meson}, domain name service~\cite{handshake}, messaging~\cite{matrix}, and computation~\cite{dfinity}.
@@ -45,7 +12,52 @@ The InterPlanetary File System (IPFS)~\cite{ipfs} has over 300 thousand active p
 A critical requirement for any storage system is \emph{data durability}, \ie, any data stored in the system can be eventually recovered.
 To handle frequent server and device failures in large distributed deployments, replication~\cite{smr,pb,pbft} and erasure coding~\cite{reed-solomon} techniques have become an integral part of these systems.
 Both techniques use \emph{redundancy} to tolerate failures of individual components, an effective approach when enough copies or encoding symbols survive.
+\sgd{Remove one following sentence.}
 They work well in centrally managed systems, where central operators have full knowledge and control over the failure domains and placement groups to minimize correlated failures.
+
+\begin{outline}
+The most critical design difficulty of the redundancy approach is that the redundancy is only effective if it is distributed across failure domains.
+In another word, if there's considerable probability for storage nodes who store the fragments for the same data object to correlated fail in a short interval, data loss may happen even in the presence of redundancy.
+\sgd{Just sufficient portion of those storage nodes fail can cause data loss but the sentence is already too complex.} 
+
+The centrally managed systems have well defined/determined \emph{objective} failure domains, \eg geological locations, hardware/software diversities, etc.
+But on the other hand, the whole systems are under the same \emph{administrative} failure domain, \ie it's up to system administrators' wills to whether ensure durability of a particular data object.
+Data objects can never be distributed beyond single administrative failure domain.
+
+Recent works of decentralized storage \eg Filecoin improves on this with an open, permissionless network that allows any organization to take part in storing the data, so that any single organization is not enough to cause data loss.
+However, the solutions are limited in the sense that any data object is only stored by only few organizations.
+\sgd{And the organizations are fixed during the whole data object lifetime.}
+The situation is not fundamentally changed, and the solutions cannot benefit from more organizations \ie the durability is not further improved when more organizations join the systems.
+
+We argue that in a permissionless system there's no practical way to reliably collect trusted information of administrative failure domains a priori \ie before those domains fail.
+\sgd{Mentioning targeted attack here?}
+So we cannot deal with administrative failure domains in the same way as dealing with objective ones, but can only ``do the BFT protocol way''.
+\sgd{Should carefully describe what is that way.}
+
+We propose a new dimension of measuring the durability of decentralized storage systems: the ability of tolerating faulty organizations.
+A durable storage system should ensure data integrity when the faulty organizations control less than certain amount (\eg $1/3$) of total storage capacity.
+Filecoin fails to do so.
+\sgd{This definition is either nonsense or trivial for centrally managed storage systems.
+Those systems have only two cases: faulty organization controls 0 capacity or 100\%.
+In the first case they ensure durability while in the second one they do not.}
+
+\sgd{The four above paragraphs somewhat duplicates the centralize/decentralize comparison in the original flow above this outline.
+I cannot make them a nature extension on the original flow.
+And the original flow cannot be used to attack prior decentralized solutions.
+The main difference of these two flows is the original flow makes division on centralized/decentralized systems \ie how many organizations take part in the whole systems, while this outline makes division on how many organizations take part in storing every individual data object.
+I feel like do the latter one is always necessary to distinguish \sys from prior decentralized works, and as long as we already do the latter one there's no need to do the former one.}
+
+We propose \sys as a baseline design that can tolerate administrative correlations.
+\sys does so by propagating the fragments over the whole system.
+The capacity-based virtual node mechanism ensures we can prove the durability.
+\sys deploys rateless erasure code along with a set of communication protocols to ensure efficient put and repair operations.
+
+Evaluations.
+
+Contributions.
+
+\sgd{Remove following.}
+\end{outline}
 
 A decentralized deployment presents fundamental challenges to the durability guarantees of a storage system.
 There is no central authority to manage the behavior and trustworthiness of the participants;
