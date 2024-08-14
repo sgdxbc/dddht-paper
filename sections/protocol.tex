@@ -1,3 +1,35 @@
+\begin{outline}
+Network primitives.
+Point to point messages.
+Gossip/flooding messages that (eventually) reaches every current storage nodes with identical content.
+Messages are authenticated.
+
+Erasure coding primitives.
+$\fn{Encode}(\var{data object}, \var{id}) \rightarrow \var{fragment}$
+$\fn{Decode}(\{(\var{id}_1, \var{fragment}_1), (\var{id}_2, \var{fragment}_2), \dots\}) \rightarrow \var{data object}$
+
+Outbound interfaces $\fn{Put}(\var{data object})$ and $\fn{Get}(\var{hash}_{data object})$ can be invoked on every storage node.
+\sgd{Discussion faulty behavior on \fn{Put}? Faulty \fn{Get} can be easily identified.}
+
+\fn{Put}.
+Gossip data object hash.
+Every storage node request fragment from \fn{Put} node.
+The \fn{Put} node encode fragment for every node with different $\var{id}$s and response.
+\sgd{Optimization: delegated encoding service.}
+
+\fn{Get}.
+Gossip data object hash.
+Every storage node push fragment (with its $\var{id}$) to \fn{Get} node.
+Recover the data object.
+
+Maintenance.
+Fresh storage node gossip once during initialization.
+Every storage node push stored fragments (with its $\var{id}$ and data object hash) to the fresh node.
+The fresh node recover data objects from received fragments, encode a distinct (random) fragment for itself and store.
+
+\sgd{Optionally: bounding per storage node capacity by random fragment eviction.}
+\end{outline}
+
 As shown in \autoref{sec:simulation}, prior decentralized storage systems are vulnerable to data losses under realistic fault models.
 In this section, we present a preliminary design of a new decentralized storage protocol, \sys.
 Though some design details are not fully ironed out, we believe the design principles of \sys are a significant step forward in providing strong durability guarantees in decentralized storage deployments.
