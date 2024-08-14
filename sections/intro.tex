@@ -1,3 +1,36 @@
+\begin{outline}
+A durable storage system tolerates faults with redundancy.
+
+\sgd{Probably every distributed system tolerate faults with redundancy.}
+
+The key of enabling durability is to avoid the redundancy of the same data object to fail together.
+
+Prior works, mostly centrally managed, extensively studied how to reduce the correlations of redundancy from technical aspects.
+
+However, the administrative correlations \ie the facts that the redundancy is persisted by single or few organizations, is equally if not more important.
+A noticeable case of such correlations is by targeted attacks, which is not ignorable in a system dealing with Byzantine faults.
+
+Decentralized storage systems attempts to overcome by establishing open systems that allow unlimited number of organizations to freely join (and leave) the systems at any time.
+However, the systems do not guarantee that each data object is maintained by multiple organizations.
+So there's still no promise that data objects will be more durable than the organizations.
+
+\sys, on the opposite, is specially designed to distribute data objects to multiple organizations, and to our best knowledge is the first work to provide fault tolerance guarantee in terms of faulty organizations:
+when \sys is configured with redundancy ratio $\alpha$,
+\sgd{$\alpha=N/k$}
+\sys can ensure durability when no more than $\alpha-1/\alpha$ of overall storage capacity in the system is controlled by faulty organizations.
+For example, \sys can tolerate 1/3 faulty storage capacity with 1.5x redundancy.
+
+The design for tolerating faulty organizations is challenging.
+There's no trusted information on the ownership of storage nodes of the organizations, or even the number of the organizations and the scales of them.
+Because of the presence of targeted attack, it is possible for the adversarial worst case to happen.
+Simulations show that prior works are not feasible to tolerate organization failures.
+
+Design.
+
+Evaluation.
+\end{outline}
+
+\iffalse
 \sgd{Save three paragraphs (hopefully).}
 We are witnessing a technological paradigm shift to move away from service centralization, a hallmark of the cloud computing and web services industries in the past two decades.
 This \emph{decentralization} movement is catalyzed by the growing concern over content censorship~\cite{twitter_censorship}, data misuse~\cite{fb_misuse}, monopolistic practices~\cite{google_antitrust}, and single point of organization failure~\cite{ftx_debacle}.
@@ -14,50 +47,6 @@ To handle frequent server and device failures in large distributed deployments, 
 Both techniques use \emph{redundancy} to tolerate failures of individual components, an effective approach when enough copies or encoding symbols survive.
 \sgd{Remove one following sentence.}
 They work well in centrally managed systems, where central operators have full knowledge and control over the failure domains and placement groups to minimize correlated failures.
-
-\begin{outline}
-The most critical design difficulty of the redundancy approach is that the redundancy is only effective if it is distributed across failure domains.
-In another word, if there's considerable probability for storage nodes who store the fragments for the same data object to correlated fail in a short interval, data loss may happen even in the presence of redundancy.
-\sgd{Just sufficient portion of those storage nodes fail can cause data loss but the sentence is already too complex.} 
-
-The centrally managed systems have well defined/determined \emph{objective} failure domains, \eg geological locations, hardware/software diversities, etc.
-But on the other hand, the whole systems are under the same \emph{administrative} failure domain, \ie it's up to system administrators' wills to whether ensure durability of a particular data object.
-Data objects can never be distributed beyond single administrative failure domain.
-
-Recent works of decentralized storage \eg Filecoin improves on this with an open, permissionless network that allows any organization to take part in storing the data, so that any single organization is not enough to cause data loss.
-However, the solutions are limited in the sense that any data object is only stored by only few organizations.
-\sgd{And the organizations are fixed during the whole data object lifetime.}
-The situation is not fundamentally changed, and the solutions cannot benefit from more organizations \ie the durability is not further improved when more organizations join the systems.
-
-We argue that in a permissionless system there's no practical way to reliably collect trusted information of administrative failure domains a priori \ie before those domains fail.
-\sgd{Mentioning targeted attack here?}
-So we cannot deal with administrative failure domains in the same way as dealing with objective ones, but can only ``do the BFT protocol way''.
-\sgd{Should carefully describe what is that way.}
-
-We propose a new dimension of measuring the durability of decentralized storage systems: the ability of tolerating faulty organizations.
-A durable storage system should ensure data integrity when the faulty organizations control less than certain amount (\eg $1/3$) of total storage capacity.
-Filecoin fails to do so.
-\sgd{This definition is either nonsense or trivial for centrally managed storage systems.
-Those systems have only two cases: faulty organization controls 0 capacity or 100\%.
-In the first case they ensure durability while in the second one they do not.}
-
-\sgd{The four above paragraphs somewhat duplicates the centralize/decentralize comparison in the original flow above this outline.
-I cannot make them a nature extension on the original flow.
-And the original flow cannot be used to attack prior decentralized solutions.
-The main difference of these two flows is the original flow makes division on centralized/decentralized systems \ie how many organizations take part in the whole systems, while this outline makes division on how many organizations take part in storing every individual data object.
-I feel like do the latter one is always necessary to distinguish \sys from prior decentralized works, and as long as we already do the latter one there's no need to do the former one.}
-
-We propose \sys as a baseline design that can tolerate administrative correlations.
-\sys does so by propagating the fragments over the whole system.
-The capacity-based virtual node mechanism ensures we can prove the durability.
-\sys deploys rateless erasure code along with a set of communication protocols to ensure efficient put and repair operations.
-
-Evaluations.
-
-Contributions.
-
-\sgd{Remove following.}
-\end{outline}
 
 A decentralized deployment presents fundamental challenges to the durability guarantees of a storage system.
 There is no central authority to manage the behavior and trustworthiness of the participants;
@@ -90,6 +79,8 @@ Critically, the larger placement group is not at the expense of reduced storage 
 The design additionally applies a \emph{rateless erasure code} to address the fragment uniqueness challenge in a decentralized network.
 To improve the practicality of the design, we refine our protocol to use independent sampling to achieve \emph{probabilistic selection} of the placement group.
 We also propose \emph{confidential sampling} to defend against active adversaries.
+\fi
+
 
 \iffalse
 \sgd{The following paragraphs are also new. I think they are formal enough to be called ``content'' instead of ``outline''.}
