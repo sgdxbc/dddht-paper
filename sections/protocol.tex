@@ -42,11 +42,19 @@ The fresh node recover data objects from received fragments, encode a distinct (
     For simplicity, we assume the storage capacity on each storage node is $t$.
     There are therefore $\frac{T}{t}$ storage nodes, and at most $\frac{T}{3t}$ nodes are controlled by adversaries.
 
-    Durability goal: Any stored object can be recovered, even if \emph{any} $\frac{T}{3t}$ of storage nodes permanently lose all their data.
+    Durability goal:
+    Any stored object can be recovered, even if \emph{any} $\frac{T}{3t}$ of storage nodes permanently lose all their data.
 
-    Capacity goal: The total object storage capacity (number of object stored) increases linearly with the number of storage nodes in the system.
+    Capacity goal:
+    The total object storage capacity (number of object stored) increases linearly with the number of storage nodes in the system.
 
-    Other goals: The system should avoid BFT consensus protocols.
+    Other goals:
+    The system should avoid BFT consensus protocols.
+    The system should adapt to dynamic changes in system size (with adversarial power changes accordingly).
+}
+
+\lijl{
+    Possible solutions:
 
     Solution 1:
     Store copies of each object on $\frac{T}{3t} + 1$ storage nodes.
@@ -78,6 +86,10 @@ The fresh node recover data objects from received fragments, encode a distinct (
     The code generates an infinite symbol sequence.
     Each of the $n$ nodes can randomly pick a symbol in the sequence with negligible collision probability.
     This should be the target solution.
+}
+
+\lijl{
+    Challenges:
 }
 
 As shown in \autoref{sec:simulation}, prior decentralized storage systems are vulnerable to data losses under realistic fault models.
