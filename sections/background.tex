@@ -1,36 +1,8 @@
 \section{Background and Motivation}
 \label{sec:background}
 
-\iffalse
-\sgd{Alternative flow for background \& motivation section.}
-
-\paragraph{The demand of \emph{store and forget} service in p2p network.}
-Definition: \emph{unattended store}.
-Client does not participant in setting up store strategy during storing data.
-Client can go offline before retrieving the data and does not need to monitor the data.
-Reason: client should not build its confidence of the data persistent in the system on the trust to several specific peers.
-In another word, whether some specific peers behave correctly or not should not affect the overall confidence level of the client on that the data will not lose.
-
-\paragraph{Scalability failure of blockchains.}
-Full replication does not scale.
-Partial replication (arweave) only mitigates the problem: workload still grows linearly according to chain depth.
-
-\paragraph{Indexing systems provide mismatched functions.}
-IPFS requires client to pick providers, potentially monitor providers' liveness and re-pick when necessary.
-Filecoin picks providers for clients, but require clients to actively challenge periodically.
-Trying to \emph{store and forget} in such systems can result in data lose.
-
-\paragraph{Demonstration of data lose in indexing system.}
-Randomly pick providers w/ or w/o replication.
-Simulated faulty providers.
-
-\paragraph{Goals.}
-User interacts the system as a whole, not individual peers.
-Durability guarantee that only depends on overall properties (e.g. faulty portion, churn rate), regardless of properties of any individual peer.
-Controllable redundancy.
-
-\sgd{Original content below.}
-\fi
+In this section, we start with the problem definition of our system.
+We then discuss prior solutions and their weaknesses in guaranteeing durability a decentralized environment.
 
 \subsection{Problem Definition}
 \label{sec:background:problem}
@@ -39,16 +11,15 @@ We consider the problem of \emph{durable} object storage system.
 The system exposes a simple object store and retrieval interface to end users.
 Each object contains a blob of binary data.
 The system provides \emph{durability}: Once an object is successfully stored, the object can be \emph{eventually} recovered with its original content, even if part of the system fails.
-Note that the guarantee differs from \emph{availability}, which ensures objects can always be retrieved in a timely fashion.
+Note that the guarantee differs from \emph{availability}, which ensures objects can always be retrieved in a \emph{timely} fashion.
 
-%the recovery may be lagged by the effects of transient failures or network partitioning, but the data is guaranteed to be recoverable, and the recovery will eventually succeed.
-
-Objects are \emph{immutable}, i.e., users cannot modify an object after it is stored.
-The system presents a \emph{flat view} of all objects; it does not offer explicit hierarchies such as those in a file system.
+Objects are \emph{immutable}, \ie, users cannot modify an object after it is stored.
+The system presents a \emph{flat view} of all objects;
+it does not offer explicit hierarchies such as those in a file system.
 It serves as a base persistent storage layer where higher-level functionalities, such as files and relational databases, can be built atop.
 
 Within the overall storage stack, we target the \emph{cold storage} layer which emphasizes \emph{data durability}, \emph{storage capacity}, and \emph{cost}, as opposed to the warm~\cite{f4} or the hot storage~\cite{haystack} layers.
-Amazon Glacier~\cite{amazon_glacier,amazon_s3} and Google Coldline~\cite{google_coldline}/Archive~\cite{google_archive} storage are popular production-level, centrally managed systems in this category.
+Amazon Glacier~\cite{amazon_glacier,amazon_s3}, Google Coldline~\cite{google_coldline} and Archive~\cite{google_archive} storage, and the archive tier~\cite{azure_tier} in Azure Storage~\cite{azure_storage} are popular production-level, centrally managed systems in this category.
 Performance and availability are not key design metrics.
 
 \paragraph{Decentralized deployment}
@@ -295,4 +266,35 @@ During the lifetime of the chunk, other peers in the network issue cryptographic
 The challenge can only be solved if the chunk is stored for the time duration.
 Unsuccessful proofs result in slashing of the token deposit, disincentivizing nodes to lose stored data.
 \fi
+\fi
+
+\iffalse
+\sgd{Alternative flow for background \& motivation section.}
+
+\paragraph{The demand of \emph{store and forget} service in p2p network.}
+Definition: \emph{unattended store}.
+Client does not participant in setting up store strategy during storing data.
+Client can go offline before retrieving the data and does not need to monitor the data.
+Reason: client should not build its confidence of the data persistent in the system on the trust to several specific peers.
+In another word, whether some specific peers behave correctly or not should not affect the overall confidence level of the client on that the data will not lose.
+
+\paragraph{Scalability failure of blockchains.}
+Full replication does not scale.
+Partial replication (arweave) only mitigates the problem: workload still grows linearly according to chain depth.
+
+\paragraph{Indexing systems provide mismatched functions.}
+IPFS requires client to pick providers, potentially monitor providers' liveness and re-pick when necessary.
+Filecoin picks providers for clients, but require clients to actively challenge periodically.
+Trying to \emph{store and forget} in such systems can result in data lose.
+
+\paragraph{Demonstration of data lose in indexing system.}
+Randomly pick providers w/ or w/o replication.
+Simulated faulty providers.
+
+\paragraph{Goals.}
+User interacts the system as a whole, not individual peers.
+Durability guarantee that only depends on overall properties (e.g. faulty portion, churn rate), regardless of properties of any individual peer.
+Controllable redundancy.
+
+\sgd{Original content below.}
 \fi
