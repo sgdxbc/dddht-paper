@@ -22,23 +22,28 @@ Within the overall storage stack, we target the \emph{cold storage} layer which 
 Amazon Glacier~\cite{amazon_glacier,amazon_s3}, Google Coldline~\cite{google_coldline} and Archive~\cite{google_archive} storage, and the archive tier~\cite{azure_tier} in Azure Storage~\cite{azure_storage} are popular production-level, centrally managed systems in this category.
 Performance and availability are not key design metrics.
 
-\paragraph{Decentralized deployment}
-Our target deployment environment is a fully \emph{decentralized} and \emph{open} network.
-%The decentralization focuses on the trust model \ie participants, while do not trust any individual other participant, trust the storage network as a whole (based on some preconditions).
-%Such system is usually also geologically decentralized, though this property is not directly leveraged and the work does not focus on the challenges caused by it.
+\paragraph{\textbf{Deployment and failure model}}
+Given the durability challenges of centrally managed storage systems (\autoref{sec:intro}), we target deployments in a \emph{decentralized} and \emph{open} network.
 The deployment model mirrors existing permissionless blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
 There is no central entity to manage or administer the system.
-Participants of the network belong to different administrative organizations, and do not trust entities outside their own organizations.
-The network is \emph{permissionless}, \ie, anyone can join the network without any authorization required, and can leave at any time.
+Participants of the network belong to different administrative organizations~\footnote{The model permits single-participant-organizations, effectively individuals joining the network.}.
+They do not \emph{trust}, nor could they \emph{control}, entities outside their own organizations.
+This ensures that the behavior of one organization cannot violate the durability guarantees of the system.
 
-Each participating node has some local storage for storing data, as well as network access to the wide area network.
+The network is \emph{permissionless}, \ie, anyone can join the network without any authorization required, and can leave at any time.
+This open model typically leads to nodes distributed across geographical locations around the globe.
+Each participating node has some local storage for storing data and network access to the wide area network.
 There is, however, no requirement on the type, speed, or quality of their physical storage or network devices.
+
 Storage devices can fail due to hardware issues or external events (\eg, natural disasters).
-Recoverable transient failures do not impact storage durability.
-Participants can be either \emph{honest} or \emph{adversarial}.
-Honest nodes follow the storage protocol exactly, while adversarial nodes can deviate arbitrarily from the protocol.
-%\sgd{Honest nodes, though honest, still fails from time to time; noticeably, all nodes eventually fail.}
-Adversaries may also collude and launch attacks to compromise other participants.
+Once a storage device fails, all objects stored on the device are lost permanently.
+Since the network is permissionless, a node can leave the system at any point;
+the effect is identical to a failure to all its storage devices.
+We also consider \emph{adversarial} participants in the network.
+Adversaries can deviate arbitrarily from the storage protocol, including deleting any stored objects.
+They may also collude and attack other \emph{honest} participants in the network.
+Similar to other BFT work, we only make weak assumptions about the total attack power of the adversaries.
+Note that recoverable transient failures, \eg, temporary network issues and node reboots, do not impact storage durability.
 
 \iffalse
 Our target environment demands stronger fault tolerance.
