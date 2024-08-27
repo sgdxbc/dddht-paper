@@ -8,26 +8,50 @@ Erasure coding primitives.
 $\fn{Encode}(\var{data object}, \var{id}) \rightarrow \var{fragment}$
 $\fn{Decode}(\{(\var{id}_1, \var{fragment}_1), (\var{id}_2, \var{fragment}_2), \dots\}) \rightarrow \var{data object}$
 
-Outbound interfaces $\fn{Put}(\var{data object})$ and $\fn{Get}(\var{hash}_{data object})$ can be invoked on every storage node.
+Public interfaces: $\fn{Put}(\var{data object})$ and $\fn{Get}(\var{hash}_{data object})$.
+Can be invoked on every storage node.
 \sgd{Discussion faulty behavior on \fn{Put}? Faulty \fn{Get} can be easily identified.}
 
+Challenge: no explicit insight on organizational correlation to guide data placement.
+Solution: only utilize the global placement group \ie store every data object on every storage node.
+The \emph{global placement group only} design brings the following three challenges.
+
+Challenge: large scale fragment distribution; unaffordable overhead of (centralized) coordination.
+Solution: rateless erasure code; every storage node naturally stores different fragments without the need of further interference.
+
+Challenge: verifying integrity of unbounded number of different fragments.
+Solution: "expanded" storage layout of packets + client signed fragment merkle tree.
+\sgd{From now on use "packet" to reference to LT code encoded blocks; "fragment" for data object splits.}
+
+Challenge: offset the redundancy variance by the change of the system scale.
+Solution: fine grained packets/fragments + random eviction.
+\sgd{A bit yet to design on scaling down.}
+
 \fn{Put}.
-Gossip data object hash.
-Every storage node request fragment from \fn{Put} node.
-The \fn{Put} node encode fragment for every node with different $\var{id}$s and response.
-\sgd{Optimization: delegated encoding service.}
+Prepare data object: split into fragments, calculate fragment hashes, construct merkle tree, sign root hash.
+Root hash as the identifier of the data object.
+Signature + merkle hashes as the fragment certificates.
+Gossip (the identifier of) the data object.
+Each storage node calculates the number of packets to store (based on the estimation of the total number of storage nodes). 
+Locally decides the fragments of the stored packets.
+Request desired fragments from \fn{Put} node.
 
 \fn{Get}.
-Gossip data object hash.
-Every storage node push fragment (with its $\var{id}$) to \fn{Get} node.
+Gossip data object identifier.
+Every storage node push fragments to \fn{Get} node.
 Recover the data object.
 
-Maintenance.
-Fresh storage node gossip once during initialization.
-Every storage node push stored fragments (with its $\var{id}$ and data object hash) to the fresh node.
-The fresh node recover data objects from received fragments, encode a distinct (random) fragment for itself and store.
+Fresh node bootstrap.
+Fresh storage node learn about the present data objects.
+Fresh node decides the fragments of the stored packets.
+Fresh node request desired fragments through gossip.
+\sgd{potential optimization here}
 
-\sgd{Optionally: bounding per storage node capacity by random fragment eviction.}
+Periodical estimation of the total number of nodes.
+Though gossip/random sampling.
+\sgd{Place a concrete solution here.}
+If there's significant increment, randomly discard packets.
+\sgd{Decrement: either request fragments, or contact client (\ie not properly handle it)}
 \end{outline}
 
 As shown in \autoref{sec:simulation}, prior decentralized storage systems are vulnerable to data losses under realistic fault models.
