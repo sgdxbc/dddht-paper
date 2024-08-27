@@ -1,3 +1,53 @@
+\section{Evaluation}
+\label{sec:eval}
+
+Potential comparison systems to evaluate:
+
+Full replication system.
+Each object is stored on all storage nodes using a dissemination protocol.
+When a new node joins the system, it receives all object copies from neighbor nodes.
+
+BFT replication system.
+Each object is replicated on $\frac{N}{3} + 1$ nodes.
+The mapping between objects and nodes is the metadata.
+The metadata is maintained by a dedicated deployment through a BFT protocol.
+The metadata deployment also monitors storage nodes, and performs repair when nodes fail.
+This could be represented by the OceanStore archival storage, which also supports erasure coding.
+
+Glacier~\cite{glacier}.
+Each object is encoded into $n$ fragments, $r$ of which is sufficient to restore the object.
+Each object is assigned a key $k$.
+Full replicas of the object are stored at position $k$.
+Fragments of the object are stored at equidistant points from $k$ in the hash ring.
+Repair:
+Issues:
+The failure model does not account for Byzantine behaviors.
+The encoding/decoding complexity of RS code is not practical for higher fault tolerance requirements.
+Durability guarantee of the system does not adapt to changing system size (and therefore changing adversarial power).
+
+OceanStore archival storage~\cite{oceanstore}.
+Each object is encoded with an erasure code.
+Distribution of code symbols is done centrally to minimize correlated failures.
+A distributed, fault-tolerant data structure is used to track the location of all objects.
+Central process to sweep and repair objects periodically.
+
+Carbonite~\cite{carbonite}.
+Reintegration: tracks replicas which have failed, in case those failures are transient.
+This reduces the number of replicas and repair traffic due to transient failures.
+Implemented using a DHT.
+Each node is responsible for a portion of the hash ring.
+Two implementation variants:
+First, object replicas are also assigned using the DHT.
+The scope is small, and nodes do not need to explicitly track failed replicas.
+Monitoring only happens within the DHT ring region.
+Second, object replicas are distributed globally (large scope).
+The DHT maintains the distribution database.
+In this case, each node needs to monitor almost all other nodes.
+Issues:
+High storage overhead due to full replication.
+DHT-based distribution won't have enough redundancy to tolerate adversarial attacks.
+
+\iffalse
 We use two types of experiments to evaluate \sys: discrete event simulation and physical deployment on geo-distributed EC2 virtual machines.
 Unless otherwise specified, we use $\kin = 32, R = 80$ for the inner code,
 % We implement the outer code using rateless erasure code with randomly generated indices.
@@ -269,6 +319,7 @@ Chunk repair incurs significantly less CPU overhead, as it only involves the inn
 %Finally, we accumulated the total outbound traffic and the CPU time from each peer at the end of the 10 minutes period.
 %We also measured the result of an idle system that does not store any data, only maintain DHT information and regular heartbeat.
 %All data shows in the figure has been subtracted by this baseline.
+\fi
 
 \iffalse
 \subsection{Discussion}

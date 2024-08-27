@@ -1,3 +1,6 @@
+\section{\sys Protocol}
+\label{sec:protocol}
+
 \begin{outline}
 Network primitives.
 Point to point messages.
@@ -53,6 +56,65 @@ Though gossip/random sampling.
 If there's significant increment, randomly discard packets.
 \sgd{Decrement: either request fragments, or contact client (\ie not properly handle it)}
 \end{outline}
+
+\lijl{
+    We should first define the system model and the objectives.
+    Here is one example:
+
+    The system consists of $T$ of total storage capacity.
+    At most $\frac{T}{3}$ of storage space is controlled or compromised by adversaries.
+    For simplicity, we assume the storage capacity on each storage node is $t$.
+    There are therefore $\frac{T}{t}$ storage nodes, and at most $\frac{T}{3t}$ nodes are controlled by adversaries.
+
+    Durability goal:
+    Any stored object can be recovered, even if \emph{any} $\frac{T}{3t}$ of storage nodes permanently lose all their data.
+
+    Capacity goal:
+    The total object storage capacity (number of object stored) increases linearly with the number of storage nodes in the system.
+
+    Other goals:
+    The system should avoid BFT consensus protocols.
+    The system should adapt to dynamic changes in system size (with adversarial power changes accordingly).
+}
+
+\lijl{
+    Possible solutions:
+
+    Solution 1:
+    Store copies of each object on $\frac{T}{3t} + 1$ storage nodes.
+    The solution satisfies the durability goal.
+    However, suppose each object has size $o$, the total object storage capacity is roughly $\frac{t}{o} * 3$, which does not increase with more storage nodes.
+    The solution also requires BFT consensus to decide which $\frac{T}{3t}$ storage nodes to store copies of an object.
+    (Alternatively, can statically assign object hashes to nodes.)
+
+    Solution 2:
+    Encode each object into $n = k + r$ symbols, where $r = \frac{T}{3t}$.
+    The $n$ symbols are stored on $n$ storage nodes.
+    The solution satisfies the durability goal.
+    The redundancy level is $\frac{r}{k}$.
+    To satisfy the capacity goal, $k$ needs to increase proportionally to $r$.
+    Challenge: the solution requires large $k$ and $r$ values for large deployments.
+    Do practical erasure codes efficiently support large $k$ and $r$?
+    Is there any theoretical limitation?
+    Is there any performance implication of larger $k$ and $r$?
+
+    Solution 2A:
+    Use a fixed-rate code, \eg, RS code.
+    Challenge: the code generates fixed $k + r$ distinct symbols.
+    To ensure durability, each of the $n$ nodes needs to store a unique symbol.
+    The initial distribution can be done by the client (too much client overhead?).
+    However, recovery still requires some form of BFT consensus to ensure unique symbol distribution, which violates our goals.
+
+    Solution 2B:
+    Use a rateless code, \eg, fountain code.
+    The code generates an infinite symbol sequence.
+    Each of the $n$ nodes can randomly pick a symbol in the sequence with negligible collision probability.
+    This should be the target solution.
+}
+
+\lijl{
+    Challenges:
+}
 
 As shown in \autoref{sec:simulation}, prior decentralized storage systems are vulnerable to data losses under realistic fault models.
 In this section, we present a preliminary design of a new decentralized storage protocol, \sys.
