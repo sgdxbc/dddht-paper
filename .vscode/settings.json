@@ -9,6 +9,7 @@
         "\\footnote{}": "dummy",
         "\\wh": "dummy",
         "\\wl": "dummy",
+        "\\msg{}{}": "dummy",
         "\\mtype{}": "dummy",
     },
     "ltex.bibtex.fields": {
