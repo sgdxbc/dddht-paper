@@ -15,28 +15,23 @@
 \excludecomment{outline}
 \fi
 
-\ifarxiv
-\newcommand{\sys}{V\textsc{ault}\xspace}
-\else
-\newcommand{\sys}{E\textsc{ntropy}\xspace}
-\fi
-
-\newcommand{\query}{\textsc{query}\xspace}
-\newcommand{\store}{\textsc{store}\xspace}
-\newcommand{\del}{\textsc{delete}\xspace}
-
-\newcommand{\kout}{\ensuremath{K_{outer}}\xspace}
-\newcommand{\kin}{\ensuremath{K_{inner}}\xspace}
-
-\newcommand{\fn}[1]{\ensuremath{\textsc{#1}}\xspace}
-\newcommand{\var}[1]{\mathit{#1}\xspace}
-\newcommand{\msg}[2]{\ensuremath{\langle \textsc{#1}, #2 \rangle}\xspace}
-\newcommand{\mtype}[1]{\textsc{#1}\xspace}
+\newcommand{\eg}{e.g.\@\xspace}
+\newcommand{\ie}{i.e.\@\xspace}
 
 \def\addgraph#1{
     \centering
     \includegraphics[width=.9\columnwidth]{graphs/#1}
 }
 
-\newcommand{\eg}{e.g.\@\xspace}
-\newcommand{\ie}{i.e.\@\xspace}
+\ifarxiv
+\newcommand{\sys}{V\textsc{ault}\xspace}
+\else
+\newcommand{\sys}{E\textsc{ntropy}\xspace}
+\fi
+
+\newcommand{\fn}[1]{\ensuremath{\textsc{#1}}\xspace}
+\newcommand{\var}[1]{\ensuremath{#1}\xspace}
+\newcommand{\msg}[2]{\ensuremath{\langle \textsc{#1}, #2 \rangle}\xspace}
+\newcommand{\msig}[3]{\ensuremath{\langle \textsc{#1}, #2 \rangle_{\sigma{}_#3}}\xspace}
+\newcommand{\mtype}[1]{\textsc{#1}\xspace}
+\newcommand{\sig}[1]{\ensuremath{\sigma{}_#1}\xspace}

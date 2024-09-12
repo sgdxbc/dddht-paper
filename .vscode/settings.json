@@ -10,7 +10,9 @@
         "\\wh": "dummy",
         "\\wl": "dummy",
         "\\msg{}{}": "dummy",
+        "\\msig{}{}{}": "dummy",
         "\\mtype{}": "dummy",
+        "\\fn{}": "dummy",
     },
     "ltex.bibtex.fields": {
         "title": false,
