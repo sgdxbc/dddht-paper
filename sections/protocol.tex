@@ -1,6 +1,175 @@
 \section{\sys Protocol}
 \label{sec:protocol}
 
+We now propose \sys, a decentralized storage system design that provides strong durability guarantee.
+
+\subsection{System Model}
+\label{sec:protocol:model}
+
+\sys operates in a permissionless setting.
+Nodes can join or leave the system at any time.
+A node rejoining the system is equivalent to a transient node failure.
+Each node maintains $S$ amount of storage capacity.
+For participants with higher capacity, they divide their storage into ``virtual'' nodes~\cite{chord} each with storage capacity $S$.
+
+We assume that at most $\frac{1}{3}$ of the overall system storage capacity is controlled or compromised by adversaries.
+Since each node has a fixed storage capacity, the model is equivalent to a maximum of $\frac{1}{3}$ of the nodes being adversarial, similar to prior BFT works.
+Adversaries can deviate arbitrarily from the protocol;
+all other nodes are honest.
+Tolerating Sybil attacks is out of the scope of our work.
+
+We assume a partially synchronous~\cite{partial_synchrony} network, \ie, there exists an unknown Global Stabilization Time (GST)~\footnote{
+We assume the GST is shorter than the lifetime of storage devices;
+otherwise the system cannot guarantee data durability.
+Given typical disk MTTF values (\eg, more than one million hours), this is a conservative assumption.
+}, after which the network exhibits synchrony.
+Honest nodes can fail.
+However, only permanent failures (\eg, nodes leaving and device failures) and adversarial behaviors can lead to data losses.
+All other recoverable failures (\eg, nodes rebooting after a kernel crash) are equivalent to transient failures.
+
+\subsection{Base Protocol}
+\label{sec:protocol:base}
+
+\begin{figure}
+\begin{mdframed}
+\textbf{Storage API}
+\begin{itemize}
+    \item $\fn{Put}(\var{obj}) \rightarrow \var{h}$:
+    stores an object $\var{obj}$ into the system.
+    When $\var{obj}$ is successfully stored, returns the hash of the object.
+    \item $\fn{Get}(h) \rightarrow \var{obj}$:
+    retrieves an object with a hash $\var{h}$.
+    Returns the original object.
+\end{itemize}
+\textbf{Node State}
+\begin{itemize}
+    \item $\var{frags}: \var{h} \rightarrow \langle \var{idx}, \var{pos} \rangle, \dots$:
+    local storage metadata. It maps an object hash to a list of fragment index and storage location tuples.
+    \item $N$:
+    an estimation of the total number of nodes
+    \item $k$, $\epsilon$:
+    pre-defined constant erasure coding parameters
+\end{itemize}
+\textbf{Auxiliary Functions}
+\begin{itemize}
+    \item $\fn{store}(\var{pos}, \var{bytes})$:
+    writes $\var{bytes}$ into local storage at location $\var{pos}$
+    \item $\fn{load}(\var{pos}) \rightarrow \var{bytes}$:
+    reads local storage at location $\var{pos}$ and returns content $\var{bytes}$
+    \item $\fn{encode}(\var{data}, \var{idx}) \rightarrow \var{f}$:
+    encodes $\var{data}$ using an erasure code and returns the encoded fragment at index $\var{idx}$
+    \item $\fn{decode}(\var{f_1}, \var{f_2}, \dots) \rightarrow \var{data}$:
+    decodes a list of fragments $\var{f_1}, \var{f_2}, \dots$ to produce $\var{data}$
+    \item $\fn{send}(\var{dst}, \var{msg})$:
+    sends a message $\var{msg}$ to a single recipient $\var{dst}$
+    \item $\fn{bcast}(\var{msg})$:
+    broadcasts a message $\var{msg}$ to all the nodes in the system
+\end{itemize}
+\end{mdframed}
+\caption{\sys top-level APIs, node state, and auxiliary functions}
+\label{fig:node-state}
+\end{figure}
+
+We start with a base \sys protocol that ensures object durability.
+The protocol fulfills the goals and addresses the challenges in \XXX, but is rather inefficient.
+We present protocol and design optimizations which improve the practicality of \sys in \autoref{sec:optz}.
+
+The top-level storage API, the local state on each node, and the auxiliary functions used by the protocol are shown in \autoref{fig:node-state}.
+We assume a generic rateless code for the \fn{encode} and \fn{decode} functions.
+The code generates an infinite sequence of encoded fragments, and any $k + \epsilon$ unique fragments can recover the original data.
+\fn{send}() uses a reliable transport protocol such as TCP.
+\fn{bcast}, on the other hand, is best-effort.
+\sys applies an existing P2P dissemination protocol to implement \fn{bcast}.
+Design details of the erasure code, local storage management, and the broadcast primitive are explored in \autoref{sec:optz}.
+We use $\langle m \rangle_{\sigma{}_n}$ to denote a message signed by node $n$.
+We follow the common practice of signing the message digest.
+
+\subsubsection{\fn{Put} Protocol}
+
+When a node $c$ invokes $\fn{Put}(\var{obj})$, it broadcasts a message \msig{StoreRequest}{\var{obj}, h}{c}, where $h$ is the hash of $\var{obj}$.
+\lijl{For now, just broadcast the entire object.
+The design is not practical anyway.}
+Once a node $s$ receives the message, it validates the signature, and generates $\frac{3(k + \epsilon)}{N}$ random coding indices.
+The node can apply additional access control checks;
+details of access control policies are not within the scope of the paper.
+For each generated index $idx$, the node produces a fragment $f$ by invoking $\fn{encode}(\var{obj}, \var{idx})$, allocates a storage location $\var{pos}$, appends $\langle \var{idx}, \var{pos} \rangle$ into $\var{frags}[h]$, and flushes the fragment to local disk by calling $\fn{store}(\var{pos}, f)$.
+After all fragments are stored, $s$ sends a message \msig{StoreReply}{h}{s} to $c$.
+Once $c$ collects $\frac{2}{3N}$ unique acknowledgements for $h$, it considers the \fn{Put} call has completed.
+Since at most $\frac{1}{3N}$ of the received \mtype{StoreReply} are from adversaries, the remaining $\frac{1}{3N}$ honest nodes who replied have stored a total of $k + \epsilon$ fragments.
+This ensures recoverability of the object.
+If $c$ fails to receive sufficient \mtype{StoreReply} after a timeout, it re-broadcasts the \mtype{StoreRequest}.
+
+\subsubsection{\fn{Get} Protocol}
+
+When a node $c$ calls $\fn{Get}(\var{h})$, where $h$ is the hash of the object it intends to read, $c$ broadcasts a \msg{ObjRecover}{h} to the network.
+Upon receiving and validating the request, a node $s$ queries its local state $\var{frags}$.
+If $h$ is present, for each mapped $\langle \var{idx}, \var{pos} \rangle$, $s$ reads the fragment from storage by issuing $\fn{load}(\var{pos})$.
+\sloppy
+Once all stored fragments $f_1, f_2, \dots$ are retrieved, $s$ replies a \msg{FragReply}{h, f_1, f_2, \dots} to $c$.
+When $c$ receives a new \mtype{FragReply} with matching $h$, it buffers the fragments, and calls $\fn{decode}(f_1, f_2, \dots)$ with all buffered fragments.
+The \fn{Get} invocation terminates when the hash of the returned object matches $h$.
+$c$ removes all buffered fragments, and ignores subsequent \mtype{FragReply}.
+Note that nodes do not sign \mtype{FragReply} messages;
+the collecting node validates the received fragments by checking the final object hash.
+\lijl{This version doesn't do access control for reading objects.
+Any node can read any object (which is also required for node join).}
+
+\subsubsection{Node Joining and Leaving}
+\label{sec:protocol:reconfig}
+
+Periodically, each node approximates the current $N$.
+We elaborate the details of this mechanism in \autoref{sec:optz}.
+If the new $N$ deviates from the previous estimation by a margin, the node readjusts its stored fragments for each object to $\frac{3(k + \epsilon)}{N}$:
+If the fragment count decreases (indicating more nodes have joined the system), it simply deletes randomly selected fragments;
+when the count increases, \ie, the system size has reduced, the node generates more fragments.
+To do so, it broadcasts a \mtype{ObjRecover}, recovers the object, generates and stores new fragments with random indices, similar to the \fn{Get} protocol.
+
+When a new node joins the system, it queries a few randomly selected nodes to learn the hash of the objects stored in the system.
+Next, the node initializes each learned object with an empty list in \var{frags}.
+It then performs the above estimation protocol immediate, which builds and stores the desired fragments for all objects.
+Nodes leaving the system has no immediate impact on the remaining participants.
+
+We consider this more ``lazy'' approach for two rationales.
+First, eagerly reacting to membership changes creates significant network traffic, particularly for a system with high churn.
+\lijl{Add some concrete evaluation to demonstrate this?}
+Second, many node failures are recoverable;
+by delaying fragment generation, the protocol avoids performing unnecessary work due to transient behaviors~\cite{carbonite}.
+
+\subsubsection{Node Recovery}
+
+When a node rejoins the network, either after a crash, rebooting, or temporary leaving the system, it recovers its in-memory $\var{frags}$ state by reading from local storage.
+Details of the storage layout are discussed in \autoref{sec:optz}.
+Next, the node performs $N$ estimation (\autoref{sec:protocol:reconfig}), and then resumes normal protocol processing.
+If the node has lost its local storage data, it performs the same joining protocol as a fresh node.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Protocol and Design Details %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Making \sys Practical}
+\label{sec:optz}
+
+\lijl{Local storage management:
+Use local file system for storage management.
+Each object is stored as a directory;
+the directory contains all fragments, each stored in a separate file.}
+
+\lijl{The protocol should optimize bandwidth and compute efficiency when distributing object data.
+Ideally, both should be fully distributed across the network, with minimum redundancy involved.}
+
+\lijl{Issue with object recovery: the client cannot verify the correctness of each received fragment.
+It needs to try all combination of $k + \epsilon$ fragments.}
+
+\lijl{Approximation is done by sending alive-check messages to sampled nodes on the consistent hashing ring.
+Alternative approaches:
+dedicated nodes periodically broadcast to collect ACKs;
+a BFT service: each node periodically reports to the service;
+other prior work.}
+
+\iffalse
+
+% Old content
+
 \begin{outline}
 Network primitives.
 Point to point messages.
@@ -112,126 +281,6 @@ If there's significant increment, randomly discard packets.
     This should be the target solution.
 }
 
-We now propose \sys, a decentralized storage system design that provides strong durability guarantee.
-
-\subsection{System Model}
-\label{sec:protocol:model}
-
-\sys operates in a permissionless setting.
-Nodes can join or leave the system at any time.
-A node rejoining the system is equivalent to a transient node failure.
-Each node maintains $S$ amount of storage capacity.
-For participants with higher capacity, they divide their storage into multiple nodes, each with storage capacity $S$.
-
-We assume that at most $\frac{1}{3}$ of the overall system storage capacity is controlled or compromised by adversaries.
-Since each node has a fixed storage capacity, the model is equivalent to a maximum of $\frac{1}{3}$ of the nodes being adversarial, similar to prior BFT works.
-Adversaries can deviate arbitrarily from the protocol;
-all other nodes are honest.
-Tolerating Sybil attacks is out of the scope of our work.
-
-We assume a partially synchronous~\cite{partial_synchrony} network, \ie, there exists an unknown Global Stabilization Time (GST), after which the network exhibits synchrony.
-Honest nodes can fail.
-However, only permanent failures (\eg, nodes leaving and device failures) and adversarial behaviors can lead to data losses.
-All other recoverable failures (\eg, nodes rebooting after a kernel crash) are equivalent to transient failures.
-
-\subsection{Base Protocol}
-\label{sec:protocol:base}
-
-\begin{figure}
-\begin{mdframed}
-\textbf{Storage API}
-\begin{itemize}
-    \item $\fn{Put}(\var{obj}) \rightarrow \var{h}$:
-    stores an object $\var{obj}$ into the system.
-    When $\var{obj}$ is successfully stored, returns the hash of the object.
-    \item $\fn{Get}(h) \rightarrow \var{obj}$:
-    retrieves an object with a hash $\var{h}$.
-    Returns the original object.
-\end{itemize}
-\textbf{Node State}
-\begin{itemize}
-    \item $\var{frags}: \var{h} \rightarrow \langle \var{idx}, \var{pos} \rangle, \dots$:
-    local storage metadata. It maps an object hash to a list of fragment index and storage location tuples.
-    \item $N$:
-    an estimation of the total number of nodes
-\end{itemize}
-\textbf{Auxiliary Functions}
-\begin{itemize}
-    \item $\fn{store}(\var{pos}, \var{bytes})$:
-    writes $\var{bytes}$ into local storage at location $\var{pos}$
-    \item $\fn{load}(\var{pos}) \rightarrow \var{bytes}$:
-    reads local storage at location $\var{pos}$ and returns content $\var{bytes}$
-    \item $\fn{encode}(\var{data}, \var{idx}) \rightarrow \var{f}$:
-    encodes $\var{data}$ using an erasure code and returns the encoded fragment at index $\var{idx}$
-    \item $\fn{decode}(\var{f_1}, \var{f_2}, \dots) \rightarrow \var{data}$:
-    decodes a list of fragments $\var{f_1}, \var{f_2}, \dots$ to produce $\var{data}$
-    \item $\fn{hash}(\var{data}) \rightarrow \var{h}$:
-    calculates the hash of $\var{data}$
-    \item $\fn{send}(\var{dst}, \var{msg})$:
-    sends a message $\var{msg}$ to a single recipient $\var{dst}$.
-    \item $\fn{bcast}(\var{msg})$:
-    broadcasts a message $\var{msg}$ to all the nodes in the system.
-\end{itemize}
-\end{mdframed}
-\caption{\sys top-level APIs, node state, and auxiliary functions}
-\label{fig:node-state}
-\end{figure}
-
-We start with a base \sys protocol that ensures object durability.
-The protocol fulfills the goals and addresses the challenges in \XXX, but is inefficient.
-We present protocol and design optimizations which improve the practicality of \sys in \autoref{sec:protocol:opt}.
-
-The top-level storage API, the local state on each node, and the auxiliary functions used by the protocol are shown in \autoref{fig:node-state}.
-We assume a generic rateless code for the $\fn{encode}()$ and $\fn{decode}()$ functions.
-The code generates an infinite sequence of encoded fragments, and any $k + \epsilon$ unique fragments can recover the original data.
-Specifics of the erasure code are explored in \autoref{sec:protocol:opt}.
-$\fn{send}()$ uses a reliable transport protocol such as TCP.
-$\fn{bcast}()$, on the other hand, is best-effort.
-\sys applies an existing P2P dissemination protocol to implement $\fn{bcast}$.
-\lijl{The dissemination protocol requires more careful treatment, and potentially some micro-benchmarks.}
-\lijl{We also need more careful local storage designs.
-For example, how fragments and metadata are stored on disk.
-Details can move to \autoref{sec:protocol:opt}.}
-
-\subsubsection{$\fn{Put}$ Protocol}
-
-When a node $c$ invokes $\fn{Put}(\var{obj})$, it broadcasts a message \msg{ObjStore}{h}, where $h$ is the hash of $\var{obj}$.
-Once a node $s$ receives the request, it generates a random number $idx$, and sends a \msg{FragRequest}{h, \var{idx}} to $c$.
-\lijl{What is the range of $idx$?
-How many fragments should $s$ request?
-Even when $\frac{1}{3}$ of the nodes fail, the remaining nodes should store at least $k + \epsilon$ fragments.
-If we can accurately estimate $N$, each node should store at least $\frac{3(k + \epsilon)}{2N}$.}
-$c$ then produces the requested fragment $f$ by invoking $\fn{encode}(\var{obj}, \var{idx})$, and replies $s$ with \msg{FragReply}{h, \var{idx}, f}.
-Upon receiving the reply, $s$ allocates a storage location $\var{pos}$, appends $\langle \var{idx}, \var{pos} \rangle$ into $\var{frags}[h]$, and flushes the fragment to local disk by calling $\fn{store}(\var{pos}, f)$.
-\lijl{$s$ should also check for duplicates.
-How does $s$ allocate storage space?
-This should be fixed-size allocation.
-Allocation map and frags metadata should be written to disk as well.}
-Next, $s$ signals successful fragment store by sending \msg{FragAck}{h, \var{idx}} to $c$.
-Once $c$ collects \XXX unique acknowledgements for $h$, it completes the $\fn{Put}()$ call.
-\lijl{How many ACKs should $c$ collect?
-$c$ needs to ensure that at least $k + \epsilon$ fragments are stored on honest nodes.
-Also discuss retries and retransmissions.}
-\lijl{In this base design, the client node performs all fragment calculation.
-The client needs to transmit at least object-sized data;
-however, in the base design, the client also transmits redundant information.
-An optimized design could distribute both client compute and network bandwidth.
-A challenge is delegation in the presence of adversaries.}
-\lijl{Shall all these messages be signed?}
-
-\subsubsection{$\fn{Get}$ Protocol}
-
-When a node $c$ calls $\fn{Get}(\var{h})$, where $h$ is the hash of the object it intends to read, $c$ broadcasts a \msg{ObjRecover}{h} to the network.
-Upon receiving the recover request, a node $s$ queries its local state $\var{frags}$.
-If $h$ is present, for each mapped $\langle \var{idx}, \var{pos} \rangle$, $s$ reads the fragment $f$ from storage by issuing $\fn{load}(\var{pos})$, and replies a \msg{FragReply}{h, \var{idx}, f} to $c$.
-Once $c$ receives enough \mtype{FragReply}, it recovers the original object by calling $\fn{decode}(f_1, f_2, \dots)$ and checks that the hash of the object matches $h$.
-\lijl{In this base design, the client receives redundant data.
-An optimized design could apply some form of streaming-based design to stop transmission once receives enough data.}
-\lijl{Another issue: the client cannot verify the correctness of each received fragment.
-It needs to try all combination of $k + \epsilon$ fragments.}
-
-\subsubsection{Node Joining and Leaving}
-
 When a node $j$ joins the system, it broadcasts a \msg{NodeJoin}{\var{id}} message.
 Upon receiving a \mtype{NodeJoin}, a node $n$ queries its local $\var{frags}$, and replies to $j$ with \msg{JoinReply}{h_1, h_2, \dots}, where $h_1, h_2, \dots$ is a list of object hashes in $\var{frags}$.
 For each unique object hash $h$ in any received \mtype{JoinReply}, $j$ issues a \msg{ObjRecover}{h} to recover the original object $\var{obj}$, similar to the $\fn{Get}$ protocol.
@@ -241,28 +290,4 @@ Since $N$ increases, existing nodes can safely discard some random fragments.
 However, they shouldn't do it eagerly (to amortize cost, to avoid doing unnecessary work, and to reduce impact on transient behaviors).
 We can use a unified, periodic protocol to do $N$ estimation, and to discard or acquire fragments based on the new $N$.}
 
-Nodes leaving the system has no immediate impact on the remaining participants.
-Periodically, each node approximates the current $N$, \ie, the total number of alive participants.
-Approximation is done by sending alive-check messages to sampled nodes on the consistent hashing ring.
-\lijl{Alternative approaches:
-dedicated nodes periodically broadcast to collect ACKs;
-a BFT service: each node periodically reports to the service;
-other prior work.}
-If the new $N$ deviates from the previous estimation by a margin, the node readjust its stored fragments for each object according to $\frac{3(k + \epsilon)}{2N}$.
-If the fragment count decreases (indicating more nodes have joined the system), the node simply drops randomly selected fragments;
-when the fragment count increases (the system size has reduced), the node generates more fragments, similar to the protocol when a new node joins the system.
-We consider this more ``lazy'' approach for two rationales.
-First, eagerly reacting to membership changes creates significant network traffic, particularly for a system with high churn.
-\lijl{Add some concrete evaluation to demonstrate this?}
-Second, many node failures are recoverable;
-by delaying re-adjusting stored fragments, the protocol avoids doing unnecessary work due to transient behaviors.
-
-\subsubsection{Node Recovery}
-
-When a node $r$ rejoins the network (either after a crash, rebooting, or temporary leaving the system), it recovers its in-memory $\var{frags}$ state by reading from local storage.
-\lijl{More details here after we finalized on-disk layout.}
-Next, $r$ performs $N$ estimation, and then resumes normal protocol processing.
-If $r$ has lost its local storage data, it performs the same joining protocol as a fresh node.
-
-\subsection{Protocol Optimizations}
-\label{sec:protocol:opt}
+\fi
