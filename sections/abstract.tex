@@ -1,15 +1,3 @@
 \begin{abstract}
-
-Building open decentralized storage system across administrative domains benefit end users by decoupling the durability guarantee from the trust to individual operators.
-However, the permissionless setup also brings its unique challenges of dealing with unpredictable correlated failures.
-In this work, we propose a proper fault model for decentralized storage systems as the key measure of the durability of such systems.
-This novel fault model precisely captures the unpredictability of failure correlation, or equivalently, failure domains, in a decentralized system.
-
-Under this new fault model, our simulation results demonstrate that prior storage systems are vulnerable to data losses.
-%Motivated by the vulnerability of data loss of prior works under this fault model
-We then design \sys, a decentralized storage system that can tolerate realistic correlated failures with a failure-domain-agnostic design.
-Unlike previous solutions, \sys distributes encoded fragments to as many storage nodes as possible, ensuring that data objects are distributed into sufficient failure domains with overwhelming probability.
-Moreover, \sys deploys rateless erasure code to enable fragment repair of large erasure codes in an open network without explicit coordination.
-We also discuss a confidential sampling approach to tolerate active adversaries.
-We believe \sys can serve as a promising direction for designing durable decentralized storage system against unpredictable correlated failures.
+Building open decentralized storage system across administrative domains benefit end users by decoupling the durability guarantee from the trust to individual operators. However, the permissionless setup also brings its unique challenges of dealing with unpredictable correlated failures. This work focuses on the strong Byzantine fault scenarios where the number of faulty nodes is proportional to the number of entire system (e.g. 1/3). We discuss the durability problem of deploying fixed size placement groups under this system setting, revealing the inability of preventing data loss with previous works. We propose a novel storage solution that tolerates such correlations by disseminating the data blocks to the whole network, and eventually achieves durability under strong Byzantine fault assumptions. And we finally address the challenges of data dissemination in a system-wide scale to make the solution practical in reality. The evaluation shows the performance characteristics of our storage protocol is comparable to existing works while tolerating stronger threat models.
 \end{abstract}
