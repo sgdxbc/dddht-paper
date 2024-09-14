@@ -26,11 +26,11 @@ Performance and availability are not key design metrics.
 Given the durability challenges of centrally managed storage systems (\autoref{sec:intro}), we target deployments in a \emph{decentralized} and \emph{open} network.
 The deployment model mirrors existing permissionless blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
 There is no central entity to manage or administer the system.
-Participants of the network belong to different administrative organizations~\footnote{The model permits single-participant-organizations, effectively individuals joining the network.}.
-They do not \emph{trust}, nor could they \emph{control}, entities outside their own organizations.
-This ensures that the behavior of one organization cannot violate the durability guarantees of the system.
+Participants of the network belong to different administrative organizations~\footnote{The model permits single-participant-organizations, or equivalently, individual entities joining the network.}.
+They do not \emph{trust}, nor could they \emph{control} entities outside their own organizations.
+This ensures that the behavior of a single organization cannot violate the durability guarantees of the entire system.
 
-The network is \emph{permissionless}, \ie, anyone can join the network without any authorization required, and can leave at any time.
+The network is \emph{permissionless}, \ie, anyone can join the network without any authorization, and can leave at any time.
 This open model typically leads to nodes distributed across geographical locations around the globe.
 Each participating node has some local storage for storing data and network access to the wide area network.
 There is, however, no requirement on the type, speed, or quality of their physical storage or network devices.
@@ -42,7 +42,7 @@ the effect is identical to a failure to all its storage devices.
 We also consider \emph{adversarial} participants in the network.
 Adversaries can deviate arbitrarily from the storage protocol, including deleting any stored objects.
 They may also collude and attack other \emph{honest} participants in the network.
-Similar to other BFT work, we only make weak assumptions about the total attack power of the adversaries.
+Similar to other BFT work, we only make assumptions about the \emph{total attack power} of the adversaries.
 Note that recoverable transient failures, \eg, temporary network issues and node reboots, do not impact storage durability.
 
 \iffalse
@@ -57,86 +57,65 @@ The storage system needs to ensure data durability even when nodes fail and depa
 \label{sec:background:durability}
 
 Durability requires that stored objects are never \emph{lost}.
-Data losses occur when the device storing an object fails, when the node hosting the device permanently fails or leaves the system, or when the object is intentionally erased.
+Data losses occur when the device storing an object fails, when the node hosting the device permanently fails or leaves the system, or when the object is erased.
 Since these events occur regularly in large deployments, storage systems distribute copies of each object to multiple storage devices.
 As long as not all devices storing a copy fail simultaneously, the object can be recovered.
 To maintain the desired fault tolerance level, storage systems perform periodic repair to redistribute lost copies due to failures.
 
-Simply replicating objects introduces large redundancy, which impacts the overall storage efficiency.
+Simply replicating objects introduces high redundancy, which impacts the overall storage efficiency.
 To reduce redundancy without compromising durability, modern storage systems apply erasure coding~\cite{google_storage,was,hitchhiker,xor}.
-Erasure coding encodes an object into fragments.
-A subset of fragments can be used to recover the original object.
+A $(n, k)$ erasure coding encodes an object into $n$ fragments.
+Any subset of $k$ fragments can be used to recover the original object.
 In particular, maximum distance separable (MDS) codes, e.g., Reed-Solomon code~\cite{reed-solomon}, are a common choice.
-Replication, in fact, is a simple form of erasure coding.
+Replication, in fact, is a simple form of erasure coding where $k$ is $1$ and an identity function is used for both encoding and decoding.
 
-\emph{Placement group} is a critical design decision for storage systems.
-A placement group consists of a set of storage devices.
-The encoded fragments (or copies) of an object are distributed to devices within a placement group.
-To ensure that the fragments are not lost simultaneously which leads to data loss, devices in a placement group should have low failure correlation.
+Durability guarantee of a storage system strongly depends on the choice of \emph{placement groups}.
+A placement group consists of a set of storage devices;
+a storage deployment typically has multiple placement groups.
+The encoded fragments of an object are distributed to devices within a single placement group.
+To ensure durability, devices in a placement group should have low \emph{failure correlation} so that simultaneous fragment losses for any object is minimized.
 The placement groups are either assigned by an operator in a centrally managed system, or decided by the storage protocol in a decentralized deployment.
 
-\iffalse
-No matter being centrally managed or decentralized, distributed storage systems more or less work in the similar way to ensure durability.
-\sgd{Rephrase the text so we can cite the decentralized storage works here.}
-The data objects are encoded into fragments and distributed to different storage nodes, so that that failure of any single storage node would not immediately result in data loss.
-Then the system constantly detect for storage failures, and repair the fragments to bring the situation back to the same as before the failure happened.
-
-\sgd{edited}
-The simplest encoding is replication, where the encoded fragments are just plain copies of the original object.
-However, replication introduces large redundancy, negatively impacting the overall storage efficiency.
-To reduce storage redundancy without compromising data reliability, modern storage systems apply erasure coding~\cite{google_storage,was,hitchhiker,xor}.
-In particular, maximum distance separable (MDS) codes, e.g., Reed-Solomon code~\cite{reed-solomon}, are a common choice.
-% Being centrally managed, the system administrator defines \emph{placement groups}.
-Each erasure code strip (or replicas of an object) is mapped to one \emph{placement group}, \ie the group of storage nodes each of which stores a fragment for the data object, defined either by the system administrator in a centrally managed storage or automatically by protocol in a decentralized storage.
-% To reduce the risk of data losses, placement groups are chosen to minimize correlated failures, where factors such as failure domains and annualized failure rate (AFR) of the storage devices~\cite{pacemaker,tiger} are usually considered.
-The placement groups are expected to have minimal correlations, to avoid data loss because of the correlated failures within placement groups.
-
-\paragraph{Correlated failures in decentralized systems.}
-~\sgd{Consider move the text from next section to here.}
-\fi
-
 \subsection{Prior Solutions}
-\label{sec:background:relwk}
+\label{sec:background:prior}
 
-With the popularity of peer-to-peer file sharing networks in the late 90s, designing storage systems from a network of decentralized computers was an active research topic at the time.
-Representative work during this period include xFS~\cite{xfs}, Farsite~\cite{farsite}, OceanStore~\cite{oceanstore}, CFS~\cite{cfs}, Glacier~\cite{glacier}, Carbonite~\cite{carbonite}, and IrisStore~\cite{irisstore}.
+In centrally managed storage systems~\cite{amazon_glacier,azure_storage,gfs,silica}, the operators have complete knowledge about the deployment: makes, models, and batches of disks, identity of servers that reside in the same rack/pod/cluster, the network topology, power distribution and redundancy, etc.
+They can, therefore, derive a good estimation of all the \emph{failure domains} and their relative failure probability.
+For instance, servers within the same rack have a higher correlated failure rate than those from distinct racks;
+disks from the same make and model are more likely to fail simultaneously than those from different vendors.
+With accurate failure domain information, the operators can assign placement groups with minimum correlated failure probabilities.
+A typical placement group consists of disks of different makes and models, and those mounted in distinct racks, power domains, or geographical locations~\cite{azure_storage,tiger}.
+
+Decentralized storage systems~\cite{xfs,farsite,oceanstore,cfs,glacier,carbonite,irisstore,ipfs}, however, lack accurate failure correlation information.
 These systems aggregate storage capacity on computers across geographical locations to provide durable and available storage services.
-Storage devices in the system are managed by mutually untrusted entities.
-Distributed hash tables (DHT)~\cite{chash, chord} are commonly used to place and locate objects.
-To handle correlated failures, some systems~\cite{oceanstore} apply introspection to predict failure correlations.
+Storage devices in the system are managed by mutually untrusted entities, and adversarial participants are common.
+Without a centrally trusted management service, prior solutions distribute object fragments (or replicas) to storage nodes using two general approaches:
 
-\iffalse
-Departing from centralized deployment, handling unreliable and malicious participants is a key design goal.
- To provide data availability and consistency in the presence of Byzantine failures, they apply BFT protocols~\cite{pbft} to replicate file data and metadata to groups of servers.
- BFT protocols, however, require less than $1/3$ of the replication group to be Byzantine faulty.
- These solutions often sidestep the issue and sometimes rely on centralized, trusted certification authorities~\cite{farsite}, equivalent to a permissioned setting.
-Limited by the hardware resources, those works focused on extending capabilities of single machine while still maintaining adequate durability.
-The trend was quickly superseded by the centrally managed solutions as part of the emergence of cloud services.
-\fi
+\noindent\textbf{Full Replication}.
+Each object is fully replicated on all storage nodes~\cite{bitcoin,ethereum,fabric}.
+The system runs a BFT protocol~\cite{pbft,hotstuff,algorand} to tolerate faults and adversaries.
+Objects are durable as long as not more than $\frac{1}{3}$ of the participants are faulty.
+The system effectively consists of a single placement group.
 
-Recently, there has been renewed interest in decentralized storage, following the success of blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
-One example is IPFS~\cite{ipfs}, a widely deployed decentralized storage network that consists of more than 400 thousand peers globally.
-IPFS divides user files into uniquely identified chunks.
-File metadata is represented as a Merkle Directed Acyclic Graph (DAG)~\cite{merkle_dag} constructed from the constituent file chunks.
-IPFS uses content addressing through the Kademlia~\cite{kademlia} DHT.
+\noindent\textbf{Selective Replication}.
+The system distributes full copies or encoded fragments of each object only to a subset of the storage nodes~\cite{farsite,past,cfs,glacier,carbonite,irisstore}.
+The distribution is commonly done through a distributed hash table (DHT)~\cite{chash,chord,kademlia} or a BFT metadata service.
+For DHT-based systems, objects and storage nodes are hashed onto the same hash space.
+Copies or fragments of an object are distributed to nodes either in the neighborhood~\cite{cfs,past,carbonite} or at specific offsets~\cite{glacier} of the object hash.
+
+IPFS~\cite{ipfs} is a modern, decentralized storage network with more than 400 thousand peers globally.
+IPFS uses content addressing through a Kademlia~\cite{kademlia} DHT.
 By writing to the DHT, peers storing a file chunk announce a publisher record which maps the chunk to the peer identifier.
-The DHT replicates the publisher record to peers in proximity in the hash space and handles peer failures through gossip.
+The DHT replicates the publisher record (\ie, metadata) to peers in proximity in the hash space and handles peer failures through gossip.
 Retrieving a file involves querying the DHT for the publisher records and the address of the publishers for each file chunk.
 IPFS, however, does not offer any file durability guarantee.
 File content in IPFS is only stored on the original file publishers;
 the protocol has no explicit redundancy mechanism to enforce file content durability.
 
-\sgd{In another word, it relies on external services for dealing with placement groups, and eventually providing durability.}
-
-\paragraph{Handling correlated failures}
-As discussed in \autoref{sec:background:durability}, correlated failures can lead to data losses even when the storage system applies erasure coding and object repairs.
-In a centrally managed systems, failure correlations are known to the operators;
-they can therefore reason about failure domains with high accuracy in their deployments.
-Decentralized environment, however, lacks global failure correlation information.
-Without a reliable notion of failure domains, prior systems~\cite{xfs,farsite,cfs,glacier,carbonite,irisstore} assume failures in decentralized environments are independent.
-As we demonstrated in \autoref{sec:simulation}, such assumptions can lead to significant data losses.
-OceanStore~\cite{oceanstore} leverages introspection to predict correlated failures.
-Prior research~\cite{glacier} has shown that accurate prediction of failure correlation is unrealistic in decentralized systems.
+\iffalse
+IPFS divides user files into uniquely identified chunks.
+File metadata is represented as a Merkle Directed Acyclic Graph (DAG)~\cite{merkle_dag} constructed from the constituent file chunks.
+\fi
 
 \iffalse
 For the decentralized storage that claims to provide durability, the unique challenging characteristics of correlated failures in decentralized systems are not specially handled.
@@ -149,13 +128,51 @@ Essentially, those works \emph{assume} there's no correlation among the distribu
 \sgd{There seems to be some works considering geological information, but that was for fast routing I remembered?}
 \fi
 
+\subsection{Durability Challenge in Decentralized Deployments}
+
+In contrary, a decentralized system lacks such centralized, accurate information to deduce failure correlation.
+Participants are from distinct administrative and management domains;
+for security and privacy concerns, they do not expose sensitive information such as location, identities, and system configurations.
+Consequently, no single entity in the system has complete, prior knowledge about the failure domains of all storage devices.
+For instance, two nodes might locate within the same rack or reside in two continents;
+no system participant, however, can \emph{reliably} determine the true case.
+Failure correlations are only revealed after simultaneous failures actually occur.
+Unfortunately, such information is already \emph{too late} to prevent durability violations.
+
+As discussed in \autoref{sec:background:durability}, correlated failures can lead to data losses even when the storage system applies erasure coding and object repairs.
+In a centrally managed systems, failure correlations are known to the operators;
+they can therefore reason about failure domains with high accuracy in their deployments.
+Decentralized environment, however, lacks global failure correlation information.
+Without a reliable notion of failure domains, prior systems~\cite{xfs,farsite,cfs,glacier,carbonite,irisstore} assume failures in decentralized environments are independent.
+As we demonstrated in \autoref{sec:simulation}, such assumptions can lead to significant data losses.
+OceanStore~\cite{oceanstore} leverages introspection to predict correlated failures.
+Prior research~\cite{glacier} has shown that accurate prediction of failure correlation is unrealistic in decentralized systems.
+
+To handle correlated failures, some systems~\cite{oceanstore} apply introspection to predict failure correlations.
+
+
+\iffalse
+Recently, there has been renewed interest in decentralized storage, following the success of blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
+\fi
+
+\iffalse
+Departing from centralized deployment, handling unreliable and malicious participants is a key design goal.
+ To provide data availability and consistency in the presence of Byzantine failures, they apply BFT protocols~\cite{pbft} to replicate file data and metadata to groups of servers.
+ BFT protocols, however, require less than $1/3$ of the replication group to be Byzantine faulty.
+ These solutions often sidestep the issue and sometimes rely on centralized, trusted certification authorities~\cite{farsite}, equivalent to a permissioned setting.
+Limited by the hardware resources, those works focused on extending capabilities of single machine while still maintaining adequate durability.
+The trend was quickly superseded by the centrally managed solutions as part of the emergence of cloud services.
+\fi
+
+\iffalse
 Another line of work~\cite{filecoin,ar} uses incentive-based approach to maintain durability.
 By incentivizing participates to store objects longer, the systems aim to reduce the overall rate of failures and adversarial behaviors.
-%The cost is eventually passed on to the end user, resulting in less attractive expensive storage services.
 However, the probability of correlated failures caused by external events, \eg, power outages and nature disasters, is not affected by incentives.
 In fact, the systems rely on participants to provide their own solutions to tolerate correlated failures.
 These solutions are typically centrally-managed, which defeats the purpose of extending durability using decentralization.
 Users effectively have to trust the fault tolerance solutions of the individual participants that store their data.
+\fi
+
 
 \iffalse
 \paragraph{Methodology of designing durable decentralized storage.}
@@ -302,4 +319,24 @@ Durability guarantee that only depends on overall properties (e.g. faulty portio
 Controllable redundancy.
 
 \sgd{Original content below.}
+\fi
+
+\iffalse
+No matter being centrally managed or decentralized, distributed storage systems more or less work in the similar way to ensure durability.
+\sgd{Rephrase the text so we can cite the decentralized storage works here.}
+The data objects are encoded into fragments and distributed to different storage nodes, so that that failure of any single storage node would not immediately result in data loss.
+Then the system constantly detect for storage failures, and repair the fragments to bring the situation back to the same as before the failure happened.
+
+\sgd{edited}
+The simplest encoding is replication, where the encoded fragments are just plain copies of the original object.
+However, replication introduces large redundancy, negatively impacting the overall storage efficiency.
+To reduce storage redundancy without compromising data reliability, modern storage systems apply erasure coding~\cite{google_storage,was,hitchhiker,xor}.
+In particular, maximum distance separable (MDS) codes, e.g., Reed-Solomon code~\cite{reed-solomon}, are a common choice.
+% Being centrally managed, the system administrator defines \emph{placement groups}.
+Each erasure code strip (or replicas of an object) is mapped to one \emph{placement group}, \ie the group of storage nodes each of which stores a fragment for the data object, defined either by the system administrator in a centrally managed storage or automatically by protocol in a decentralized storage.
+% To reduce the risk of data losses, placement groups are chosen to minimize correlated failures, where factors such as failure domains and annualized failure rate (AFR) of the storage devices~\cite{pacemaker,tiger} are usually considered.
+The placement groups are expected to have minimal correlations, to avoid data loss because of the correlated failures within placement groups.
+
+\paragraph{Correlated failures in decentralized systems.}
+~\sgd{Consider move the text from next section to here.}
 \fi
