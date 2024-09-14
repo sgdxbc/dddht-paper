@@ -69,7 +69,7 @@ Any subset of $k$ fragments can be used to recover the original object.
 In particular, maximum distance separable (MDS) codes, e.g., Reed-Solomon code~\cite{reed-solomon}, are a common choice.
 Replication, in fact, is a simple form of erasure coding where $k$ is $1$ and an identity function is used for both encoding and decoding.
 
-Durability guarantee of a storage system strongly depends on the choice of \emph{placement groups}.
+Durability guarantee of a storage system depends heavily on the choice of \emph{placement groups}.
 A placement group consists of a set of storage devices;
 a storage deployment typically has multiple placement groups.
 The encoded fragments of an object are distributed to devices within a single placement group.
@@ -100,18 +100,61 @@ The system effectively consists of a single placement group.
 \noindent\textbf{Selective Replication}.
 The system distributes full copies or encoded fragments of each object only to a subset of the storage nodes~\cite{farsite,past,cfs,glacier,carbonite,irisstore}.
 The distribution is commonly done through a distributed hash table (DHT)~\cite{chash,chord,kademlia} or a BFT metadata service.
-For DHT-based systems, objects and storage nodes are hashed onto the same hash space.
+For DHT-based systems, objects and storage nodes are hashed into the same hash space.
 Copies or fragments of an object are distributed to nodes either in the neighborhood~\cite{cfs,past,carbonite} or at specific offsets~\cite{glacier} of the object hash.
 
 IPFS~\cite{ipfs} is a modern, decentralized storage network with more than 400 thousand peers globally.
 IPFS uses content addressing through a Kademlia~\cite{kademlia} DHT.
 By writing to the DHT, peers storing a file chunk announce a publisher record which maps the chunk to the peer identifier.
-The DHT replicates the publisher record (\ie, metadata) to peers in proximity in the hash space and handles peer failures through gossip.
+The publisher record thus serves as the metadata.
+The DHT replicates the publisher record to peers in proximity in the hash space and handles peer failures through gossip.
 Retrieving a file involves querying the DHT for the publisher records and the address of the publishers for each file chunk.
 IPFS, however, does not offer any file durability guarantee.
 File content in IPFS is only stored on the original file publishers;
 the protocol has no explicit redundancy mechanism to enforce file content durability.
 
+\subsection{Durability Challenge in Decentralized Deployments}
+
+Unlike centrally managed systems, decentralized storage lacks accurate information to deduce failure correlation.
+Participants are from distinct administrative and management domains;
+for security and privacy concerns, they do not expose sensitive information such as location, identities, and system configurations.
+Consequently, no single entity in the system has complete, prior knowledge about the failure domains of all storage devices.
+For instance, two nodes might locate within the same rack or reside in two continents;
+no system participant, however, can \emph{reliably} determine the true case.
+Failure correlations are only revealed after simultaneous failures actually occur.
+Unfortunately, such information is already \emph{too late} to prevent durability violations.
+
+Without reliable failure domain information, prior systems~\cite{xfs,farsite,cfs,glacier,carbonite,irisstore} leverage randomization to reduce correlated failure rates.
+By distributing object fragments to randomly selected nodes (\eg, hashed IDs in a DHT), these approaches claim that failures within each placement group are effectively \emph{independent}.
+Their durability guarantee, therefore, hinges on this \emph{failure independence} assumption.
+Some system~\cite{oceanstore} uses introspection to predict correlated failures.
+Prior research~\cite{irisstore}, however, has shown that accurate prediction of failure correlation is unrealistic in decentralized environment.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{figures/loss}
+    \caption{Data loss in decentralized stroage}
+    \label{fig:loss}
+\end{figure}
+
+Unfortunately, failure independence only holds in the absence of adversaries.
+When adversarial participants have significant attack power, which is a common assumption for decentralized systems, they can easily subvert the durability guarantees of existing systems that assign placement groups based on randomness or heuristics.
+\lijl{Citations for significant attack power?}
+As illustrated in \autoref{fig:loss}, the encoded fragments of an object are initially stored on a randomly selected set of nodes (\eg, using a DHT).
+Suppose that permanent failures of these nodes in the placement group are indeed independent.
+Location information for the object, however, is public, since it is required for object retrieval and repair.
+Adversaries can learn the identities of the responsible nodes by either observing network traffic or participating in object retrieval.
+As adversaries are typically assumed to have attack power proportional to the overall system capacity, they can concentrate their attack to compromise enough nodes in the placement group.
+By deleting the fragments on the compromised nodes, the object is lost.
+We have also conducted simulations to demonstrate our hypothesis.
+\xxx{Simulation result here.}
+
+\iffalse
+As discussed in \autoref{sec:background:durability}, correlated failures can lead to data losses even when the storage system applies erasure coding and object repairs.
+In a centrally managed systems, failure correlations are known to the operators;
+they can therefore reason about failure domains with high accuracy in their deployments.
+Decentralized environment, however, lacks global failure correlation information.
+\fi
 \iffalse
 IPFS divides user files into uniquely identified chunks.
 File metadata is represented as a Merkle Directed Acyclic Graph (DAG)~\cite{merkle_dag} constructed from the constituent file chunks.
@@ -127,28 +170,6 @@ Essentially, those works \emph{assume} there's no correlation among the distribu
 
 \sgd{There seems to be some works considering geological information, but that was for fast routing I remembered?}
 \fi
-
-\subsection{Durability Challenge in Decentralized Deployments}
-
-In contrary, a decentralized system lacks such centralized, accurate information to deduce failure correlation.
-Participants are from distinct administrative and management domains;
-for security and privacy concerns, they do not expose sensitive information such as location, identities, and system configurations.
-Consequently, no single entity in the system has complete, prior knowledge about the failure domains of all storage devices.
-For instance, two nodes might locate within the same rack or reside in two continents;
-no system participant, however, can \emph{reliably} determine the true case.
-Failure correlations are only revealed after simultaneous failures actually occur.
-Unfortunately, such information is already \emph{too late} to prevent durability violations.
-
-As discussed in \autoref{sec:background:durability}, correlated failures can lead to data losses even when the storage system applies erasure coding and object repairs.
-In a centrally managed systems, failure correlations are known to the operators;
-they can therefore reason about failure domains with high accuracy in their deployments.
-Decentralized environment, however, lacks global failure correlation information.
-Without a reliable notion of failure domains, prior systems~\cite{xfs,farsite,cfs,glacier,carbonite,irisstore} assume failures in decentralized environments are independent.
-As we demonstrated in \autoref{sec:simulation}, such assumptions can lead to significant data losses.
-OceanStore~\cite{oceanstore} leverages introspection to predict correlated failures.
-Prior research~\cite{glacier} has shown that accurate prediction of failure correlation is unrealistic in decentralized systems.
-
-To handle correlated failures, some systems~\cite{oceanstore} apply introspection to predict failure correlations.
 
 
 \iffalse
