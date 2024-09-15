@@ -1,5 +1,48 @@
-\lijl{This section needs some text cutting}
+\section{The \sys Approach}
+\label{sec:approach}
 
+So far, we have discussed two general approaches to provide durability in prior decentralized storage systems.
+Selective replication is effective when failures within each placement group are independent.
+However, we have shown in \autoref{sec:background:loss} that adversaries can break the failure independence assumption and compromise data durability deterministically.
+Full replication addresses this durability issue by storing all objects on all the nodes.
+Even if adversaries can compromise a significant proportion of the system, the remaining honest nodes can still recover all objects.
+
+The obvious downside of full replication is \emph{scalability}.
+Since each node stores all the objects, the system storage capacity is bounded by that of a single node, \ie, adding more nodes to the system does not scale the overall capacity.
+Such limitation makes the full replication approach impractical for most storage scenarios, except rare cases like the blockchain~\cite{bitcoin,ethereum}.
+Even in the blockchain case, the approach prohibits storing large data on-chain, and both Ethereum and Bitcoin are facing storage capacity issues.
+\lijl{Citations here?}
+Note that a partitioning scheme does not fundamentally solve the issue;
+it merely transforms the system to a selective replication approach, which shares the same durability challenge as above.
+
+\subsection{Durability without Compromising Scale}
+
+Is the trade-off between strong durability and scalability fundamental in decentralized storage systems?
+In this work, we challenge this hypothesis by proposing a radical design, \sys.
+To guarantee durability, each object is distributed to \emph{all} the storage nodes.
+By defining a single placement group for the entire system, \sys eschews any reliance on failure correlation prediction, which has been shown to be unreliable in decentralized deployments~\cite{carbonite}.
+Moreover, even when a significant proportion of the system is Byzantine, the approach can ensure durability in the presence of strong adversarial behaviors, similar to existing BFT protocols.
+
+How does \sys scale the system storage capacity if every object is stored on all the nodes?
+Our key insight is to \emph{decouple redundancy from data distribution}.
+Traditionally, redundancy of an object and the placement group size are strongly correlated.
+To handle more failures, prior solutions increase the redundancy level and the placement group size \emph{simultaneously}:
+in a replication system, the system creates more object replicas;
+if erasure coding is applied, more encoded fragments are generated.
+These additional redundancies are then distributed to the larger placement group.
+
+We, however, argue that redundancy and placement groups of a system could be designed \emph{independently}.
+The redundancy level of an object should only depend on the \emph{fault tolerance degree} of the placement group, and more specifically, the \emph{proportion} of storage devices that can fail simultaneously in the group.
+Redundancy, therefore, should be \emph{constant}, regardless of the placement group size.
+To ensure data durability, the system should \emph{evenly distribute} the object and its constant redundancy among all nodes in the placement group.
+Intuitively, even when the adversaries compromise an arbitrary subset of the group, up to the attack limit, the remaining redundancy can still recover the original object.
+In the case of \sys, since there exists a single placement group, \sys evenly distributes an object and its constant redundancy among all the storage nodes.
+
+\subsection{Design Challenges}
+
+\subsection{\sys Overview}
+
+\iffalse
 Why is it hard to guarantee data durability in a decentralized storage system?
 In this section, we analyze key challenges faced by existing systems to prevent data losses in an open, permissionless environment.
 We then present our key principles of enforcing durability, as well as a concrete approach of combining rateless erasure code and verifiable randomness following the principle.
@@ -205,6 +248,7 @@ The ``winning'' hash values serves as \textit{unforgeable tokens} to store the e
 Randomization has been applied by prior systems, such as RAMCloud~\cite{ramcloud} and HDFS~\cite{hdfs}.
 These systems, however, perform \emph{centralized} random replica selection on master nodes --- an approach that fails to work in our target environment.
 By combining VRF and rateless code, our solution enables fully decentralized random peer selection and ensures adversaries have no power to influence selection results.
+\fi
 
 % Obsolete Content
 \iffalse
