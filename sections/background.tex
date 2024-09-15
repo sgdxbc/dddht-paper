@@ -116,6 +116,7 @@ File content in IPFS is only stored on the original file publishers;
 the protocol has no explicit redundancy mechanism to enforce file content durability.
 
 \subsection{Durability Challenge in Decentralized Deployments}
+\label{sec:background:loss}
 
 Unlike centrally managed systems, decentralized storage lacks accurate information to deduce failure correlation.
 Participants are from distinct administrative and management domains;
@@ -140,6 +141,7 @@ Prior research~\cite{irisstore}, however, has shown that accurate prediction of 
     \label{fig:loss}
 \end{figure}
 
+\paragraph{Durability violation in the presence of adversaries.}
 Unfortunately, failure independence only holds in the absence of adversaries.
 When adversarial participants have significant attack power, which is a common assumption for decentralized systems, they can easily subvert the durability guarantees of existing systems that assign placement groups based on randomness or heuristics.
 \lijl{Citations for significant attack power?}
