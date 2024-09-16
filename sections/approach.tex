@@ -51,11 +51,19 @@ Traditional maximum distance separable (MDS) erasure codes, \eg,  Reed-Solomon c
 Such codes, however, encode a \emph{fixed} number of fragments for an object given a redundancy target.
 A system using MDS codes thus needs to determine the placement group size before deployment.
 Moreover, commonly deployed MDS codes only work efficiently with small block ($n$) and message ($k$) lengths.
-For instance, typical deployment of Reed-Solomon code uses $n = 255$ and $k = 223$.
+For instance, typical deployments of Reed-Solomon cod uses $n = 255$ and $k = 223$.
 Larger parameters will lead to impractical encoding and decoding overheads.
+\lijl{Some citations and/or concrete evaluation results.}
 A decentralized storage deployment, however, can have hundreds of thousands of storage nodes~\cite{ipfs}.
 
 \paragraph{Code fragment distribution.}
+Distributing the large volume of encoded fragments to every storage node is a non-trivial task.
+Guarantees of an erasure code require each node to store \emph{unique} encoded fragments.
+Uncoordinated fragment generation and distribution, however, may lead to insufficient \emph{unique} fragments to recover the original data, an issue analogous to the coupon collector's problem~\cite{ccp}.
+On the other hand, it is well-established that BFT consensus in a permissionless system is costly.
+To safely confirm a transaction, Bitcoin requires a confirmation latency of around one hour;
+even the faster Ethereum network incurs a finality latency of over 12 seconds.
+Besides latency, both networks suffer low consensus throughput -- 7 transaction per second (TPS) for Bitcoin and 20 TPS for Ethereum -- and high transaction fees.
 
 \paragraph{Object recover efficiency.}
 
