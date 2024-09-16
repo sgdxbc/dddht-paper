@@ -20,6 +20,7 @@ it merely transforms the system to a selective replication approach, which share
 Is the trade-off between strong durability and scalability fundamental in decentralized storage systems?
 In this work, we challenge this hypothesis by proposing a radical design, \sys.
 To guarantee durability, each object is distributed to \emph{all} the storage nodes.
+\sgd{majority?}
 By defining a single placement group for the entire system, \sys eschews any reliance on failure correlation prediction, which has been shown to be unreliable in decentralized deployments~\cite{irisstore}.
 Moreover, even when a significant proportion of the system is Byzantine, the approach can ensure durability in the presence of strong adversarial behaviors, similar to existing BFT protocols.
 
