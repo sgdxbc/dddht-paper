@@ -76,6 +76,38 @@ When fragments of an object are distributed to all the nodes, the repair traffic
 
 \subsection{\sys Overview}
 \label{sec:approach:overview}
+\sys takes a unique design to address the challenges in \autoref{sec:approach:challenges}.
+\sys deploys a rateless erasure code.
+Rateless codes are a family of erasure codes that have two special properties.
+First, a rateless code generates an \emph{infinite sequence} of encoding fragments from $k$ source blocks.
+Any $k + \epsilon$ fragments can be used to reconstruct the original source data.
+This differs from MDS codes which produces $n$ fixed encoding fragments from the $k$ source blocks.
+Second, rateless codes work well with large parameters.
+Real deployment of $(1200, 1000, 200)$ rateless code has been shown to be efficient~\cite{liquid}.
+Such parameters are two orders of magnitude larger than practical MDS codes used in production systems.
+
+Leveraging the properties of a rateless code, \sys selects a redundancy level based on the fault tolerance target of the system (\eg, $\frac{1}{3}$ Byzantine resilience).
+For each object, \sys generates a set of encoding fragments based on the redundancy parameter, and distributes them to each node.
+As the cardinality of the set is infinite, when the system scales, \sys can always generate new, unique fragments to store on newly joined nodes.
+By estimating changes in the system size, each node can independently discard or generate new fragments to maintain the overall redundancy without compromising durability.
+The approach addresses the dynamic system size challenge.
+
+Given the infinite encoding fragment space in a rateless code, each \sys node performs \emph{random sampling} independently to choose fragments to store locally.
+The distribution procedure is therefore fully decentralized and without involving any consensus protocol.
+\sys leverages properties of randomness and the infinite encoding space to ensure negligible fragment collisions across nodes, addressing the fragment distribution challenge.
+
+Lastly, \sys designs a new coding scheme to bound the repair cost.
+The scheme is based on the Luby Transform (LT) codes.
+When generating an encoding fragment, each node samples a random \emph{degree} $d$ based on the Soliton distribution \lijl{citation here}, and selects $d$ randomly chosen data blocks from the original object.
+Instead of performing XOR on the blocks as in prior rateless codes, \sys stores all $d$ blocks on the node.
+When repairing, a node no longer requires to reconstruct the original object.
+As the original data blocks are distributed across the system, generating a new fragment is transformed to a search problem:
+the node simply queries the sampled data blocks from other participants.
+The repair procedure only transmits data for the required new fragments, which is a theoretical minimum.
+
+%%%%%%%%%%%%%%%%%
+% Obsolete Text %
+%%%%%%%%%%%%%%%%%
 
 \iffalse
 Why is it hard to guarantee data durability in a decentralized storage system?
