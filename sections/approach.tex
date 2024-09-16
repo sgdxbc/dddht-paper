@@ -16,6 +16,7 @@ Note that a partitioning scheme does not fundamentally solve the issue;
 it merely transforms the system to a selective replication approach, which shares the same durability challenge as above.
 
 \subsection{Durability without Compromising Scale}
+\label{sec:approach:insight}
 
 Is the trade-off between strong durability and scalability fundamental in decentralized storage systems?
 In this work, we challenge this hypothesis by proposing a radical design, \sys.
@@ -42,10 +43,11 @@ Intuitively, even when the adversaries compromise an arbitrary subset of the gro
 In the case of \sys, since there exists a single placement group, \sys evenly distributes an object and its constant redundancy among all the storage nodes.
 
 \subsection{Design Challenges}
+\label{sec:approach:challenges}
 
 Our approach of evenly distributing constant object redundancy on all storage nodes, though conceptually simple, raises several design challenges:
 
-\paragraph{Constant redundancy with large, varying system sizes.}
+\paragraph{Constant redundancy with varying system sizes.}
 Since \sys targets decentralized storage with a permissionless setting, our approach needs to handle dynamic system sizes.
 A replication-based approach can easily handle changes in system sizes, but fails to maintain constant redundancy.
 Traditional maximum distance separable (MDS) erasure codes, \eg,  Reed-Solomon codes, achieve lower object redundancy.
@@ -66,9 +68,14 @@ To safely confirm a transaction, Bitcoin requires a confirmation latency of arou
 even the faster Ethereum network incurs a finality latency of over 12 seconds.
 Besides latency, both networks suffer low consensus throughput -- 7 transaction per second (TPS) for Bitcoin and 20 TPS for Ethereum -- and high transaction fees.
 
-\paragraph{Object recover efficiency.}
+\paragraph{Object repair efficiency.}
+Erasure coding trades off storage efficiency with computation.
+To recover the original object, the system reads $k$ unique fragments and performs a computational-heavy decoding procedure.
+Unlike a replication-based scheme, repairing an object requires first recovering the object, then encoding a new fragment.
+When fragments of an object are distributed to all the nodes, the repair traffic and computational overhead can become impractical for larger deployment scales.
 
 \subsection{\sys Overview}
+\label{sec:approach:overview}
 
 \iffalse
 Why is it hard to guarantee data durability in a decentralized storage system?
