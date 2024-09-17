@@ -149,6 +149,26 @@ Details of the storage layout are discussed in \autoref{sec:optz}.
 Next, the node performs $N$ estimation (\autoref{sec:protocol:reconfig}), and then resumes normal protocol processing.
 If the node has lost its local storage data, it performs the same joining protocol as a fresh node.
 
+\subsection{Proof}
+
+The \sys maintains the following invariant:
+for each stored data block, at any time since the \fn{Put} operation finishes, any set of $N - f$ honest nodes hold at least $k + \epsilon$ fragments for the block.
+
+The durability is guaranteed following this invariant: during the \fn{Get} operation, client will eventually attempt to contact all $N$ nodes, at least $N - f$ of which are honest and will respond to client.
+Client can reconstruct the original data block with the $k + \epsilon$ fragments collected from them.
+In the following text we will discuss how the invariant is maintained during various situations.
+
+\paragraph{\fn{Put} operation.}
+\sgd{Not sure whether this recap is necessary}
+During a \fn{Put} operation, client tracks for the reported number of persisted fragments from storage nodes.
+At any time, if the total number of the persisted fragments \emph{after ignoring the $f$ nodes that report the highest numbers} exceeds $k + \epsilon$, the \fn{Put} operation is finished.
+Firstly, the invariant trivially holds for the worst case where all $f$ nodes that report the highest numbers are faulty by the definition of finalized condition.
+Secondly, the case is indeed the worst case: if there is any honest node among the $f$ nodes that report the highest numbers, the total number of fragments persisted on the honest nodes will be more or equal than the case above.
+
+\paragraph{Node joining.}
+Notice that honest nodes do not give up any persisted fragment upon node joining, and any set of $N - f$ honest nodes that does not contain the new node will still hold $k + \epsilon$ fragments as long as it is already doing so.
+For the sets that contain the new node (which means the new node must be honest), 
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Protocol and Design Details %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
