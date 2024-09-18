@@ -57,3 +57,5 @@ ACKs
 Luby
 linearizable
 Soliton
+XORed
+XORing
