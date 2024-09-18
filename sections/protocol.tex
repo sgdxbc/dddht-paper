@@ -159,15 +159,16 @@ Client can reconstruct the original data block with the $k + \epsilon$ fragments
 In the following text we will discuss how the invariant is maintained during various situations.
 
 \paragraph{\fn{Put} operation.}
-\sgd{Not sure whether this recap is necessary}
-During a \fn{Put} operation, client tracks for the reported number of persisted fragments from storage nodes.
-At any time, if the total number of the persisted fragments \emph{after ignoring the $f$ nodes that report the highest numbers} exceeds $k + \epsilon$, the \fn{Put} operation is finished.
-Firstly, the invariant trivially holds for the worst case where all $f$ nodes that report the highest numbers are faulty by the definition of finalized condition.
-Secondly, the case is indeed the worst case: if there is any honest node among the $f$ nodes that report the highest numbers, the total number of fragments persisted on the honest nodes will be more or equal than the case above.
+As described in the \autoref{sec:protocol:base}, the finalization condition of \fn{Put} trivially holds the invariant.
 
 \paragraph{Node joining.}
 Notice that honest nodes do not give up any persisted fragment upon node joining, and any set of $N - f$ honest nodes that does not contain the new node will still hold $k + \epsilon$ fragments as long as it is already doing so.
 For the sets that contain the new node (which means the new node must be honest),
+
+\paragraph{Node leaving.}
+~\sgd{Need an extra assumption of replacing honest node must join for a while already.}
+
+\paragraph{Redundancy adjustment.}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Protocol and Design Details %
