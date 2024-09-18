@@ -38,6 +38,13 @@ All other recoverable failures (\eg, nodes rebooting after a kernel crash) are e
 \end{figure}
 
 \begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{figures/get}
+    \caption{$\fn{Get}$ protocol}
+    \label{fig:get}
+\end{figure}
+
+\begin{figure}
 \begin{mdframed}
 \textbf{Storage API}
 \begin{itemize}
@@ -229,6 +236,14 @@ This constant redundancy overhead does not violate our design goal.
 
 \subsection{Self-Certifying Fragments}
 \lijl{Describe how we use Merkle tree and root hashes to validate each chunk.}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\columnwidth]{figures/merkle}
+    \caption{Self-certifying fragments}
+    \label{fig:put}
+\end{figure}
+
 Transmitting \code fragments instead of the original data block raises a new challenge: verifying for integrity.
 Unlike the data blocks which are naturally self-certifying because the network identifies the blocks with their hashes, the \code fragments that are encoded by remote nodes are not trusted, and the naive way to validate them is to reconstruct and block and encode again, which is obviously unacceptable.
 
