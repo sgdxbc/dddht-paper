@@ -167,7 +167,7 @@ Secondly, the case is indeed the worst case: if there is any honest node among t
 
 \paragraph{Node joining.}
 Notice that honest nodes do not give up any persisted fragment upon node joining, and any set of $N - f$ honest nodes that does not contain the new node will still hold $k + \epsilon$ fragments as long as it is already doing so.
-For the sets that contain the new node (which means the new node must be honest), 
+For the sets that contain the new node (which means the new node must be honest),
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Protocol and Design Details %
@@ -225,7 +225,7 @@ Nevertheless, the extra redundancy is \emph{constant}, given the ideal Soliton D
 Specifically, the average degree of the distribution is $10.98$.
 This constant redundancy overhead does not violate our design goal.
 
-\paragraph{Validating data chunks.}
+\subsection{Self-Certifying Fragments}
 \lijl{Describe how we use Merkle tree and root hashes to validate each chunk.}
 
 \subsection{Fragment Distribution with Constant Redundancy}
