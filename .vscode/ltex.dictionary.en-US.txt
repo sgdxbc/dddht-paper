@@ -59,3 +59,4 @@ linearizable
 Soliton
 XORed
 XORing
+soliton

@@ -193,7 +193,7 @@ To address this issue, we develop a new erasure coding scheme, termed optimal re
 \code is based on the Luby Transform (LT) rateless codes~\cite{ltcodes}.
 The original LT codes divide the original data into equal-sized chunks.
 To generate an encoded fragment, LT codes perform XOR on $d$ \emph{randomly} chosen data chunks.
-Critically, the number $d$, called the degree of a fragment, follows a Robust Soliton Distribution~\cite{ltcodes}.
+Critically, the number $d$, called the degree of a fragment, follows a robust soliton distribution~\cite{ltcodes}.
 To recover the original data, LT codes collect $k + \epsilon$ encoded fragments.
 If a fragment has degree 1, it directly reveals an original data chunk.
 A lower degree fragment $f$ can be XORed with a higher degree fragment $f'$ that contains it to reduce the degree of $f'$.
@@ -209,7 +209,8 @@ Since each fragment contains $d$ original data chunks, no XOR is required in the
 In the original LT codes, any $k + \epsilon$ unique fragments contain all the original data chunks (some of which are XORed).
 By following the same selection distribution and representing fragments as flattened data chunks, \code automatically provides the same guarantee.
 As such, any $k + \epsilon$ unique \code fragments can recover the original data with overwhelming probability.
-Note that by avoiding XORing the original data chunks, \code can use the more efficient ideal Soliton Distribution~\cite{ltcodes} to ensure recoverability, which has a smaller mode that the Robust Soliton Distribution in LT codes.
+Note that by avoiding XORing the original data chunks, \code can use the more efficient ideal soliton distribution~\cite{ltcodes} to ensure recoverability, which has a smaller mode that the robust soliton distribution in LT codes.
+\sgd{what is "mode"? the average degree is indeed smaller.}
 
 The key benefit of \code is improved efficiency in object repair.
 To generate a new encoded fragment, \code does not require reconstructing the original object.
@@ -228,14 +229,42 @@ This constant redundancy overhead does not violate our design goal.
 
 \subsection{Self-Certifying Fragments}
 \lijl{Describe how we use Merkle tree and root hashes to validate each chunk.}
+Transmitting \code fragments instead of the original data block raises a new challenge: verifying for integrity.
+Unlike the data blocks which are naturally self-certifying because the network identifies the blocks with their hashes, the \code fragments that are encoded by remote nodes are not trusted, and the naive way to validate them is to reconstruct and block and encode again, which is obviously unacceptable.
+
+To address this challenge, \sys leverages the flattened view representation described above, and certifies each chunk individually.
+Upon \fn{Put} operation, \sys computes the hash of every chunk of the data block, and construct a Merkle tree for all the chunks.
+Then each chunk is equipped with its Merkle proof, and the root hash of the Merkle tree is used to identify the data block.
+
+With this extra facility, when \sys node receiving \code fragments encoded by remote nodes, the Merkle proofs sent along with the fragments can show the inclusion of the fragments to the Merkle tree root hashes, which means the fragments are valid for the blocks.
+\sgd{Seems no way to prove the index is correct, at least node can deduplicate locally.}
+
+This Merkle tree exposes a constant storage overhead.
+Our specific \code utilizes a 15-layer Merkle tree, which results in a Merkle proof of 480 bytes.
+The overhead is negligible compare to the chunk size \ie 32KB.
 
 \subsection{Fragment Distribution with Constant Redundancy}
 \lijl{Discuss how are the fragments being initially distributed, how $n$, $k$ being decided.}
 
+One limitation of \sys is the $k$ must be statically decided ahead of time.
+It's a challenging task to cooperate with ever-changing number of nodes with a fixed $k$.
+To address this problem, \sys choose a sufficient large $k$ (\ie $2^{15}$) to handle potentially giant system scale.
+When the storage network is initiated with a small set of nodes, each node stores multiple fragments.
+For example, with $N$ = 10K nodes in the system, each node stores 10 fragments for each block, so that $N/3$ honest nodes store $33340 > k + \epsilon$ fragments that is sufficient for reconstructing the block.
+When the system scales up, \ie the number of nodes increases, the unnecessary redundancy are discarded by the random eviction during the periodical estimation of $N$, ensuring the constant redundancy.
+
 \subsection{Local Storage Design}
 
 \lijl{Describe local storage organization and optimization.}
+The local storage of the storage nodes follows a straightforward file structure.
+Every block corresponds to a directory, and every stored chunk of the block corresponds to a subdirectory, which consists of two files: the chunk content and the Merkle proof.
+Notice of the lack of fragment level directory: if fragments contain overlapping chunks (though the chance is rare considering large number of different chunks), the storage is automatically deduplicated.
+In conclusion, the local storage keeps minimal metadata and encodes it into file system as much as possible.
 
+In practice, we notice that sometimes the file system may be stressed: when the node is concurrently storing multiple high-degree fragments, it may create large number of files.
+To mitigate this situation, \sys adapts a lightweight bundling solution: all the directories and files belongs to the same block are aggregated into a single ZIP file.
+The ZIP files are maintained in stored (\ie uncompressed) mode to minimize the computation overhead.
+In practice, we observe near zero cost of this bundling, and a significant speed up in the file system interaction.
 
 \lijl{Notes:}
 
