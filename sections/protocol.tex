@@ -176,6 +176,68 @@ For the sets that contain the new node (which means the new node must be honest)
 \section{Making \sys Practical}
 \label{sec:optz}
 
+The base \sys protocol guarantees object durability while permitting the system to scale in storage capacity.
+However, the protocol, in the current design, incurs impractical overheads for large-scale deployments.
+In this section, we propose protocol and design optimizations that significantly improve the system efficiency.
+
+\subsection{Optimal Regeneration Code}
+In the base \sys protocol, the repair process requires first reconstructing the original object, before generating new fragments.
+This procedure is universal for all storage systems that deploy erasure codes, but its network bandwidth and computation overheads are especially problematic for our \sys design.
+\sys distributes fragments of each object widely, to all storage nodes.
+Reconstructing an object, therefore, requires full-network-scale data transmission.
+Moreover, when a new node joins \sys, it has to reconstruct \emph{all existing objects} stored in the system.
+The traffic and computational cost would be overwhelming for any non-trivial deployments.
+
+To address this issue, we develop a new erasure coding scheme, termed optimal regeneration code (\code).
+\code is based on the Luby Transform (LT) rateless codes~\cite{ltcodes}.
+The original LT codes divide the original data into equal-sized chunks.
+To generate an encoded fragment, LT codes perform XOR on $d$ \emph{randomly} chosen data chunks.
+Critically, the number $d$, called the degree of a fragment, follows a Robust Soliton Distribution~\cite{ltcodes}.
+To recover the original data, LT codes collect $k + \epsilon$ encoded fragments.
+If a fragment has degree 1, it directly reveals an original data chunk.
+A lower degree fragment $f$ can be XORed with a higher degree fragment $f'$ that contains it to reduce the degree of $f'$.
+The process continues until all the original data chunks are revealed.
+The original paper proves that, with overwhelming probability, LT codes can decode the original data with any $k + \epsilon$ unique fragments.
+
+Generating a new fragment using LT codes, however, still requires recovering the original data.
+To reduce the repair cost, we perform a \emph{transformation} on the LT codes to derive our \code code.
+To encode a fragment, \code similarly samples a degree $d$ from a degree distribution, and chooses $d$ random data chunks.
+Instead of performing XOR, \code directly stores a ``flattened view'' of the original $d$ data chunks in the fragment.
+When decoding the original data, \code similarly collects $k + \epsilon$ encoded fragments.
+Since each fragment contains $d$ original data chunks, no XOR is required in the decoding process.
+In the original LT codes, any $k + \epsilon$ unique fragments contain all the original data chunks (some of which are XORed).
+By following the same selection distribution and representing fragments as flattened data chunks, \code automatically provides the same guarantee.
+As such, any $k + \epsilon$ unique \code fragments can recover the original data with overwhelming probability.
+Note that by avoiding XORing the original data chunks, \code can use the more efficient ideal Soliton Distribution~\cite{ltcodes} to ensure recoverability, which has a smaller mode that the Robust Soliton Distribution in LT codes.
+
+The key benefit of \code is improved efficiency in object repair.
+To generate a new encoded fragment, \code does not require reconstructing the original object.
+The repairing node samples $d$ random data chunk indices.
+By the recoverability property of \code, each of the $d$ data chunks is stored on at least one non-failure node in the system (possibly combined with other chunks to form a fragment).
+The repairing node simply broadcasts a repair request with the object hash and the $d$ chunk indices.
+Next, it receives the requested data chunks from existing storage nodes, and ``merge'' them to form the new fragment.
+It is easy to see that the procedure is equivalent to reconstructing the object and generating the fragment in sequence.
+We name \code ``optimal'' since the regeneration process only transmits fragment-sized data, which is optimal~\footnote{The procedure does transmit extra metadata (\eg, chunk indices), but the size is negligible compared to fragment sizes.}.
+
+Our \code trades off repair efficiency with redundancy.
+Compared to LT codes, \code scales up the size of each fragment by its degree $d$.
+Nevertheless, the extra redundancy is \emph{constant}, given the ideal Soliton Distribution.
+Specifically, the average degree of the distribution is $10.98$.
+This constant redundancy overhead does not violate our design goal.
+
+\paragraph{Validating data chunks.}
+\lijl{Describe how we use Merkle tree and root hashes to validate each chunk.}
+
+\subsection{Fragment Distribution with Constant Redundancy}
+\lijl{Discuss how are the fragments being initially distributed, how $n$, $k$ being decided.}
+
+\subsection{Local Storage Design}
+
+\lijl{Describe local storage organization and optimization.}
+
+
+\lijl{Notes:}
+
 \lijl{Local storage management:
 Use local file system for storage management.
 Each object is stored as a directory;
