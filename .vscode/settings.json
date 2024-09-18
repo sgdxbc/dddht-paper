@@ -13,6 +13,7 @@
         "\\msig{}{}{}": "dummy",
         "\\mtype{}": "dummy",
         "\\fn{}": "dummy",
+        "\\code": "dummy",
     },
     "ltex.bibtex.fields": {
         "title": false,
