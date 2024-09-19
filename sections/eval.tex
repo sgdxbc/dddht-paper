@@ -68,7 +68,7 @@ When the request is from remote region, a significant slowdown is observed.
 While fully replicated baseline is still much slower in \fn{Put} operation (154.6s compared to 94.2/95.2s of \sys/DHT-based storage), its \fn{Get} is almost the same as the other two systems: all of them are around 72-73s.
 
 \paragraph{Scalability.}
-Next we measure the direct \fn{Put} and \fn{Get} with various numbers of nodes ranging from 5000 to 10000 for \sys and DHT-based storage.
+Next we measure the direct \fn{Put} and \fn{Get} with various numbers of nodes ranging from 4000 to 10000 for \sys and DHT-based storage.
 Fully replicated baseline is not benchmarked because it can hardly go over 100 nodes.
 The result is shown in \autoref{fig:deploy-scale}.
 
@@ -82,7 +82,7 @@ The result is shown in \autoref{fig:deploy-scale}.
 Both systems show desirable scalability.
 The DHT-based storage always disseminates to and aggregates from 100 nodes, so its performance is expected to maintain constant.
 \sys on the other hand performs the operations system-wide, and the performance slightly improves as system scales up.
-The \fn{Put} operation latency decreases from 39.4s to 32.9s, while the \fn{Get} operation latency decrease from 15.3s to 12.2s.
+The \fn{Put} operation latency decreases from 41.2s to 32.9s, while the \fn{Get} operation latency decrease from 15.3s to 12.2s.
 This shows \sys performance does not degrade with more nodes.
 
 The reason \sys performs better with more nodes is that when there are more nodes, the number of fragments stored by each node is less (\ie from 20 decreases to 10).
