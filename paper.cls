@@ -63,6 +63,7 @@
 \RequirePackage{braket}
 \RequirePackage{tikz}
 \RequirePackage{amsthm}
+\RequirePackage{comment}
 \ifacm
 \else
 \RequirePackage{amsmath}
