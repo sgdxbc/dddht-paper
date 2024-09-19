@@ -148,7 +148,7 @@ Prior research~\cite{irisstore}, however, has shown that accurate prediction of 
 \end{figure}
 
 \paragraph{Durability violation in the presence of adversaries.}
-Failure independence, however, only holds in the absence of adversaries.
+Even if correlation prediction is accurate, failure independence only holds in the absence of adversaries.
 Decentralized deployments typically assume adversaries with attack power \emph{proportional} to the system size~\cite{bitcoin,ethereum,pbft,hotstuff,algorand}.
 Such strong adversaries can easily subvert the durability guarantees of existing systems that assign placement groups based on randomness or heuristics.
 As illustrated in \autoref{fig:loss}, the storage system initially stores the encoded fragments of an object on a random set of nodes (\eg, using a DHT).
