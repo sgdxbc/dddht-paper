@@ -263,16 +263,18 @@ When scaling up, the unnecessary fragments are discarded during periodical $N$ e
 \subsection{Local Storage Design}
 \label{sec:optz:local}
 
-\lijl{Describe local storage organization and optimization.}
-The local storage of the storage nodes follows a straightforward file structure.
-Every block corresponds to a directory, and every stored chunk of the block corresponds to a subdirectory, which consists of two files: the chunk content and the Merkle proof.
-Notice of the lack of fragment level directory: if fragments contain overlapping chunks (though the chance is rare considering large number of different chunks), the storage is automatically deduplicated.
-In conclusion, the local storage keeps minimal metadata and encodes it into file system as much as possible.
+\sys leverages the OS file system for local storage management.
+Specifically, \sys organizes each object as a file system directory.
+Each data chunk of the object is stored as a subdirectory, which contains two files: the chunk content and the Merkle proof.
+We do not explicitly maintain fragment level directory for storage efficiency:
+the scheme deduplicates overlapping chunks across multiple fragments.
 
-In practice, we notice that sometimes the file system may be stressed: when the node is concurrently storing multiple high-degree fragments, it may create large number of files.
-To mitigate this situation, \sys adapts a lightweight bundling solution: all the directories and files belongs to the same block are aggregated into a single ZIP file.
-The ZIP files are maintained in stored (\ie uncompressed) mode to minimize the computation overhead.
-In practice, we observe near zero cost of this bundling, and a significant speed up in the file system interaction.
+To our surprise, the file system can become the performance bottleneck when deploying \sys.
+When a node is storing many high-degree fragments, our storage scheme creates large number of files, causing significant file system metadata traffic.
+To mitigate this situation, \sys adapts a lightweight aggregation solution.
+\sys aggregates all directories and files belongs to the same object into a single ZIP file.
+The ZIP files are configured in stored (\ie, uncompressed) mode to minimize the computation overhead.
+In practice, we observe a significant speed up in the file system performance at nearly zero cost compared to a flattened organization.
 
 \lijl{The protocol should optimize bandwidth and compute efficiency when distributing object data.
 Ideally, both should be fully distributed across the network, with minimum redundancy involved.}
