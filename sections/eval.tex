@@ -44,6 +44,52 @@ We measured the latency of \fn{Put} and \fn{Get} operations with three settings:
 The benchmark first perform a \fn{Put} operation on a randomly-selected node with a block filled with random bytes, then wait for the block reaches all the storing nodes, then \fn{Get} the block back and compare the checksum.
 In the second settings the two random nodes are constraint to be in the same region of the client, while in the third setting they are constraint to be in regions different from the client.
 
+\sys achieve 32.9s and 12.1s average latencies on direct \fn{Put} and \fn{Get}.
+It is slower than DHT-based storage (19.4s and 6.7s), because of two reasons:
+\begin{itemize}
+    \item The $k$ code parameter of \sys is significantly larger than the one of DHT-based storage, which results in 2.77x more redundancy than the DHT-based storage system.
+    The more bytes for dissemination results in longer latency.
+    \item The fragments disseminated by \sys is more and smaller than the DHT-based storage, and the dissemination scope is much wider \ie to all of the 10K nodes compared to only 100 nodes of the placement group.
+    So the dissemination of \sys is less efficient.
+\end{itemize}
+However, both of the systems are significantly faster than the fully replicated baseline in \fn{Put} operation, which takes 88.8s on average.
+At the other hand, the \fn{Get} operation is instantly finished in a fully replicated system under direct setting, since every storage node keeps a full copy of the original block that is ready for fulfilling the operation at any time.
+
+When client requests from a local storage node, a small latency penalty (3-5s) is added to all the system.
+When the request is from remote region, a significant slowdown is observed.
+While fully replicated baseline is still much slower in \fn{Put} operation (154.6s compared to 94.2/95.2s of \sys/DHT-based storage), its \fn{Get} is almost the same as the other two systems: all of them are around 72-73s.
+
+\paragraph{Scalability.}
+Next we measure the direct \fn{Put} and \fn{Get} with various numbers of nodes ranging from 5000 to 10000 for \sys and DHT-based storage.
+Fully replicated baseline is not benchmarked because it can hardly go over 100 nodes.
+
+Both systems show desirable scalability.
+The DHT-based storage always disseminates to and aggregates from 100 nodes, so its performance is expected to maintain constant.
+\sys on the other hand performs the operations system-wide, and the performance slightly improves as system scales up.
+The \fn{Put} operation latency decreases from 39.4s to 32.9s, while the \fn{Get} operation latency decrease from 15.3s to 12.2s.
+This shows \sys performance does not degrade with more nodes.
+
+The reason \sys performs better with more nodes is that when there are more nodes, the number of fragments stored by each node is less (\ie from 20 decreases to 10).
+Because each fragment is transmitted in a dedicated HTTP request, the fewer fragments result in fewer communication rounds, which helps to improve the latency especially in such a worldwide deployment scenario.
+
+\paragraph{Write throughput.}
+Beside latency, we also measured write throughput of \sys and DHT-based storage.
+The benchmark is conducted by performing a certain number of \fn{Put} operations and measure the total time for all the operations to finish.
+The write throughput is calculated as the total size of blocks that have been \fn{Put} divided by the total time of the operations.
+The benchmark is performed with different number of concurrent operations.
+For example, when concurrency is 100, at any time there are 100 ongoing \fn{Put} operations.
+
+In this benchmark we spawn all 100 EC2 instances in the ap-east-1 region, to avoid high data transfer cost.
+To cancel the effect of unrealistic high bandwidth brought by AWS's datacenter network, we limit the ingress bandwidth of each storage node to 10Mbps in our implementation.
+
+In this benchmark \sys can sustain a stable write throughput of around 238MB/s.
+Because every storage node uniformly take part in every \fn{Put} operation, \sys fully utilize the available bandwidth resource of the whole system at any concurrency level.
+On the other hand, the DHT-based storage performs worse than \sys with small concurrency, as only part of the nodes (\ie the ones that have been selected by the placement groups) can take part in the operations, and the bandwidth of other nodes are wasted.
+As the concurrency increases, the throughput of DHT-based storage increases and surpasses \sys thanks to its smaller redundancy.
+However, its throughput is not as stable as \sys: the system bottlenecks on the nodes that is selected by the most number of placement groups.
+As we can see in the later simulation, this issue cannot be addressed by storing more blocks with more concurrency, as the variance of storage node load goes up when there are more data to store.
+
+\iffalse
 Potential comparison systems to evaluate:
 
 Full replication system.
@@ -89,6 +135,7 @@ In this case, each node needs to monitor almost all other nodes.
 Issues:
 High storage overhead due to full replication.
 DHT-based distribution won't have enough redundancy to tolerate adversarial attacks.
+\fi
 
 \iffalse
 We use two types of experiments to evaluate \sys: discrete event simulation and physical deployment on geo-distributed EC2 virtual machines.
