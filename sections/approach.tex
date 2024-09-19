@@ -1,46 +1,47 @@
 \section{The \sys Approach}
 \label{sec:approach}
 
-So far, we have discussed two general approaches to provide durability in prior decentralized storage systems.
-Selective replication is effective when failures within each placement group are independent.
-However, we have shown in \autoref{sec:background:loss} that adversaries can break the failure independence assumption and compromise data durability deterministically.
+In \autoref{sec:background}, we introduce two general approaches to provide durability in prior decentralized storage systems.
+Selective distribution is effective when failures within each placement group are independent.
+However, we have shown in \autoref{sec:background:loss} that strong adversaries can break the failure independence assumption and compromise data durability deterministically.
 Full replication addresses this durability issue by storing all objects on all the nodes.
 Even if adversaries can compromise a significant proportion of the system, the remaining honest nodes can still recover all objects.
+In fact, BFT SMR protocols apply such approach to \emph{guarantee safety}, as identities of the Byzantine participants are unknown.
 
 The obvious downside of full replication is \emph{scalability}.
 Since each node stores all the objects, the system storage capacity is bounded by that of a single node, \ie, adding more nodes to the system does not scale the overall capacity.
-Such limitation makes the full replication approach impractical for most storage scenarios, except rare cases like the blockchain~\cite{bitcoin,ethereum}.
-Even in the blockchain case, the approach prohibits storing large data on-chain, and both Ethereum and Bitcoin are facing storage capacity issues.
-\lijl{Citations here?}
-Note that a partitioning scheme does not fundamentally solve the issue;
-it merely transforms the system to a selective replication approach, which shares the same durability challenge as above.
+Such limitation makes the approach impractical for most storage scenarios, except rare cases like the blockchain~\cite{bitcoin,ethereum}.
+Even in the blockchain case, full replication prohibits storing large data on-chain, and both Ethereum and Bitcoin are facing storage capacity issues.
+Note that data partitioning does not fundamentally address the issue;
+it merely transforms the system to a selective distribution approach, which shares the same durability challenge as above.
 
 \subsection{Durability without Compromising Scale}
 \label{sec:approach:insight}
 
 Is the trade-off between strong durability and scalability fundamental in decentralized storage systems?
 In this work, we challenge this hypothesis by proposing a radical design, \sys.
-To guarantee durability, each object is distributed to \emph{all} the storage nodes.
+To guarantee durability, each object is distributed to \emph{all} storage nodes.
 \sgd{majority?}
-By defining a single placement group for the entire system, \sys eschews any reliance on failure correlation prediction, which has been shown to be unreliable in decentralized deployments~\cite{irisstore}.
-Moreover, even when a significant proportion of the system is Byzantine, the approach can ensure durability in the presence of strong adversarial behaviors, similar to existing BFT protocols.
+\lijl{All honest nodes?}
+By defining a single placement group for the entire system, \sys eschews any reliance on failure correlation prediction, which has been shown to be unreliable in decentralized environment~\cite{irisstore}.
+Moreover, even when a significant portion of the system is Byzantine, the approach can ensure durability, similar to existing BFT protocols.
 
 How does \sys scale the system storage capacity if every object is stored on all the nodes?
 Our key insight is to \emph{decouple redundancy from data distribution}.
-Redundancy is the additional storage overhead to recover from erasure.
-For instance, if the system stores two copies of each object, the redundancy level is two.
+%Redundancy is the additional storage overhead to recover from erasure.
+%For instance, if the system stores two copies of each object, the redundancy level is two.
 Traditionally, redundancy of an object and the placement group size are strongly correlated.
-To handle more failures in larger groups, prior solutions increase the redundancy level and the placement group size \emph{simultaneously}:
+To handle more failures in a larger group, prior solutions increase the redundancy and the placement group size \emph{simultaneously}:
 in a replication system, the system creates more object replicas;
-if erasure coding is applied, more encoded fragments are generated.
-These additional redundancies are then distributed to the larger placement group.
+if erasure coding is used, more encoded fragments are generated.
+The system then distributes these additional redundancies to the larger placement group.
 
 We, however, argue that redundancy and placement groups of a system could be designed \emph{independently}.
-The redundancy level of an object should only depend on the \emph{fault tolerance degree} of the placement group, and more specifically, the \emph{proportion} of storage devices that can fail simultaneously in the group.
+The redundancy of an object should depend only on the \emph{fault tolerance degree} of the placement group.
+That is, only the \emph{proportion} of storage devices that can fail simultaneously, not the group size, should impact redundancy.
 Therefore, with a fixed failure probability, redundancy should be \emph{constant}, regardless of the placement group size.
-To ensure data durability, the system then \emph{evenly distributes} the object and its constant redundancy among all nodes in the placement group.
-Intuitively, even when the adversaries compromise an arbitrary subset of the group, up to the attack limit, the remaining redundancy can still recover the original object.
-In the case of \sys, since there exists a single placement group, \sys evenly distributes an object and its constant redundancy among all the storage nodes.
+To ensure data durability, \sys then \emph{evenly distributes} the object and its constant redundancy among all nodes in the system.
+Intuitively, even when the adversaries compromise any subset of the system, up to the attack limit, the remaining redundancy can still recover the original object.
 
 \subsection{Design Challenges}
 \label{sec:approach:challenges}
