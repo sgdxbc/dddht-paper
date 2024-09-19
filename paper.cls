@@ -24,6 +24,7 @@
 
 \DeclareOption{acm}{\acmtrue}
 \DeclareOption{apx}{\apxtrue}
+\DeclareOption{space}{\spacetrue}
 
 \DeclareOption*{
     \ifacm\PassOptionsToClass{\CurrentOption}{acmart}\else
