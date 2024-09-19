@@ -60,3 +60,4 @@ Soliton
 XORed
 XORing
 soliton
+DHash
