@@ -122,6 +122,14 @@ There is no \fn{Put} operation happened during the simulation.
 
 \paragraph{Node load uniformity.}
 We collect the \emph{load} of the nodes when they leave the system, in the unit of block size.
+The CDF of loads of both systems are shown in \autoref{fig:simulate-load}.
+
+\begin{figure}
+    \includegraphics[width=0.4\columnwidth]{graphs/s_pdf_entropy}
+    \includegraphics[width=0.4\columnwidth]{graphs/s_pdf_dht}
+    \caption{Node storage load CDF of \sys (left) and DHT-based storage (right)}
+    \label{fig:simulate-load}
+\end{figure}
 
 In this simulation \sys shows better uniformity.
 Every node in the system is utilized, and most of the nodes have similar load.
@@ -133,7 +141,14 @@ Eventually the system load is unevenly distributed to the nodes.
 \paragraph{Redundancy of stable system.}
 In the following simulations, we collect system statistics every $10^5$ steps.
 We first study the redundancy of the constantly-scale systems with different number of nodes.
-The graph shows the average redundancy of different systems.
+The graph \autoref{fig:simulate-scale} shows the average redundancy of different systems.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\columnwidth]{graphs/s_scale_static}
+    \caption{Redundancy of various numbers of nodes}
+    \label{fig:simulate-scale}
+\end{figure}
 
 Both \sys and DHT-based storage shows perfect scalability, while \sys has a higher redundancy because of the larger $k$ parameter.
 On the other hand, the fully replicated baseline has unbounded redundancy.
@@ -149,7 +164,14 @@ Then it never reacts to the changing $N$.
 In the other two settings the nodes periodically perform estimation of $N$, with $10^4$ and $10^6$ steps interval respectively.
 The former one corresponds to the ideal near-perfect responsiveness to the changing system scale, while the latter one is more realistic.
 
-The simulation results have a few takeaways.
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\columnwidth]{graphs/s_scale}
+    \caption{Redundancy of \sys during system scaling up}
+    \label{fig:simulate-scale-up}
+\end{figure}
+
+As shown in \autoref{fig:simulate-scale-up} the simulation results have a few takeaways.
 First, even in the baseline, the redundancy increases slower and slower because the newly-joining nodes are initialized with proper redundancy level, while the old nodes that persists unnecessary redundancy gradually leave the system.
 When the system stops growing the redundancy immediately drops, and it will eventually get back to expected level.
 
@@ -162,7 +184,14 @@ It reacts slower than the ideal setting, but it eventually matches the ideal cas
 
 \paragraph{Repair overhead.}
 In the following simulation we track the egress traffic of individual nodes for assisting repair during failures.
-The graph shows the average traffic of different system scales, in the unit of block size.
+The graph \autoref{fig:simulate-repair} shows the average traffic of different system scales, in the unit of block size.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\columnwidth]{graphs/s_repair}
+    \caption{Average node repair traffic}
+    \label{fig:simulate-repair}
+\end{figure}
 
 In both systems every node only need to transfer few block size amount of repair data during its lifetime, and the overhead decreases as the number of nodes increases.
 The repair overhead of \sys is smaller than DHT-based storage thanks to the flattened view fragments (\autoref{sec:optz}).
@@ -174,6 +203,14 @@ In the last simulation we check for the safety guarantee of \sys.
 Unlike the other two systems that eagerly detect and repair for failures and maintain a near-constant redundancy level, \sys takes a more lazy approach (\autoref{sec:protocol:reconfig}), results in a more fluctuated redundancy.
 In this simulation, we collect the \emph{logical redundancy} data, \ie the number of available fragments divided by $k$, instead of the \emph{physical redundancy} showing in the above simulations.
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\columnwidth]{graphs/s_logical}
+    \caption{Logical redundancy of \sys}
+    \label{fig:simulate-logical}
+\end{figure}
+
+The results are shown in \autoref{fig:simulate-logical}.
 As the number of nodes increases, the fluctuation of redundancy decreases.
 But the redundancy is never going below 3x \ie the system never violates durability guarantee in the presence of $N/3$ faulty nodes.
 
