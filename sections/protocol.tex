@@ -165,10 +165,11 @@ If the node has lost its local storage data, it performs the same joining protoc
 \label{sec:optz}
 
 The base \sys protocol guarantees object durability while permitting the system to scale in storage capacity.
-However, the protocol, in the current design, incurs impractical overheads for large-scale deployments.
+However, the protocol, in its current design, incurs impractical overheads for large-scale deployments.
 In this section, we propose protocol and design optimizations that significantly improve the system efficiency.
 
 \subsection{Optimal Regeneration Code}
+\label{sec:optz:orc}
 In the base \sys protocol, the repair process requires first reconstructing the original object, before generating new fragments.
 This procedure is universal for all storage systems that deploy erasure codes, but its network bandwidth and computation overheads are especially problematic for our \sys design.
 \sys distributes fragments of each object widely, to all storage nodes.
@@ -196,8 +197,7 @@ Since each fragment contains $d$ original data chunks, no XOR is required in the
 In the original LT codes, any $k + \epsilon$ unique fragments contain all the original data chunks (some of which are XORed).
 By following the same selection distribution and representing fragments as flattened data chunks, \code automatically provides the same guarantee.
 As such, any $k + \epsilon$ unique \code fragments can recover the original data with overwhelming probability.
-Note that by avoiding XORing the original data chunks, \code can use the more efficient ideal soliton distribution~\cite{ltcodes} to ensure recoverability, which has a smaller mode that the robust soliton distribution in LT codes.
-\sgd{what is "mode"? the average degree is indeed smaller.}
+Note that by eschewing the XOR ``locking'' issue, \code can use the more efficient ideal soliton distribution~\cite{ltcodes} to ensure recoverability, which has a smaller average degree than the robust soliton distribution in LT codes.
 
 The key benefit of \code is improved efficiency in object repair.
 To generate a new encoded fragment, \code does not require reconstructing the original object.
@@ -215,31 +215,40 @@ Specifically, the average degree of the distribution is $10.98$.
 This constant redundancy overhead does not violate our design goal.
 
 \subsection{Self-Certifying Fragments}
-\lijl{Describe how we use Merkle tree and root hashes to validate each chunk.}
+\label{sec:optz:merkle}
 
 \begin{figure}
     \centering
     \includegraphics[width=\columnwidth]{figures/merkle}
     \caption{Self-certifying fragments}
-    \label{fig:put}
+    \label{fig:merkle}
 \end{figure}
 
-Transmitting \code fragments instead of the original data block raises a new challenge: verifying for integrity.
-Unlike the data blocks which are naturally self-certifying because the network identifies the blocks with their hashes, the \code fragments that are encoded by remote nodes are not trusted, and the naive way to validate them is to reconstruct and block and encode again, which is obviously unacceptable.
+\sys stores and transmits encoded fragments, instead of the original object.
+In the presence of adversaries, how to check the validity of each fragment, \ie, it is a correctly encoded fragment from the original object?
+In the base protocol, \sys solves this by brute force:
+a node checks the validity of a fragment by attempting to reconstruct the original object with matching object hash.
+When some fragments are erroneous, the approach requires iterating all combinations of fragments, which has an \emph{exponential} complexity.
 
-To address this challenge, \sys leverages the flattened view representation described above, and certifies each chunk individually.
-Upon \fn{Put} operation, \sys computes the hash of every chunk of the data block, and construct a Merkle tree for all the chunks.
-Then each chunk is equipped with its Merkle proof, and the root hash of the Merkle tree is used to identify the data block.
+To address this challenge, we design \emph{self-certifying fragments}.
+Self-certifying fragments can be validated individually.
+When storing an object, the issuing node constructs a Merkle tree, with the leaf nodes being the hash of each data chunk of the object.
+When storing and transmitting data chunks, each chunk is attached with a \emph{Merkle proof} of the chunk.
+We also use the root hash of the Merkel tree to identify the object, instead of the object hash.
 
-With this extra facility, when \sys node receiving \code fragments encoded by remote nodes, the Merkle proofs sent along with the fragments can show the inclusion of the fragments to the Merkle tree root hashes, which means the fragments are valid for the blocks.
+When a node receives a \code fragment, it iteratively validates each enclosed data chunks.
+For each data chunk, the node hashes the chunk, and uses the attached Merkle proof and the root hash to verify the validity of the chunk.
+Note that our self-certifying fragments are enabled by our \code design.
+The Merkle tree-based approach does not work if data chunks are XORed to form the fragments.
+
 \sgd{Seems no way to prove the index is correct, at least node can deduplicate locally.}
 
-This Merkle tree exposes a constant storage overhead.
-Our specific \code utilizes a 15-layer Merkle tree, which results in a Merkle proof of 480 bytes.
-The overhead is negligible compare to the chunk size \ie 32KB.
+Self-certifying fragments add a small, constant storage overhead.
+Our \code implementation uses a 15-layer Merkle tree, resulting in a constant 480 bytes Merkle proof.
+Such overhead is negligible compared to the data chunk size, \ie, 32 KB.
 
 \subsection{Fragment Distribution with Constant Redundancy}
-\lijl{Discuss how are the fragments being initially distributed, how $n$, $k$ being decided.}
+\label{sec:optz:dist}
 
 One limitation of \sys is the $k$ must be statically decided ahead of time.
 It's a challenging task to cooperate with ever-changing number of nodes with a fixed $k$.
@@ -249,6 +258,7 @@ For example, with $N$ = 10K nodes in the system, each node stores 10 fragments f
 When the system scales up, \ie the number of nodes increases, the unnecessary redundancy are discarded by the random eviction during the periodical estimation of $N$, ensuring the constant redundancy.
 
 \subsection{Local Storage Design}
+\label{sec:optz:local}
 
 \lijl{Describe local storage organization and optimization.}
 The local storage of the storage nodes follows a straightforward file structure.
@@ -261,26 +271,14 @@ To mitigate this situation, \sys adapts a lightweight bundling solution: all the
 The ZIP files are maintained in stored (\ie uncompressed) mode to minimize the computation overhead.
 In practice, we observe near zero cost of this bundling, and a significant speed up in the file system interaction.
 
-\lijl{Notes:}
-
-\lijl{Local storage management:
-Use local file system for storage management.
-Each object is stored as a directory;
-the directory contains all fragments, each stored in a separate file.}
-
 \lijl{The protocol should optimize bandwidth and compute efficiency when distributing object data.
 Ideally, both should be fully distributed across the network, with minimum redundancy involved.}
-
-\lijl{Issue with object recovery: the client cannot verify the correctness of each received fragment.
-It needs to try all combination of $k + \epsilon$ fragments.}
 
 \lijl{Approximation is done by sending alive-check messages to sampled nodes on the consistent hashing ring.
 Alternative approaches:
 dedicated nodes periodically broadcast to collect ACKs;
 a BFT service: each node periodically reports to the service;
 other prior work.}
-
-\lijl{Since each node needs to store fragments for all the objects, node local metadata should be carefully designed to avoid scalability issues.}
 
 \iffalse
 
