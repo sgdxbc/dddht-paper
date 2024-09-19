@@ -247,15 +247,18 @@ Self-certifying fragments add a small, constant storage overhead.
 Our \code implementation uses a 15-layer Merkle tree, resulting in a constant 480 bytes Merkle proof.
 Such overhead is negligible compared to the data chunk size, \ie, 32 KB.
 
-\subsection{Fragment Distribution with Constant Redundancy}
+\subsection{Fragment Distribution}
 \label{sec:optz:dist}
 
-One limitation of \sys is the $k$ must be statically decided ahead of time.
-It's a challenging task to cooperate with ever-changing number of nodes with a fixed $k$.
-To address this problem, \sys choose a sufficient large $k$ (\ie $2^{15}$) to handle potentially giant system scale.
-When the storage network is initiated with a small set of nodes, each node stores multiple fragments.
-For example, with $N$ = 10K nodes in the system, each node stores 10 fragments for each block, so that $N/3$ honest nodes store $33340 > k + \epsilon$ fragments that is sufficient for reconstructing the block.
-When the system scales up, \ie the number of nodes increases, the unnecessary redundancy are discarded by the random eviction during the periodical estimation of $N$, ensuring the constant redundancy.
+To maintain constant redundancy, \sys nodes discard (generate) fragments when the system scales up (down).
+When generating the initial encoding for an object, the issuing node fixes the coding parameter $k$ and the chunk size.
+The configuration needs to ensure that each node stores \emph{at least} one fragment while maintaining constant redundancy.
+However, as the size of the system scales, this requirement can be violated;
+at that point, \sys needs to perform a costly re-encoding of the object with an updated coding parameter.
+To address this issue, \sys chooses a sufficient large $k$ (\eg, $2^{15}$) to handle a projected maximum system size.
+Normally, the actual system size is much smaller, so each node stores multiple fragments.
+For instance, with $N$ = 10K nodes in the system, each node stores 10 fragments for each object, so that $N/3$ honest nodes store $33340 > k + \epsilon$ fragments, which is sufficient for reconstructing the object.
+When scaling up, the unnecessary fragments are discarded during periodical $N$ estimation, ensuring constant redundancy.
 
 \subsection{Local Storage Design}
 \label{sec:optz:local}
