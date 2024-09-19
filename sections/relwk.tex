@@ -30,7 +30,7 @@ it also avoids centralized trust or costly BFT consensus protocols for fragment 
 IPFS~\cite{ipfs} uses DHT to store publisher record without centralization, but offers no mechanism to reliably store objects.
 Filecoin~\cite{filecoin} and Arweave~\cite{ar} both use tokens to incentivize nodes to store objects longer, but has weak durability guarantees in the presence of failures.
 
-\paragraph{BFT Protocols.}
+\paragraph{BFT Replication.}
 State machine replication protocols that tolerant Byzantine failures~\cite{pbft,algorand,hotstuff,bitcoin,ethereum} can also ensure data durability in the presence of strong adversaries.
 These protocols, however, require data to be replicated on all participants;
 the capacity limitation makes them impractical for large-scale storage systems.
