@@ -113,6 +113,70 @@ As the concurrency increases, the throughput of DHT-based storage increases and 
 However, its throughput is not as stable as \sys: the system bottlenecks on the nodes that is selected by the most number of placement groups.
 As we can see in the later simulation, this issue cannot be addressed by storing more blocks with more concurrency, as the variance of storage node load goes up when there are more data to store.
 
+\subsection{Simulation}
+
+While the deployed evaluations verifies the practical performance of \sys, we additionally simulate \sys and the DHT-based storage for insights of long-term behaviors of the systems.
+Without further clarification all the simulations are performed for $10^7$ steps.
+The system is initialized with 1000 random data blocks stored by the 10K storage nodes, with a 0.01 node/step joining and leaving rate.
+There is no \fn{Put} operation happened during the simulation.
+
+\paragraph{Node load uniformity.}
+We collect the \emph{load} of the nodes when they leave the system, in the unit of block size.
+
+In this simulation \sys shows better uniformity.
+Every node in the system is utilized, and most of the nodes have similar load.
+On the other hand, the CDF graph of DHT-based storage shows steps, each of which corresponds to a set of nodes that are selected by a certain number of placement groups.
+The lines all starts from 0, means there are always nodes that are not selected and utilized by any group.
+Also, as the number of data grows, the load of top-utilized nodes grows dramatically.
+Eventually the system load is unevenly distributed to the nodes.
+
+\paragraph{Redundancy of stable system.}
+In the following simulations, we collect system statistics every $10^5$ steps.
+We first study the redundancy of the constantly-scale systems with different number of nodes.
+The graph shows the average redundancy of different systems.
+
+Both \sys and DHT-based storage shows perfect scalability, while \sys has a higher redundancy because of the larger $k$ parameter.
+On the other hand, the fully replicated baseline has unbounded redundancy.
+
+\paragraph{Redundancy adjustment for scaling up.}
+Then we study how well \sys can adjust redundancy against growing system scale.
+In the first $10^7$ steps the number of nodes grows from 10K to 100K, and then the simulation continues for $2 \dot 10^6$ steps without system growing.
+This simulation is performed with 100 data blocks.
+
+We studied three settings in this simulation.
+The ``oneshot'' setting demonstrate the baseline: every node only estimate $N$ once upon joining the system and initialize its storage accordingly.
+Then it never reacts to the changing $N$.
+In the other two settings the nodes periodically perform estimation of $N$, with $10^4$ and $10^6$ steps interval respectively.
+The former one corresponds to the ideal near-perfect responsiveness to the changing system scale, while the latter one is more realistic.
+
+The simulation results have a few takeaways.
+First, even in the baseline, the redundancy increases slower and slower because the newly-joining nodes are initialized with proper redundancy level, while the old nodes that persists unnecessary redundancy gradually leave the system.
+When the system stops growing the redundancy immediately drops, and it will eventually get back to expected level.
+
+Then, under the ideal setting we can clearly observe the effect of actively redundancy adjustment.
+In this case all the nodes reduce their redundancy almost at the same time, results in the significant drop in short intervals.
+Because of the rounding error the redundancy cannot drop back to the exact same level as initial, but it is still much less than the baseline.
+
+And finally, the realistic setting sits in between the other two settings.
+It reacts slower than the ideal setting, but it eventually matches the ideal case.
+
+\paragraph{Repair overhead.}
+In the following simulation we track the egress traffic of individual nodes for assisting repair during failures.
+The graph shows the average traffic of different system scales, in the unit of block size.
+
+In both systems every node only need to transfer few block size amount of repair data during its lifetime, and the overhead decreases as the number of nodes increases.
+The repair overhead of \sys is smaller than DHT-based storage thanks to the flattened view fragments (\autoref{sec:optz}).
+In \sys only chunks that directly required by the remote node need to be transferred, and no reconstruct is necessary.
+The larger $k$ results in smaller chunk size, which leads to better repair traffic efficiency.
+
+\paragraph{Redundancy over time.}
+In the last simulation we check for the safety guarantee of \sys.
+Unlike the other two systems that eagerly detect and repair for failures and maintain a near-constant redundancy level, \sys takes a more lazy approach (\autoref{sec:protocol:reconfig}), results in a more fluctuated redundancy.
+In this simulation, we collect the \emph{logical redundancy} data, \ie the number of available fragments divided by $k$, instead of the \emph{physical redundancy} showing in the above simulations.
+
+As the number of nodes increases, the fluctuation of redundancy decreases.
+But the redundancy is never going below 3x \ie the system never violates durability guarantee in the presence of $N/3$ faulty nodes.
+
 \iffalse
 Potential comparison systems to evaluate:
 
