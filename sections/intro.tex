@@ -60,6 +60,14 @@ Lastly, we propose a new rateless code construct, the Optimal Regeneration Code 
 \code enables object repairs to completely eschew regeneration the original objects, making the repair process practical under our \sys design.
 
 \lijl{Evaluation results here.}
+The evaluation of \sys shows desirable results.
+\sys can keep the \fn{Put} and \fn{Get} latency within 1.7x and 1.8x comparing to a mainstream DHT-based storage in worldwide deployed evaluation, and the latency maintains stable while system scales up.
+In write throughput evaluation, \sys can write data with a stable 238MB/s throughput even with limited node bandwidth resource.
+In the simulation, \sys shows more uniformed load than the compared DHT-based storage.
+\sys shows perfectly-bounded redundancy that fully replicated baseline cannot achieve.
+We also prove that \sys can properly adjust redundancy as the system dynamically scaling up.
+The repair overhead is also lower than the compared DHT-based storage.
+And finally, \sys's redundancy, though fluctuates, is always sufficient to ensure the durability guarantee.
 
 \iffalse
 \begin{outline}
