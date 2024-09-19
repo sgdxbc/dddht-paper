@@ -18,19 +18,19 @@ The system presents a \emph{flat view} of all objects;
 it does not offer explicit hierarchies such as those in a file system.
 It serves as a base persistent storage layer where higher-level functionalities, such as files and relational databases, can be built atop.
 
-Within the overall storage stack, we target the \emph{cold storage} layer which emphasizes \emph{data durability}, \emph{storage capacity}, and \emph{cost}, as opposed to the warm~\cite{f4} or the hot storage~\cite{haystack} layers.
+Within the overall storage stack, we target the \emph{archival storage} layer which emphasizes \emph{data durability}, \emph{storage capacity}, and \emph{cost}, as opposed to the warm~\cite{f4} or the hot storage~\cite{haystack} layers.
 Amazon Glacier~\cite{amazon_glacier,amazon_s3}, Google Coldline~\cite{google_coldline} and Archive~\cite{google_archive} storage, and the archive tier~\cite{azure_tier} in Azure Storage~\cite{azure_storage} are popular production-level, centrally managed systems in this category.
 Performance and availability are not key design metrics.
 
 \paragraph{\textbf{Deployment and failure model}}
-Given the durability challenges of centrally managed storage systems (\autoref{sec:intro}), we target deployments in a \emph{decentralized} and \emph{open} network.
-The deployment model mirrors existing permissionless blockchain systems such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
+We target deployments in a \emph{decentralized} and \emph{open} network.
+The deployment model mirrors existing permissionless blockchains such as Bitcoin~\cite{bitcoin} and Ethereum~\cite{ethereum}.
 There is no central entity to manage or administer the system.
 Participants of the network belong to different administrative organizations~\footnote{The model permits single-participant-organizations, or equivalently, individual entities joining the network.}.
 They do not \emph{trust}, nor could they \emph{control} entities outside their own organizations.
 This ensures that the behavior of a single organization cannot violate the durability guarantees of the entire system.
 
-The network is \emph{permissionless}, \ie, anyone can join the network without any authorization, and can leave at any time.
+The network is \emph{permissionless}, \ie, anyone can join and leave the network at any time.
 This open model typically leads to nodes distributed across geographical locations around the globe.
 Each participating node has some local storage for storing data and network access to the wide area network.
 There is, however, no requirement on the type, speed, or quality of their physical storage or network devices.
@@ -39,10 +39,10 @@ Storage devices can fail due to hardware issues or external events (\eg, natural
 Once a storage device fails, all objects stored on the device are lost permanently.
 Since the network is permissionless, a node can leave the system at any point;
 the effect is identical to a failure to all its storage devices.
-We also consider \emph{adversarial} participants in the network.
+We also consider \emph{adversarial} participants in the network, a common assumption in decentralized systems.
 Adversaries can deviate arbitrarily from the storage protocol, including deleting any stored objects.
 They may also collude and attack other \emph{honest} participants in the network.
-Similar to other BFT work, we only make assumptions about the \emph{total attack power} of the adversaries.
+Similar to other BFT work, we only assume the \emph{total attack power} of the adversaries.
 Note that recoverable transient failures, \eg, temporary network issues and node reboots, do not impact storage durability.
 
 \iffalse
@@ -57,10 +57,10 @@ The storage system needs to ensure data durability even when nodes fail and depa
 \label{sec:background:durability}
 
 Durability requires that stored objects are never \emph{lost}.
-Data losses occur when the device storing an object fails, when the node hosting the device permanently fails or leaves the system, or when the object is erased.
+Data loss occurs when the device storing an object fails, when the node hosting the device permanently fails or leaves the system, or when the object is erased.
 Since these events occur regularly in large deployments, storage systems distribute copies of each object to multiple storage devices.
-As long as not all devices storing a copy fail simultaneously, the object can be recovered.
-To maintain the desired fault tolerance level, storage systems perform periodic repair to redistribute lost copies due to failures.
+Provided not all devices storing a copy fail simultaneously, the object can be recovered.
+To maintain the fault tolerance level, storage systems perform periodic repair to redistribute lost copies due to failures.
 
 Simply replicating objects introduces high redundancy, which impacts the overall storage efficiency.
 To reduce redundancy without compromising durability, modern storage systems apply erasure coding~\cite{google_storage,was,hitchhiker,xor}.
@@ -72,17 +72,19 @@ Replication, in fact, is a simple form of erasure coding where $k$ is $1$ and an
 Durability guarantee of a storage system depends heavily on the choice of \emph{placement groups}.
 A placement group consists of a set of storage devices;
 a storage deployment typically has multiple placement groups.
-The encoded fragments of an object are distributed to devices within a single placement group.
-To ensure durability, devices in a placement group should have low \emph{failure correlation} so that simultaneous fragment losses for any object is minimized.
-The placement groups are either assigned by an operator in a centrally managed system, or decided by the storage protocol in a decentralized deployment.
+Storage systems distribute encoded fragments of an object to devices within a single placement group.
+To ensure durability, devices in a placement group should have low \emph{failure correlation} so that simultaneous fragment losses are minimized.
+Placement groups are assigned by an operator in centrally managed systems, or decided by the protocol in a decentralized deployment.
 
 \subsection{Prior Solutions}
 \label{sec:background:prior}
 
 In centrally managed storage systems~\cite{amazon_glacier,azure_storage,gfs,silica}, the operators have complete knowledge about the deployment: makes, models, and batches of disks, identity of servers that reside in the same rack/pod/cluster, the network topology, power distribution and redundancy, etc.
 They can, therefore, derive a good estimation of all the \emph{failure domains} and their relative failure probability.
+\ifspace
 For instance, servers within the same rack have a higher correlated failure rate than those from distinct racks;
 disks from the same make and model are more likely to fail simultaneously than those from different vendors.
+\fi
 With accurate failure domain information, the operators can assign placement groups with minimum correlated failure probabilities.
 A typical placement group consists of disks of different makes and models, and those mounted in distinct racks, power domains, or geographical locations~\cite{azure_storage,tiger}.
 
@@ -95,17 +97,17 @@ Without a centrally trusted management service, prior solutions distribute objec
 Each object is fully replicated on all storage nodes~\cite{bitcoin,ethereum,fabric}.
 The system runs a BFT protocol~\cite{pbft,hotstuff,algorand} to tolerate Byzantine failures.
 To ensure linearizable~\cite{linearizability} replication, the protocol requires $3f + 1$ replicas to tolerate $f$ adversarial nodes.
-However, for durable storage with immutable objects, each object only needs to be replicated on $f + 1$ nodes.
+However, for durability with immutable objects, it only needs to replicate each object on $f + 1$ nodes.
 The system effectively consists of a single placement group.
 
-\noindent\textbf{Selective Replication}.
-The system distributes full copies or encoded fragments of each object only to a subset of the storage nodes~\cite{farsite,past,cfs,glacier,carbonite,irisstore}.
+\noindent\textbf{Selective Distribution}.
+The system distributes full copies or encoded fragments of each object to a subset of the storage nodes~\cite{farsite,past,cfs,glacier,carbonite,irisstore}.
 The distribution is commonly done through a distributed hash table (DHT)~\cite{chash,chord,kademlia} or a BFT metadata service.
-For DHT-based systems, objects and storage nodes are hashed into the same hash space.
-Copies or fragments of an object are distributed to nodes either in the neighborhood~\cite{cfs,past,carbonite} or at specific offsets~\cite{glacier} of the object hash;
-these nodes effectively form the placement group for the object.
+For DHT-based systems, they hash the objects and storage nodes into the same hash space.
+Copies or fragments of an object are distributed to nodes in the neighborhood~\cite{cfs,past,carbonite} or at specific offsets~\cite{glacier} of the object hash;
+these nodes form the object placement group.
 
-IPFS~\cite{ipfs} is a modern, decentralized storage network with more than 400 thousand peers globally.
+IPFS~\cite{ipfs} is a modern, decentralized storage network with more than 400 thousand peers.
 IPFS uses content addressing through a Kademlia~\cite{kademlia} DHT.
 By writing to the DHT, peers storing a file chunk announce a publisher record which maps the chunk to the peer identifier.
 The publisher record thus serves as the metadata.
@@ -122,13 +124,15 @@ Unlike centrally managed systems, decentralized storage lacks accurate informati
 Participants are from distinct administrative and management domains;
 for security and privacy concerns, they do not expose sensitive information such as location, identities, and system configurations.
 Consequently, no single entity in the system has complete, prior knowledge about the failure domains of all storage devices.
+\ifspace
 For instance, two nodes might locate within the same rack or reside in two continents;
 no system participant, however, can \emph{reliably} determine the true case.
+\fi
 Failure correlations are only revealed after simultaneous failures actually occur.
-Unfortunately, such information is already \emph{too late} to prevent durability violations.
+Unfortunately, such information is already too late to prevent durability violations.
 
 Without reliable failure domain information, prior systems~\cite{xfs,farsite,cfs,glacier,carbonite,irisstore} leverage randomization to reduce correlated failure rates.
-By distributing object fragments to randomly selected nodes (\eg, hashed IDs in a DHT), these approaches claim that failures within each placement group are effectively \emph{independent}.
+By distributing object fragments to randomly selected nodes (\eg, hashed IDs in a DHT), they claim that failures within each placement group are effectively \emph{independent}.
 Their durability guarantee, therefore, hinges on this \emph{failure independence} assumption.
 Some system~\cite{oceanstore} uses introspection to predict correlated failures.
 Prior research~\cite{irisstore}, however, has shown that accurate prediction of failure correlation is unrealistic in decentralized environment.
@@ -137,19 +141,23 @@ Prior research~\cite{irisstore}, however, has shown that accurate prediction of 
 \begin{figure}
     \centering
     \includegraphics[width=\columnwidth]{figures/loss}
-    \caption{Data loss in decentralized storage}
+    \caption{Illustrating data loss of a decentralized storage system using selective distribution.
+    Object distribution is public information.
+    Adversaries can compromise enough responsible nodes to violate durability of an object.}
     \label{fig:loss}
 \end{figure}
 
 \paragraph{Durability violation in the presence of adversaries.}
-Unfortunately, failure independence only holds in the absence of adversaries.
-When adversarial participants have significant attack power, which is a common assumption for decentralized systems, they can easily subvert the durability guarantees of existing systems that assign placement groups based on randomness or heuristics.
-\lijl{Citations for significant attack power?}
-As illustrated in \autoref{fig:loss}, the encoded fragments of an object are initially stored on a randomly selected set of nodes (\eg, using a DHT).
-Suppose that permanent failures of these nodes in the placement group are indeed independent.
+Failure independence, however, only holds in the absence of adversaries.
+Decentralized deployments typically assume adversaries with attack power \emph{proportional} to the system size~\cite{bitcoin,ethereum,pbft,hotstuff,algorand}.
+Such strong adversaries can easily subvert the durability guarantees of existing systems that assign placement groups based on randomness or heuristics.
+As illustrated in \autoref{fig:loss}, the storage system initially stores the encoded fragments of an object on a random set of nodes (\eg, using a DHT).
+Suppose that permanent failures of this placement group are indeed independent.
 Location information for the object, however, is public, since it is required for object retrieval and repair.
 Adversaries can learn the identities of the responsible nodes by either observing network traffic or participating in object retrieval.
-As adversaries are typically assumed to have attack power proportional to the overall system capacity, they can concentrate their attack to compromise enough nodes in the placement group.
+With a common $\frac{1}{3}$ attack power assumption, they can concentrate their attack to compromise enough nodes in the placement group.
 By deleting the fragments on the compromised nodes, the object is lost.
-We have also conducted simulations to demonstrate our hypothesis.
-\xxx{Simulation result here.}
+
+\ifspace
+We have also conducted simulations to validate our hypothesis.
+\fi
