@@ -1,6 +1,49 @@
 \section{Evaluation}
 \label{sec:eval}
 
+In this section we explore various aspects of \sys including performance, storage capacity and scalability.
+To answer the following questions:
+\begin{itemize}
+    \item Can \sys achieve practical latency? Can \sys fully utilize bandwidth resource into write throughput?
+    \item Can \sys evenly distribute blocks among the storage nodes? Can \sys maintain bounded redundancy in long term under various system conditions?
+    \item Can \sys efficiently repair for failures without overwhelming storage nodes?
+\end{itemize}
+We perform evaluations with both deployed system and simulation.
+
+In both kind of evaluations, we compare \sys with two other storage systems: a fully replicated baseline and a DHT-based decentralized storage network.
+We construct a basic hierarchical transmission mesh for the full replication storage to mitigate its single-point bottleneck in \fn{Put} operations.
+In \fn{Put} operations the data block is sent to several \emph{regional primaries}, who are responsible for relaying the block to local storage nodes.
+
+The DHT-based storage network is inspired by various previous decentralized storage networks \sgd{cite}.
+In this network, each data block is stored on a randomly-selected fixed-size placement group.
+The selection strategy varies in previous works, such as successive nodes or equally-distanced nodes on the ring network and closest XOR distance.
+\sgd{cite}
+However, all of them go through a $O(log(N))$ message complexity DHT walking procedure.
+In our evaluation, we simulate the selection with a $O(1)$ procedure that selects the successive nodes locally from the \fn{Put} or \fn{Get} client nodes.
+This simulated selection can serve as a (rather loose) theoretical limit of various kinds of DHT walking performance, and allow us to focus on the performance of data dissemination and aggregation within placement groups.
+
+Without further statement our evaluation are performed with the following parameters:
+the number of nodes $N = 10000$, and assuming at most $f = N/3$ of them are faulty.
+As discussed in \autoref{sec:optz}, we deploy a rateless erasure code with 1GB block size, $k = 2^{15}$ and the nodes target a redundancy of 3.05x \ie each chunk (or fragment of degree 1) is 32KB size and each storage node stores 10 fragments for each block.
+For full replication baseline we reduce $N$ to 100 for its poor scalability.
+For DHT-based storage system, we fix placement group size to 100, and deploy the same erasure code of \sys but with $k = 32$, so that when each node stores one fragment for each block the system is able to tolerate $1/3$ faulty nodes in each placement group.
+Notice that this is a weaker guarantee than the one provided by \sys, since $N/3$ faulty nodes can dominate a single placement group \ie results in more than $1/3$ faulty nodes in the group.
+Consequentially, the DHT-based system also uses 1GB block size, but the chunk size is 32MB.
+
+\subsection{Worldwide Deployed Benchmarks}
+
+We measure the performance characteristics of \sys with our reference implementation written with 4359 lines of Rust code.
+We implement a \sys storage node as a pair of foreground HTTP server and two background event loops: one for disseminating gossip messages, and the other for reacting the gossip messages.
+This design decouples server-like behaviors with client-side requests which are all performed by the event loops, and avoids cascading synchronous blocking.
+
+\paragraph{Operation latency.}
+We measured the latency of \sys and compared systems with 10000 storage nodes deployed on 100 AWS EC2 instances across five regions (ap-east-1, us-west-1, eu-central-1, sa-east-1, af-south-1).
+Each instance has 16 vCPUs, 128GB memory, 500GB gp3 storage and up to 12.5Gbps bandwidth.
+
+We measured the latency of \fn{Put} and \fn{Get} operations with three settings: the operation is initiated directly by a storage node, the operation is requested by a client to a storage node that is geologically locally or remotely located.
+The benchmark first perform a \fn{Put} operation on a randomly-selected node with a block filled with random bytes, then wait for the block reaches all the storing nodes, then \fn{Get} the block back and compare the checksum.
+In the second settings the two random nodes are constraint to be in the same region of the client, while in the third setting they are constraint to be in regions different from the client.
+
 Potential comparison systems to evaluate:
 
 Full replication system.
