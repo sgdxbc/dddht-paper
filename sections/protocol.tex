@@ -2,6 +2,7 @@
 \label{sec:protocol}
 
 We now propose \sys, a decentralized storage system design that provides strong durability guarantee.
+We also provide a correctness proof of the protocol in \autoref{sec:proof}.
 
 \subsection{System Model}
 \label{sec:protocol:model}
@@ -155,27 +156,6 @@ When a node rejoins the network, either after a crash, rebooting, or temporary l
 Details of the storage layout are discussed in \autoref{sec:optz}.
 Next, the node performs $N$ estimation (\autoref{sec:protocol:reconfig}), and then resumes normal protocol processing.
 If the node has lost its local storage data, it performs the same joining protocol as a fresh node.
-
-\subsection{Proof}
-
-The \sys maintains the following invariant:
-for each stored data block, at any time since the \fn{Put} operation finishes, any set of $N - f$ honest nodes hold at least $k + \epsilon$ fragments for the block.
-
-The durability is guaranteed following this invariant: during the \fn{Get} operation, client will eventually attempt to contact all $N$ nodes, at least $N - f$ of which are honest and will respond to client.
-Client can reconstruct the original data block with the $k + \epsilon$ fragments collected from them.
-In the following text we will discuss how the invariant is maintained during various situations.
-
-\paragraph{\fn{Put} operation.}
-As described in the \autoref{sec:protocol:base}, the finalization condition of \fn{Put} trivially holds the invariant.
-
-\paragraph{Node joining.}
-Notice that honest nodes do not give up any persisted fragment upon node joining, and any set of $N - f$ honest nodes that does not contain the new node will still hold $k + \epsilon$ fragments as long as it is already doing so.
-For the sets that contain the new node (which means the new node must be honest),
-
-\paragraph{Node leaving.}
-~\sgd{Need an extra assumption of replacing honest node must join for a while already.}
-
-\paragraph{Redundancy adjustment.}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Protocol and Design Details %

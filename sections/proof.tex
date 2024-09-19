@@ -1,0 +1,21 @@
+\section{Durability Proof}
+\label{sec:proof}
+
+The \sys maintains the following invariant:
+for each stored data block, at any time since the \fn{Put} operation finishes, any set of $N - f$ honest nodes hold at least $k + \epsilon$ fragments for the block.
+
+The durability is guaranteed following this invariant: during the \fn{Get} operation, client will eventually attempt to contact all $N$ nodes, at least $N - f$ of which are honest and will respond to client.
+Client can reconstruct the original data block with the $k + \epsilon$ fragments collected from them.
+In the following text we will discuss how the invariant is maintained during various situations.
+
+\paragraph{\fn{Put} operation.}
+As described in the \autoref{sec:protocol:base}, the finalization condition of \fn{Put} trivially holds the invariant.
+
+\paragraph{Node joining.}
+Notice that honest nodes do not give up any persisted fragment upon node joining, and any set of $N - f$ honest nodes that does not contain the new node will still hold $k + \epsilon$ fragments as long as it is already doing so.
+For the sets that contain the new node (which means the new node must be honest),
+
+\paragraph{Node leaving.}
+~\sgd{Need an extra assumption of replacing honest node must join for a while already.}
+
+\paragraph{Redundancy adjustment.}
