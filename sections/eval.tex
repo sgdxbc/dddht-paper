@@ -47,8 +47,9 @@ In all settings, we perform a \fn{Put} operation with an object filled with rand
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\columnwidth]{graphs/d_latency}
-    \caption{Latency of \fn{Put} and \fn{Get} operations in a world-wide deployment}
+    \hspace{-8pt}\includegraphics[width=0.76\columnwidth]{graphs/d_latency}
+    \includegraphics[width=0.74\columnwidth]{graphs/d_scale}
+    \caption{Latency of \fn{Put} and \fn{Get} operations in a world-wide deployment: (top) fixed 10K nodes with three settings (bottom) increasing system sizes}
     \label{fig:deploy-latency}
 \end{figure}
 
@@ -69,14 +70,13 @@ While the replication system is still much slower in \fn{Put} operation (154.6s 
 \paragraph{Scalability.}
 Next, we measure the latency of direct \fn{Put} and \fn{Get} with increasing system sizes.
 We skip the replication baseline, since it fail to scale beyond 100 nodes.
-The result is shown in \autoref{fig:deploy-scale}.
+The result is shown in \autoref{fig:deploy-latency}.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\columnwidth]{graphs/d_scale}
-    \caption{Latency of \fn{Put} and \fn{Get} operations with increasing system sizes}
-    \label{fig:deploy-scale}
-\end{figure}
+% \begin{figure}
+%     \centering
+%     \caption{Latency of \fn{Put} and \fn{Get} operations with increasing system sizes}
+%     \label{fig:deploy-scale}
+% \end{figure}
 
 Both systems show good scalability.
 DHT storage always disseminates to and aggregates from 100 nodes, so its performance is stable regardless of system sizes.
@@ -96,7 +96,7 @@ To get realistic results with cross-region bandwidth constrains, we limit the in
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\columnwidth]{graphs/d_tput}
+    \includegraphics[width=0.7\columnwidth]{graphs/d_tput}
     \caption{Comparing the \fn{Put} throughput of \sys and DHT storage with increasing client workloads}
     \label{fig:deploy-tput}
 \end{figure}
@@ -120,8 +120,8 @@ We first collect the storage utilization (load) of each node when they leave the
 The CDF of node storage loads for both systems are shown in \autoref{fig:simulate-load}.
 
 \begin{figure}
-    \includegraphics[width=0.4\columnwidth]{graphs/s_pdf_entropy}
-    \includegraphics[width=0.4\columnwidth]{graphs/s_pdf_dht}
+    \hspace{30pt}\includegraphics[width=0.35\columnwidth]{graphs/s_pdf_entropy}
+    \includegraphics[width=0.35\columnwidth]{graphs/s_pdf_dht}
     \caption{Node storage load CDF of \sys (left) and DHT-based storage (right). Each line represents different number of objects stored in the system.}
     \label{fig:simulate-load}
 \end{figure}
@@ -136,7 +136,8 @@ Eventually the system load is unevenly distributed among the nodes.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\columnwidth]{graphs/s_scale_static}
+    \hspace{-10pt}\includegraphics[width=0.7\columnwidth]{graphs/s_scale_static}
+    \includegraphics[width=0.7\columnwidth]{graphs/s_scale}
     \caption{Average redundancy with increasing system scales}
     \label{fig:simulate-scale}
 \end{figure}
@@ -150,12 +151,11 @@ Both \sys and DHT storage show constant redundancy regardless of system sizes.
 This shows that \sys can scale perfectly with increasing system sizes.
 Redundancy of the replication baseline, however, increases linearly with more nodes.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=0.8\columnwidth]{graphs/s_scale}
-    \caption{Redundancy of \sys during system scaling up}
-    \label{fig:simulate-scale-up}
-\end{figure}
+% \begin{figure}
+%     \centering
+%     \caption{Redundancy of \sys during system scaling up}
+%     \label{fig:simulate-scale-up}
+% \end{figure}
 
 \paragraph{Redundancy in dynamic systems.}
 Next, we study how \sys adjusts its redundancy against dynamic system scales.
@@ -166,7 +166,7 @@ In ``one-shot'', every node estimates $N$ only once when it joins the system.
 For the other two settings, the nodes periodically estimate $N$, with $10^4$ and $10^6$ steps interval respectively.
 The former provides near-perfect responsiveness to the changing system scales, while the latter one is more realistic.
 
-As shown in \autoref{fig:simulate-scale-up}, even in the one-shot setting, the increase in redundancy gradually slows down.
+As shown in \autoref{fig:simulate-scale}, even in the one-shot setting, the increase in redundancy gradually slows down.
 The newly-joined nodes are initialized with the proper redundancy, while old nodes who store unnecessary redundancy gradually leave the system.
 When the system stops growing, the redundancy growth drops, and eventually drops to the expected level.
 
@@ -180,7 +180,7 @@ The graph \autoref{fig:simulate-repair} shows the average traffic of different s
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\columnwidth]{graphs/s_repair}
+    \includegraphics[width=0.7\columnwidth]{graphs/s_repair}
     \caption{Average node repair traffic}
     \label{fig:simulate-repair}
 \end{figure}
@@ -197,7 +197,7 @@ In this simulation, we collect the \emph{logical redundancy} data, \ie the numbe
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\columnwidth]{graphs/s_logical}
+    \includegraphics[width=0.7\columnwidth]{graphs/s_logical}
     \caption{Logical redundancy of \sys}
     \label{fig:simulate-logical}
 \end{figure}
@@ -210,7 +210,7 @@ But the redundancy is never going below 3x \ie the system never violates durabil
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.8\columnwidth]{graphs/op}
+    \includegraphics[width=0.7\columnwidth]{graphs/op}
     \caption{CPU Time of various operations}
     \label{fig:op}
 \end{figure}

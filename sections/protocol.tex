@@ -102,8 +102,9 @@ We follow the common practice of signing the message digest.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.9\columnwidth]{figures/put}
-    \caption{$\fn{Put}$ protocol}
+    \includegraphics[width=0.7\columnwidth]{figures/put}
+    \includegraphics[width=0.7\columnwidth]{figures/get}
+    \caption{\fn{Put} and \fn{Get} protocol}
     \label{fig:put}
 \end{figure}
 
@@ -122,13 +123,6 @@ This ensures recoverability of the object.
 If $c$ fails to receive sufficient \mtype{StoreReply} after a timeout, it re-broadcasts the \mtype{StoreRequest}.
 
 \subsubsection{\fn{Get} Protocol}
-
-\begin{figure}
-    \centering
-    \includegraphics[width=0.9\columnwidth]{figures/get}
-    \caption{$\fn{Get}$ protocol}
-    \label{fig:get}
-\end{figure}
 
 When a node $c$ calls $\fn{Get}(\var{h})$, where $h$ is the hash of the object it intends to read, $c$ broadcasts a \msg{ObjRecover}{h} to the network.
 Upon receiving and validating the request, a node $s$ queries its local state $\var{frags}$.
@@ -233,7 +227,7 @@ This constant redundancy overhead does not violate our design goal.
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.9\columnwidth]{figures/merkle}
+    \includegraphics[width=0.85\columnwidth]{figures/merkle}
     \caption{Self-certifying fragments}
     \label{fig:merkle}
 \end{figure}
