@@ -31,42 +31,39 @@ as such, one fragment per storage node can tolerate $1/3$ faulty nodes in each p
 The DHT storage also uses 1 GB block size, but the chunk size is 32 MB.
 As shown in \autoref{sec:background:loss}, this provides weaker durability guarantee than \sys, since $N/3$ faulty nodes can dominate a single placement group.
 
-\subsection{Worldwide Deployed Benchmarks}
+\subsection{Worldwide Deployment Benchmarks}
 
-We measure the performance characteristics of \sys with our reference implementation written with 4359 lines of Rust code.
-We implement a \sys storage node as a pair of foreground HTTP server and two background event loops: one for disseminating gossip messages, and the other for reacting the gossip messages.
-This design decouples server-like behaviors with client-side requests which are all performed by the event loops, and avoids cascading synchronous blocking.
+We first evaluate the performance characteristics of \sys using our reference implementation written in 4359 lines of Rust code.
+We implement a \sys storage node using a pair of foreground HTTP server and two background workers: one for disseminating gossip messages, and the other for handling gossip messages.
+This design decouples server behaviors and client-side requests, and avoids cascading synchronous blocking.
 
 \paragraph{Operation latency.}
-We measured the latency of \sys and compared systems with 10000 storage nodes deployed on 100 AWS EC2 instances across five regions (ap-east-1, us-west-1, eu-central-1, sa-east-1, af-south-1).
-Each instance has 16 vCPUs, 128GB memory, 500GB gp3 storage and up to 12.5Gbps bandwidth.
+We measured the latency of all systems using 10000 storage nodes deployed on 100 AWS EC2 instances across five regions (ap-east-1, us-west-1, eu-central-1, sa-east-1, af-south-1).
+Each instance has 16 vCPUs, 128~GB memory, 500~GB gp3 storage and up to 12.5Gbps bandwidth.
 
-We measured the latency of \fn{Put} and \fn{Get} operations with three settings: the operation is initiated directly by a storage node, the operation is requested by a client to a storage node that is geologically locally or remotely located.
-The benchmark first perform a \fn{Put} operation on a randomly-selected node with a block filled with random bytes, then wait for the block reaches all the storing nodes, then \fn{Get} the block back and compare the checksum.
-In the second settings the two random nodes are constraint to be in the same region of the client, while in the third setting they are constraint to be in regions different from the client.
-The results are shown in \autoref{fig:deploy-latency}.
+We measured the latency of \fn{Put} and \fn{Get} operations with three settings: the operation is invoked directly by a storage node; the operation is requested by a separate client either in the same region or a remote region.
+In all settings, we perform a \fn{Put} operation with an object filled with random bytes, waits for the object to reach all the nodes, then \fn{Get} the object and compare the checksum.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.8\columnwidth]{graphs/d_latency}
-    \caption{Latency of \fn{Put} and \fn{Get} operations}
+    \caption{Latency of \fn{Put} and \fn{Get} operations in a world-wide deployment}
     \label{fig:deploy-latency}
 \end{figure}
 
-\sys achieve 32.9s and 12.1s average latencies on direct \fn{Put} and \fn{Get}.
-It is slower than DHT-based storage (19.4s and 6.7s), because of two reasons:
-\begin{itemize}
-    \item The $k$ code parameter of \sys is significantly larger than the one of DHT-based storage, which results in 2.77x more redundancy than the DHT-based storage system.
-    The more bytes for dissemination results in longer latency.
-    \item The fragments disseminated by \sys is more and smaller than the DHT-based storage, and the dissemination scope is much wider \ie to all of the 10K nodes compared to only 100 nodes of the placement group.
-    So the dissemination of \sys is less efficient.
-\end{itemize}
-However, both of the systems are significantly faster than the fully replicated baseline in \fn{Put} operation, which takes 88.8s on average.
-At the other hand, the \fn{Get} operation is instantly finished in a fully replicated system under direct setting, since every storage node keeps a full copy of the original block that is ready for fulfilling the operation at any time.
+As shown in \autoref{fig:deploy-latency}, \sys achieve 32.9s and 12.1s average latencies on direct \fn{Put} and \fn{Get}.
+It is slower than DHT storage (19.4s and 6.7s) for two reasons:
+a) \sys has a significantly larger $k$ parameter, resulting in a 2.77x higher redundancy than DHT storage.
+This leads to longer data dissemination latency.
+b) \sys disseminates smaller but more fragments than DHT storage.
+The dissemination scope is also wider, \ie, to all the 10K nodes compared to only 100 nodes in a placement group.
+As such, the dissemination of \sys is less efficient.
+However, both systems are significantly faster than the fully replicated baseline in \fn{Put} operation, which takes 88.8s on average.
+The replication baseline completes the \fn{Get} operation instantly under the direct setting, since a full copy is always available on the node.
 
-When client requests from a local storage node, a small latency penalty (3-5s) is added to all the system.
-When the request is from remote region, a significant slowdown is observed.
-While fully replicated baseline is still much slower in \fn{Put} operation (154.6s compared to 94.2/95.2s of \sys/DHT-based storage), its \fn{Get} is almost the same as the other two systems: all of them are around 72-73s.
+When a separate client requests from a local region, a small latency penalty (3-5s) is added to all the systems.
+A significant slowdown is observed when the client is in a remote region.
+While the replication system is still much slower in \fn{Put} operation (154.6s compared to 94.2/95.2s of \sys/DHT storage), its \fn{Get} is almost the same as the other two systems: all of them are around 72-73s.
 
 \paragraph{Scalability.}
 Next we measure the direct \fn{Put} and \fn{Get} with various numbers of nodes ranging from 4000 to 10000 for \sys and DHT-based storage.
