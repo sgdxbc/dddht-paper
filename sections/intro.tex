@@ -59,15 +59,13 @@ Moreover, when the system size scales, newly joined nodes can independently gene
 Lastly, we propose a new rateless code construct, the Optimal Regeneration Code (\code), based on Luby Transform codes.
 \code enables object repairs to completely eschew regeneration the original objects, making the repair process practical under our \sys design.
 
-\lijl{Evaluation results here.}
-The evaluation of \sys shows desirable results.
-\sys can keep the \fn{Put} and \fn{Get} latency within 1.7x and 1.8x comparing to a mainstream DHT-based storage in worldwide deployed evaluation, and the latency maintains stable while system scales up.
-In write throughput evaluation, \sys can write data with a stable 238MB/s throughput even with limited node bandwidth resource.
-In the simulation, \sys shows more uniformed load than the compared DHT-based storage.
-\sys shows perfectly-bounded redundancy that fully replicated baseline cannot achieve.
-We also prove that \sys can properly adjust redundancy as the system dynamically scaling up.
-The repair overhead is also lower than the compared DHT-based storage.
-And finally, \sys's redundancy, though fluctuates, is always sufficient to ensure the durability guarantee.
+\sys is a practical design.
+In a world-wide deployment, \sys maintains \fn{Put} and \fn{Get} latency within 1.7x and 1.8x comparing to a mainstream DHT-based storage.
+Latency of \sys remains stable while the system scales up.
+\sys also sustains a 238~MB/s throughput, comparable to the DHT storage, even with limited node bandwidth resource.
+Critically, \sys guarantees data durability, while the DHT store loses data in the presence of adversaries.
+Using simulation, we show that \sys maintains \emph{constant} redundancy regardless of system scales.
+We also prove that \sys can properly adjust redundancy in dynamic systems, and has lower repair overhead than the DHT store.
 
 \iffalse
 \begin{outline}
