@@ -31,19 +31,7 @@ All other recoverable failures (\eg, nodes rebooting after a kernel crash) are e
 \subsection{Base Protocol}
 \label{sec:protocol:base}
 
-\begin{figure}
-    \centering
-    \includegraphics[width=\columnwidth]{figures/put}
-    \caption{$\fn{Put}$ protocol}
-    \label{fig:put}
-\end{figure}
 
-\begin{figure}
-    \centering
-    \includegraphics[width=\columnwidth]{figures/get}
-    \caption{$\fn{Get}$ protocol}
-    \label{fig:get}
-\end{figure}
 
 \begin{figure}
 \begin{mdframed}
@@ -56,6 +44,8 @@ All other recoverable failures (\eg, nodes rebooting after a kernel crash) are e
     retrieves an object with a hash $\var{h}$.
     Returns the original object.
 \end{itemize}
+
+
 \textbf{Node State}
 \begin{itemize}
     \item $\var{frags}: \var{h} \rightarrow \langle \var{idx}, \var{pos} \rangle, \dots$:
@@ -65,6 +55,15 @@ All other recoverable failures (\eg, nodes rebooting after a kernel crash) are e
     \item $k$, $\epsilon$:
     pre-defined constant erasure coding parameters
 \end{itemize}
+
+\end{mdframed}
+\caption{\sys top-level APIs and node state}
+\label{fig:node-state}
+\end{figure}
+\begin{figure}
+\begin{mdframed}
+
+
 \textbf{Auxiliary Functions}
 \begin{itemize}
     \item $\fn{store}(\var{pos}, \var{bytes})$:
@@ -81,15 +80,15 @@ All other recoverable failures (\eg, nodes rebooting after a kernel crash) are e
     broadcasts a message $\var{msg}$ to all the nodes in the system
 \end{itemize}
 \end{mdframed}
-\caption{\sys top-level APIs, node state, and auxiliary functions}
-\label{fig:node-state}
+\caption{\sys Auxiliary functions}
+\label{fig:node-aux}
 \end{figure}
 
 We start with a base \sys protocol that ensures object durability.
 The protocol fulfills the goals and addresses the challenges in \XXX, but is rather inefficient.
 We present protocol and design optimizations which improve the practicality of \sys in \autoref{sec:optz}.
 
-The top-level storage API, the local state on each node, and the auxiliary functions used by the protocol are shown in \autoref{fig:node-state}.
+The top-level storage API, the local state on each node, and the auxiliary functions used by the protocol are shown in \autoref{fig:node-state} and \autoref{fig:node-aux}.
 We assume a generic rateless code for the \fn{encode} and \fn{decode} functions.
 The code generates an infinite sequence of encoded fragments, and any $k + \epsilon$ unique fragments can recover the original data.
 \fn{send}() uses a reliable transport protocol such as TCP.
@@ -100,6 +99,14 @@ We use $\langle m \rangle_{\sigma{}_n}$ to denote a message signed by node $n$.
 We follow the common practice of signing the message digest.
 
 \subsubsection{\fn{Put} Protocol}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\columnwidth]{figures/put}
+    \caption{$\fn{Put}$ protocol}
+    \label{fig:put}
+\end{figure}
+
 
 When a node $c$ invokes $\fn{Put}(\var{obj})$, it broadcasts a message \msig{StoreRequest}{\var{obj}, h}{c}, where $h$ is the hash of $\var{obj}$.
 \lijl{For now, just broadcast the entire object.
@@ -115,6 +122,13 @@ This ensures recoverability of the object.
 If $c$ fails to receive sufficient \mtype{StoreReply} after a timeout, it re-broadcasts the \mtype{StoreRequest}.
 
 \subsubsection{\fn{Get} Protocol}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.9\columnwidth]{figures/get}
+    \caption{$\fn{Get}$ protocol}
+    \label{fig:get}
+\end{figure}
 
 When a node $c$ calls $\fn{Get}(\var{h})$, where $h$ is the hash of the object it intends to read, $c$ broadcasts a \msg{ObjRecover}{h} to the network.
 Upon receiving and validating the request, a node $s$ queries its local state $\var{frags}$.
@@ -219,7 +233,7 @@ This constant redundancy overhead does not violate our design goal.
 
 \begin{figure}
     \centering
-    \includegraphics[width=\columnwidth]{figures/merkle}
+    \includegraphics[width=0.9\columnwidth]{figures/merkle}
     \caption{Self-certifying fragments}
     \label{fig:merkle}
 \end{figure}
