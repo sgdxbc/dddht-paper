@@ -151,11 +151,20 @@ Both \sys and DHT storage show constant redundancy regardless of system sizes.
 This shows that \sys can scale perfectly with increasing system sizes.
 Redundancy of the replication baseline, however, increases linearly with more nodes.
 
+<<<<<<< HEAD
 % \begin{figure}
 %     \centering
 %     \caption{Redundancy of \sys during system scaling up}
 %     \label{fig:simulate-scale-up}
 % \end{figure}
+=======
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\columnwidth]{graphs/s_scale}
+    \caption{Redundancy of \sys when the system scales up dynamically}
+    \label{fig:simulate-scale-up}
+\end{figure}
+>>>>>>> 9d3ff7f (eval: all simulations)
 
 \paragraph{Redundancy in dynamic systems.}
 Next, we study how \sys adjusts its redundancy against dynamic system scales.
@@ -174,9 +183,9 @@ Under the ideal setting, all the nodes reduce their redundancy after $N$ estimat
 Due to rounding errors, the redundancy curve shows a sawtooth wave, but is still much lower than the one-shot setting.
 Finally, when performing $N$ less frequently, the system reacts slower than the ideal setting, but eventually matches its redundancy level.
 
-\paragraph{Repair overhead.}
-In the following simulation we track the egress traffic of individual nodes for assisting repair during failures.
-The graph \autoref{fig:simulate-repair} shows the average traffic of different system scales, in the unit of block size.
+\paragraph{Repair efficiency.}
+In this simulation, we record the egress traffic of individual nodes during object repairs.
+\autoref{fig:simulate-repair} shows the average repair traffic of \sys and DHT storage with increasing system scales, in units of objects.
 
 \begin{figure}
     \centering
@@ -185,28 +194,28 @@ The graph \autoref{fig:simulate-repair} shows the average traffic of different s
     \label{fig:simulate-repair}
 \end{figure}
 
-In both systems every node only need to transfer few block size amount of repair data during its lifetime, and the overhead decreases as the number of nodes increases.
-The repair overhead of \sys is smaller than DHT-based storage thanks to the flattened view fragments (\autoref{sec:optz}).
-In \sys only chunks that directly required by the remote node need to be transferred, and no reconstruct is necessary.
-The larger $k$ results in smaller chunk size, which leads to better repair traffic efficiency.
-
-\paragraph{Redundancy over time.}
-In the last simulation we check for the safety guarantee of \sys.
-Unlike the other two systems that eagerly detect and repair for failures and maintain a near-constant redundancy level, \sys takes a more lazy approach (\autoref{sec:protocol:reconfig}), results in a more fluctuated redundancy.
-In this simulation, we collect the \emph{logical redundancy} data, \ie the number of available fragments divided by $k$, instead of the \emph{physical redundancy} showing in the above simulations.
+For both systems, each node only transfers a few block-size amount of repair data during its lifetime;
+the overhead also decreases as the system scales up.
+The repair overhead of \sys is smaller than DHT storage, thanks to the flattened view of \code (\autoref{sec:optz}).
+In \sys, only chunks that directly required by the remote node are transferred, and no object reconstruction is necessary.
+The larger $k$ results in smaller chunk size, which also leads to better repair traffic efficiency.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.7\columnwidth]{graphs/s_logical}
-    \caption{Logical redundancy of \sys}
+    \caption{Logical redundancy of \sys over time. The system is only durable if the logical redundancy is above 3x (assuming $\frac{N}{3}$ faulty nodes).}
     \label{fig:simulate-logical}
 \end{figure}
 
-The results are shown in \autoref{fig:simulate-logical}.
-As the number of nodes increases, the fluctuation of redundancy decreases.
-But the redundancy is never going below 3x \ie the system never violates durability guarantee in the presence of $N/3$ faulty nodes.
+\paragraph{Durability.}
+In the last simulation we verify the durability guarantee of \sys.
+Unlike the other two systems which eagerly detect and repair objects, \sys takes a more lazy approach (\autoref{sec:protocol:reconfig}), resulting in a more fluctuated redundancy.
+In this simulation, we measure \emph{logical redundancy}, \ie, the number of available \emph{fragments} divided by $k$, instead of the \emph{physical redundancy} (data chunks) in previous simulations.
+As shown in \autoref{fig:simulate-logical}, when the system size increases, the redundancy fluctuation decreases.
+But most critically, the logical redundancy of any setup never goes below 3x.
+This demonstrates that \sys never violates the durability guarantee, even in the presence of \emph{arbitrary} $N/3$ faulty nodes.
 
-\subsection{Coding Microbenchmark}
+\subsection{Coding Micro-Benchmark}
 
 \begin{figure}
     \centering
