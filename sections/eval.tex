@@ -24,7 +24,8 @@ This selection method serves as a (rather loose) theoretical limit for any DHT p
 If not stated otherwise, we use the following default parameters.
 The system size $N$ is $10000$;
 at most $f = N/3$ of them are faulty.
-We deploy a rateless erasure code with 1 GB block size, $k = 2^{15}$, and a target redundancy of 3.05x, \ie, each data chunk is 32 KB and each storage node stores 10 fragments for each object.
+We deploy a rateless erasure code with 1~GB block size, $k = 2^{15}$, and a target redundancy of 3.05x, \ie, each data chunk is 32 KB and each storage node stores 10 fragments for each object.
+All objects have the size of a single block (1~GB).
 For the full replication baseline, we reduce $N$ to 100 due to its poor scalability.
 For DHT storage, we fix the placement group size to 100, and deploy the same erasure code as \sys but with $k = 32$;
 as such, one fragment per storage node can tolerate $1/3$ faulty nodes in each placement group.
@@ -109,28 +110,29 @@ As we show later in simulations, this issue cannot be addressed by storing more 
 
 \subsection{Simulation}
 
-While the deployed evaluations verifies the practical performance of \sys, we additionally simulate \sys and the DHT-based storage for insights of long-term behaviors of the systems.
-Without further clarification all the simulations are performed for $10^7$ steps.
-The system is initialized with 1000 random data blocks stored by the 10K storage nodes, with a 0.01 node/step joining and leaving rate.
-There is no \fn{Put} operation happened during the simulation.
+We also conduct simulations to evaluate the long-term behaviors of the systems.
+All the simulations are performed for $10^7$ steps if not stated otherwise.
+The system is initialized with 1000 random objects stored by 10K storage nodes, with a 0.01 node/step joining and leaving rate.
+No \fn{Put} operation is invoked after initialization.
 
-\paragraph{Node load uniformity.}
-We collect the \emph{load} of the nodes when they leave the system, in the unit of block size.
-The CDF of loads of both systems are shown in \autoref{fig:simulate-load}.
+\paragraph{Node storage overhead distribution.}
+We first collect the storage utilization (load) of each node when they leave the system, in unit of object sizes.
+The CDF of node storage loads for both systems are shown in \autoref{fig:simulate-load}.
 
 \begin{figure}
     \includegraphics[width=0.4\columnwidth]{graphs/s_pdf_entropy}
     \includegraphics[width=0.4\columnwidth]{graphs/s_pdf_dht}
-    \caption{Node storage load CDF of \sys (left) and DHT-based storage (right)}
+    \caption{Node storage load CDF of \sys (left) and DHT-based storage (right). Each line represents different number of objects stored in the system.}
     \label{fig:simulate-load}
 \end{figure}
 
-In this simulation \sys shows better uniformity.
-Every node in the system is utilized, and most of the nodes have similar load.
-On the other hand, the CDF graph of DHT-based storage shows steps, each of which corresponds to a set of nodes that are selected by a certain number of placement groups.
-The lines all starts from 0, means there are always nodes that are not selected and utilized by any group.
-Also, as the number of data grows, the load of top-utilized nodes grows dramatically.
-Eventually the system load is unevenly distributed to the nodes.
+In this simulation, \sys shows better uniformity (lower variance in CDF).
+Storage of every node in the system is utilized, and most nodes have similar storage load.
+The CDF of DHT storage shows clear steps;
+each step corresponds to a set of nodes that are selected by some placement groups.
+The lines all starts from 0, meaning some nodes are never selected by any group.
+As the number of objects grows, the load of top-utilized nodes grows dramatically.
+Eventually the system load is unevenly distributed among the nodes.
 
 \paragraph{Redundancy of stable system.}
 In the following simulations, we collect system statistics every $10^5$ steps.
