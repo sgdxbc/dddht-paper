@@ -2,29 +2,35 @@
 \label{sec:proof}
 
 The \sys maintains the following invariant:
-for each stored data block, at any time since the \fn{Put} operation finishes, the honest nodes in any set of $N - f$ nodes in the system collectively persist at least $k + \epsilon$ fragments for the block.
+for each stored data block, at any time after the completion of \fn{Put} operation, the honest nodes in any set of $N - f$ nodes in the system collectively retain at least $k + \epsilon$ fragments of the block.
 
-The durability is guaranteed following this invariant: during the \fn{Get} operation, client will eventually attempt to contact all the nodes, and retrieve $k + \epsilon$ fragments from the honest ones among them.
-Client can reconstruct the original data block with the $k + \epsilon$ fragments collected from them.
-In the following text we will discuss how the invariant is maintained during every kind of \emph{system transition} with inductive reasoning.
-Thanks to the simplicity of the protocol, we only need to consider the following transitions: \fn{Put} operation, node joining and leaving, and redundancy adjustment.
+This invariant ensures data durability. During the \fn{Get} operation, client will eventually attempt to contact all nodes and retrieve $k + \epsilon$ fragments from the honest ones.
+With these $k + \epsilon$ fragments, client can reconstruct the original data block.
+
+In the following content, we will discuss how this invariant is maintained during different types of \emph{system transition} using inductive reasoning.
+Due to the simplicity of the protocol, we only need to consider the following transitions: \fn{Put} operation, node joining and leaving, and redundancy adjustment.
 
 \paragraph{\fn{Put} operation and redundancy adjustment.}
-As described in the \autoref{sec:protocol:base}, the finalization condition of \fn{Put} specifically holds the invariant.
-The redundancy adjustment mechanism and the \fn{Put} operation establish the following equivalence: for each storage node, by the time it performed an estimation of $N$ and adjust redundancy accordingly, it reaches the same (probabilistic) state of just participating \fn{Put} of every stored object with the estimated $N$ (modulo the difference in data expiration time).
-Thus, the invariant also holds for redundancy adjustment following the same reasoning of \fn{Put}.
+As described in the \autoref{sec:protocol:base}, the finalization condition of \fn{Put} specifically upholds the invariant.
+The redundancy adjustment mechanism and the \fn{Put} operation establish the following equivalence: for each storage node, by the time it has estimated $N$ and adjusted redundancy accordingly, it reaches the same (probabilistic) state as if it had just participated in the \fn{Put} operation for every stored object, using the estimated $N$ (with the only difference being the data expiration time).
+Thus, the invariant also holds for redundancy adjustment, following the same reasoning as for the \fn{Put} operation.
 
 \paragraph{Node joining.}
-Notice that honest nodes do not give up any persisted fragment upon node joining, so the total number of fragments persisted by honest nodes do not change during node joining.
-Thus, the invariant holds as long as it holds prior to node joining.
-Notice that the invariant may be temporarily violated on the set of $N - f$ nodes that contains the newly-joined node before it initializes its storage during the first estimation of $N$.
-To address this problem we can simply redefine ``the system'' \ie the nodes counted by $N$ as the nodes that have finished their first estimation, and only consider the node has joined the system when it has persisted expected fragments.
-This is a practical definition in practice: a fresh honest node can simply ask the others to exclude itself during estimation before it has finished its own estimation.
+Notice that honest nodes do not discard any persisted fragment when a new node joins the system, so the total number of fragments stored by honest nodes remains unchanged during node joining.
+Therefore, the invariant holds as long as it was valid prior to the node joining.
+
+However, the invariant might be temporarily violated for the sets of $N - f$ nodes that include the newly joined node before it completes its initial storage setup during the first estimation of $N$.
+To address this issue, we can redefine ``the system'', \ie the nodes counted by $N$, to include only those that have completed their first estimation.
+A node is only considered part of the system once it has persisted the expected number of fragments.
+
+This is a practical definition: a newly joined honest node can request to be excluded from the estimations of other nodes until it completes its own estimation process.
 
 \paragraph{Node leaving.}
-Perform a case study on whether the left node is honest.
-If it is faulty, then the invariant is not affected by its leaving since the invariant is only about the states of honest nodes.
-Otherwise, by the definition of the threat model in \autoref{sec:protocol:model}, the system contains at most $f = \frac{N}{3}$ faulty nodes after the node has left, which means the system contains at most $f' = \frac{N - 1}{3}$ faulty nodes even \emph{before} the node is leaving.
-As the $f$ is implicitly rounding down, we can know that the system contains at least $N - f' = N - f + 1$ honest nodes.
-After the node leaves, there are $N - f$ honest nodes in the system, and any set of $N - f$ nodes must intersect with at least $N - 2f$ honest nodes.
-Following the similar reasoning of \fn{Put} (\ie this is equivalent to the case where this $N - f$ nodes are the ones that participate in a \fn{Put} operation), the invariant is proved to hold.
+We can perform a case study on whether the node that leaves is honest.
+If the node is faulty, the invariant remains unaffected, as it concerns only the states of honest nodes.
+If the node is honest, then by the threat model defined in \autoref{sec:protocol:model}, the system contains at most $f = \frac{N}{3}$ faulty nodes after the node leaves.
+This implies that, even \emph{before} the node left, the system contains at most $f' = \frac{N - 1}{3}$ faulty nodes.
+
+Since $f$ is implicitly rounded down, it follows that the system had at least $N - f' = N - f + 1$ honest nodes.
+After the node leaves, the system retains $N - f$ honest nodes, and any set of $N - f$ nodes will intersect with at least $N - 2f$ honest nodes.
+By similar reasoning as in the \fn{Put} operation (\ie this scenario is equivalent to the case where this set of $N - f$ nodes participate in a \fn{Put} operation), the invariant is shown to hold.
