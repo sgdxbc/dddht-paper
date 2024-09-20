@@ -66,25 +66,25 @@ A significant slowdown is observed when the client is in a remote region.
 While the replication system is still much slower in \fn{Put} operation (154.6s compared to 94.2/95.2s of \sys/DHT storage), its \fn{Get} is almost the same as the other two systems: all of them are around 72-73s.
 
 \paragraph{Scalability.}
-Next we measure the direct \fn{Put} and \fn{Get} with various numbers of nodes ranging from 4000 to 10000 for \sys and DHT-based storage.
-Fully replicated baseline is not benchmarked because it can hardly go over 100 nodes.
+Next, we measure the latency of direct \fn{Put} and \fn{Get} with increasing system sizes.
+We skip the replication baseline, since it fail to scale beyond 100 nodes.
 The result is shown in \autoref{fig:deploy-scale}.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.8\columnwidth]{graphs/d_scale}
-    \caption{Latency of \fn{Put} and \fn{Get} operations with different numbers of nodes}
+    \caption{Latency of \fn{Put} and \fn{Get} operations with increasing system sizes}
     \label{fig:deploy-scale}
 \end{figure}
 
-Both systems show desirable scalability.
-The DHT-based storage always disseminates to and aggregates from 100 nodes, so its performance is expected to maintain constant.
-\sys on the other hand performs the operations system-wide, and the performance slightly improves as system scales up.
-The \fn{Put} operation latency decreases from 41.2s to 32.9s, while the \fn{Get} operation latency decrease from 15.3s to 12.2s.
+Both systems show good scalability.
+DHT storage always disseminates to and aggregates from 100 nodes, so its performance is stable regardless of system sizes.
+Each \sys operation contacts all the nodes, and its performance slightly improves as system scales up.
+The \fn{Put} latency decreases from 41.2s to 32.9s, while the \fn{Get} operation latency decrease from 15.3s to 12.2s.
 This shows \sys performance does not degrade with more nodes.
 
-The reason \sys performs better with more nodes is that when there are more nodes, the number of fragments stored by each node is less (\ie from 20 decreases to 10).
-Because each fragment is transmitted in a dedicated HTTP request, the fewer fragments result in fewer communication rounds, which helps to improve the latency especially in such a worldwide deployment scenario.
+As the system scales, the number of fragments stored on each node decreases (from 20 to 10).
+Because each fragment is transmitted in a dedicated HTTP request, the fewer fragments result in fewer communication rounds, improving the latency particularly for cross region traffic.
 
 \paragraph{Write throughput.}
 Beside latency, we also measured write throughput of \sys and DHT-based storage.
