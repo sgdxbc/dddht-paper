@@ -134,31 +134,21 @@ The lines all starts from 0, meaning some nodes are never selected by any group.
 As the number of objects grows, the load of top-utilized nodes grows dramatically.
 Eventually the system load is unevenly distributed among the nodes.
 
-\paragraph{Redundancy of stable system.}
-In the following simulations, we collect system statistics every $10^5$ steps.
-We first study the redundancy of the constantly-scale systems with different number of nodes.
-The graph \autoref{fig:simulate-scale} shows the average redundancy of different systems.
-
 \begin{figure}
     \centering
     \includegraphics[width=0.8\columnwidth]{graphs/s_scale_static}
-    \caption{Redundancy of various numbers of nodes}
+    \caption{Average redundancy with increasing system scales}
     \label{fig:simulate-scale}
 \end{figure}
 
-Both \sys and DHT-based storage shows perfect scalability, while \sys has a higher redundancy because of the larger $k$ parameter.
-On the other hand, the fully replicated baseline has unbounded redundancy.
-
-\paragraph{Redundancy adjustment for scaling up.}
-Then we study how well \sys can adjust redundancy against growing system scale.
-In the first $10^7$ steps the number of nodes grows from 10K to 100K, and then the simulation continues for $2 \dot 10^6$ steps without system growing.
-This simulation is performed with 100 data blocks.
-
-We studied three settings in this simulation.
-The ``oneshot'' setting demonstrate the baseline: every node only estimate $N$ once upon joining the system and initialize its storage accordingly.
-Then it never reacts to the changing $N$.
-In the other two settings the nodes periodically perform estimation of $N$, with $10^4$ and $10^6$ steps interval respectively.
-The former one corresponds to the ideal near-perfect responsiveness to the changing system scale, while the latter one is more realistic.
+\paragraph{Redundancy when system stabilizes.}
+In the following simulations, we collect system statistics every $10^5$ steps.
+We first study the redundancy of each system when the system scale is stable.
+\autoref{fig:simulate-scale} shows the average redundancy of all three systems with increasing system sizes.
+Both \sys and DHT storage show constant redundancy regardless of system sizes.
+\sys has a higher redundancy because of the larger $k$ parameter.
+This shows that \sys can scale perfectly with increasing system sizes.
+Redundancy of the replication baseline, however, increases linearly with more nodes.
 
 \begin{figure}
     \centering
@@ -167,16 +157,22 @@ The former one corresponds to the ideal near-perfect responsiveness to the chang
     \label{fig:simulate-scale-up}
 \end{figure}
 
-As shown in \autoref{fig:simulate-scale-up} the simulation results have a few takeaways.
-First, even in the baseline, the redundancy increases slower and slower because the newly-joining nodes are initialized with proper redundancy level, while the old nodes that persists unnecessary redundancy gradually leave the system.
-When the system stops growing the redundancy immediately drops, and it will eventually get back to expected level.
+\paragraph{Redundancy in dynamic systems.}
+Next, we study how \sys adjusts its redundancy against dynamic system scales.
+In the first $10^7$ steps the number of nodes grows from 10K to 100K, and then the simulation continues for $2 \dot 10^6$ steps without further scaling.
+This simulation is performed with 100 objects.
+We studied three settings in this simulation.
+In ``one-shot'', every node estimates $N$ only once when it joins the system.
+For the other two settings, the nodes periodically estimate $N$, with $10^4$ and $10^6$ steps interval respectively.
+The former provides near-perfect responsiveness to the changing system scales, while the latter one is more realistic.
 
-Then, under the ideal setting we can clearly observe the effect of actively redundancy adjustment.
-In this case all the nodes reduce their redundancy almost at the same time, results in the significant drop in short intervals.
-Because of the rounding error the redundancy cannot drop back to the exact same level as initial, but it is still much less than the baseline.
+As shown in \autoref{fig:simulate-scale-up}, even in the one-shot setting, the increase in redundancy gradually slows down.
+The newly-joined nodes are initialized with the proper redundancy, while old nodes who store unnecessary redundancy gradually leave the system.
+When the system stops growing, the redundancy growth drops, and eventually drops to the expected level.
 
-And finally, the realistic setting sits in between the other two settings.
-It reacts slower than the ideal setting, but it eventually matches the ideal case.
+Under the ideal setting, all the nodes reduce their redundancy after $N$ estimation, resulting in significant redundancy drop in short intervals.
+Due to rounding errors, the redundancy curve shows a sawtooth wave, but is still much lower than the one-shot setting.
+Finally, when performing $N$ less frequently, the system reacts slower than the ideal setting, but eventually matches its redundancy level.
 
 \paragraph{Repair overhead.}
 In the following simulation we track the egress traffic of individual nodes for assisting repair during failures.
