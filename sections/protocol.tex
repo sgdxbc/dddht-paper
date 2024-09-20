@@ -13,8 +13,8 @@ A node rejoining the system is equivalent to a transient node failure.
 Each node maintains $S$ amount of storage capacity.
 For participants with higher capacity, they divide their storage into ``virtual'' nodes~\cite{chord} each with storage capacity $S$.
 
-We assume that at most $\frac{1}{3}$ of the overall system storage capacity is controlled or compromised by adversaries.
-Since each node has a fixed storage capacity, the model is equivalent to a maximum of $\frac{1}{3}$ of the nodes being adversarial, similar to prior BFT works.
+We assume that at most $f = \frac{N}{3}$ of the overall system storage capacity is controlled or compromised by adversaries.
+Since each node has a fixed storage capacity, the model is equivalent to a maximum of $f$ nodes being adversarial, similar to prior BFT works.
 Adversaries can deviate arbitrarily from the protocol;
 all other nodes are honest.
 Tolerating Sybil attacks is out of the scope of our work.
@@ -111,13 +111,13 @@ We follow the common practice of signing the message digest.
 When a node $c$ invokes $\fn{Put}(\var{obj})$, it broadcasts a message \msig{StoreRequest}{\var{obj}, h}{c}, where $h$ is the hash of $\var{obj}$.
 \lijl{For now, just broadcast the entire object.
 The design is not practical anyway.}
-Once a node $s$ receives the message, it validates the signature, and generates $\frac{3(k + \epsilon)}{N}$ random coding indices.
+Once a node $s$ receives the message, it validates the signature, and generates $\lceil\frac{k + \epsilon}{N - 2f}\rceil$ random coding indices.
 The node can apply additional access control checks;
 details of access control policies are not within the scope of the paper.
 For each generated index $idx$, the node produces a fragment $f$ by invoking $\fn{encode}(\var{obj}, \var{idx})$, allocates a storage location $\var{pos}$, appends $\langle \var{idx}, \var{pos} \rangle$ into $\var{frags}[h]$, and flushes the fragment to local disk by calling $\fn{store}(\var{pos}, f)$.
 After all fragments are stored, $s$ sends a message \msig{StoreReply}{h}{s} to $c$.
-Once $c$ collects $\frac{2}{3N}$ unique acknowledgements for $h$, it considers the \fn{Put} call has completed.
-Since at most $\frac{1}{3N}$ of the received \mtype{StoreReply} are from adversaries, the remaining $\frac{1}{3N}$ honest nodes who replied have stored a total of $k + \epsilon$ fragments.
+Once $c$ collects $N - f$ unique acknowledgements for $h$, it considers the \fn{Put} call has completed.
+Since at most $f$ of the received \mtype{StoreReply} are from adversaries, the remaining $N - 2f$ honest nodes who replied have stored a total of $k + \epsilon$ fragments.
 This ensures recoverability of the object.
 If $c$ fails to receive sufficient \mtype{StoreReply} after a timeout, it re-broadcasts the \mtype{StoreRequest}.
 
@@ -148,7 +148,7 @@ Any node can read any object (which is also required for node join).}
 
 Periodically, each node approximates the current $N$.
 We elaborate the details of this mechanism in \autoref{sec:optz}.
-If the new $N$ deviates from the previous estimation by a margin, the node readjusts its stored fragments for each object to $\frac{3(k + \epsilon)}{N}$:
+If the new $N$ deviates from the previous estimation by a margin, the node readjusts its stored fragments for each object to $\lceil\frac{k + \epsilon}{N - 2f}\rceil$:
 If the fragment count decreases (indicating more nodes have joined the system), it simply deletes randomly selected fragments;
 when the count increases, \ie, the system size has reduced, the node generates more fragments.
 To do so, it broadcasts a \mtype{ObjRecover}, recovers the object, generates and stores new fragments with random indices, similar to the \fn{Get} protocol.
