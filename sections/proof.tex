@@ -2,20 +2,29 @@
 \label{sec:proof}
 
 The \sys maintains the following invariant:
-for each stored data block, at any time since the \fn{Put} operation finishes, any set of $N - f$ honest nodes hold at least $k + \epsilon$ fragments for the block.
+for each stored data block, at any time since the \fn{Put} operation finishes, the honest nodes in any set of $N - f$ nodes in the system collectively persist at least $k + \epsilon$ fragments for the block.
 
-The durability is guaranteed following this invariant: during the \fn{Get} operation, client will eventually attempt to contact all $N$ nodes, at least $N - f$ of which are honest and will respond to client.
+The durability is guaranteed following this invariant: during the \fn{Get} operation, client will eventually attempt to contact all the nodes, and retrieve $k + \epsilon$ fragments from the honest ones among them.
 Client can reconstruct the original data block with the $k + \epsilon$ fragments collected from them.
-In the following text we will discuss how the invariant is maintained during various situations.
+In the following text we will discuss how the invariant is maintained during every kind of \emph{system transition} with inductive reasoning.
+Thanks to the simplicity of the protocol, we only need to consider the following transitions: \fn{Put} operation, node joining and leaving, and redundancy adjustment.
 
-\paragraph{\fn{Put} operation.}
-As described in the \autoref{sec:protocol:base}, the finalization condition of \fn{Put} trivially holds the invariant.
+\paragraph{\fn{Put} operation and redundancy adjustment.}
+As described in the \autoref{sec:protocol:base}, the finalization condition of \fn{Put} specifically holds the invariant.
+The redundancy adjustment mechanism and the \fn{Put} operation establish the following equivalence: for each storage node, by the time it performed an estimation of $N$ and adjust redundancy accordingly, it reaches the same (probabilistic) state of just participating \fn{Put} of every stored object with the estimated $N$ (modulo the difference in data expiration time).
+Thus, the invariant also holds for redundancy adjustment following the same reasoning of \fn{Put}.
 
 \paragraph{Node joining.}
-Notice that honest nodes do not give up any persisted fragment upon node joining, and any set of $N - f$ honest nodes that does not contain the new node will still hold $k + \epsilon$ fragments as long as it is already doing so.
-For the sets that contain the new node (which means the new node must be honest),
+Notice that honest nodes do not give up any persisted fragment upon node joining, so the total number of fragments persisted by honest nodes do not change during node joining.
+Thus, the invariant holds as long as it holds prior to node joining.
+Notice that the invariant may be temporarily violated on the set of $N - f$ nodes that contains the newly-joined node before it initializes its storage during the first estimation of $N$.
+To address this problem we can simply redefine ``the system'' \ie the nodes counted by $N$ as the nodes that have finished their first estimation, and only consider the node has joined the system when it has persisted expected fragments.
+This is a practical definition in practice: a fresh honest node can simply ask the others to exclude itself during estimation before it has finished its own estimation.
 
 \paragraph{Node leaving.}
-~\sgd{Need an extra assumption of replacing honest node must join for a while already.}
-
-\paragraph{Redundancy adjustment.}
+Perform a case study on whether the left node is honest.
+If it is faulty, then the invariant is not affected by its leaving since the invariant is only about the states of honest nodes.
+Otherwise, by the definition of the threat model in \autoref{sec:protocol:model}, the system contains at most $f = \frac{N}{3}$ faulty nodes after the node has left, which means the system contains at most $f' = \frac{N - 1}{3}$ faulty nodes even \emph{before} the node is leaving.
+As the $f$ is implicitly rounding down, we can know that the system contains at least $N - f' = N - f + 1$ honest nodes.
+After the node leaves, there are $N - f$ honest nodes in the system, and any set of $N - f$ nodes must intersect with at least $N - 2f$ honest nodes.
+Following the similar reasoning of \fn{Put} (\ie this is equivalent to the case where this $N - f$ nodes are the ones that participate in a \fn{Put} operation), the invariant is proved to hold.
