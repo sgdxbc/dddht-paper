@@ -220,19 +220,19 @@ This demonstrates that \sys never violates the durability guarantee, even in the
 \begin{figure}
     \centering
     \includegraphics[width=0.7\columnwidth]{graphs/op}
-    \caption{CPU Time of various operations}
+    \caption{CPU overhead of different erasure coding operations. We compare our \code with the original LT codes.}
     \label{fig:op}
 \end{figure}
 
-\autoref{fig:op} shows the overhead of \code compares to LT code.
-Both code uses $k = 2^{15}$ and 1GB block size.
-The benchmark generates a block filled with random bytes (where \code additionally initialize the Merkle tree), then repeat encode-decode cycle until the block is reconstructed.
-For \code the encoded fragment is verified before decoded.
-The accumulated time spent on each kind of operation is then reported.
+Lastly, \autoref{fig:op} shows the CPU overhead of our \code compared to the original LT code.
+Both codes use $k = 2^{15}$ and 1~GB block size.
+The benchmark generates a block filled with random bytes (\code also initializes the Merkle tree), then repeat an encode-decode cycle until the block is reconstructed.
+For \code, each fragment is validated before decoding.
+The overall time spent on each type of operation is then reported.
 
-As shown in the graph, \code is significantly more efficient than LT code in both encoding (3.30s vs 44.99s) and decoding (0.16s vs 1.24s).
-This is because \code eliminate the XOR operations with its flattened view representation, so both encoding and decoding are mostly pure data copying.
-As the result, although \code introduces extra initialize (0.74s) and verify (9.19s) operations for self-certifying, the overall overhead is still less than LT code.
+\code is significantly more efficient than LT code in both encoding (3.30s vs 44.99s) and decoding (0.16s vs 1.24s).
+\code eliminates the XOR operations with its flattened view representation, so both encoding and decoding only involve data copying.
+Although \code introduces extra initialization (0.74s) and validation (9.19s) operations for self-certifying fragments, the overall overhead is still less than LT codes.
 
 \iffalse
 Potential comparison systems to evaluate:
