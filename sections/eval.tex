@@ -87,29 +87,25 @@ As the system scales, the number of fragments stored on each node decreases (fro
 Because each fragment is transmitted in a dedicated HTTP request, the fewer fragments result in fewer communication rounds, improving the latency particularly for cross region traffic.
 
 \paragraph{Write throughput.}
-Beside latency, we also measured write throughput of \sys and DHT-based storage.
-The benchmark is conducted by performing a certain number of \fn{Put} operations and measure the total time for all the operations to finish.
-The write throughput is calculated as the total size of blocks that have been \fn{Put} divided by the total time of the operations.
-The benchmark is performed with different number of concurrent operations.
-For example, when concurrency is 100, at any time there are 100 ongoing \fn{Put} operations.
-
-In this benchmark we spawn all 100 EC2 instances in the ap-east-1 region, to avoid high data transfer cost.
-To cancel the effect of unrealistic high bandwidth brought by AWS's datacenter network, we limit the ingress bandwidth of each storage node to 10Mbps in our implementation.
+Beside latency, we also measured \fn{Put} throughput of \sys and DHT storage.
+The benchmark gradually increased the number of concurrent \fn{Put} operations.
+Throughput is calculated as the total size of the objects that have been \fn{Put} divided by the total time of the operations.
+We spawn all 100 EC2 instances in the ap-east-1 region to avoid the high data transfer cost.
+To get realistic results with cross-region bandwidth constrains, we limit the ingress bandwidth of each storage node to 10Mbps in our implementation.
 
 \begin{figure}
     \centering
     \includegraphics[width=0.8\columnwidth]{graphs/d_tput}
-    \caption{Write throughput}
+    \caption{Comparing the \fn{Put} throughput of \sys and DHT storage with increasing client workloads}
     \label{fig:deploy-tput}
 \end{figure}
 
-The result is shown in \autoref{fig:deploy-tput}.
-This benchmark shows \sys can sustain a stable write throughput of around 238MB/s.
-Because every storage node uniformly take part in every \fn{Put} operation, \sys fully utilize the available bandwidth resource of the whole system at any concurrency level.
-On the other hand, the DHT-based storage performs worse than \sys with small concurrency, as only part of the nodes (\ie the ones that have been selected by the placement groups) can take part in the operations, and the bandwidth of other nodes are wasted.
-As the concurrency increases, the throughput of DHT-based storage increases and surpasses \sys thanks to its smaller redundancy.
-However, its throughput is not as stable as \sys: the system bottlenecks on the nodes that is selected by the most number of placement groups.
-As we can see in the later simulation, this issue cannot be addressed by storing more blocks with more concurrency, as the variance of storage node load goes up when there are more data to store.
+As shown in \autoref{fig:deploy-tput}, \sys sustains a stable write throughput of around 238~MB/s.
+Since each storage node uniformly involves in every \fn{Put} operation, \sys fully utilizes the available bandwidth of the whole system at any concurrency level.
+DHT storage, however, performs worse than \sys at lower load, as only the bandwidth of the nodes selected by the placement groups are utilized.
+As the concurrency increases, the throughput of DHT storage increases and surpasses \sys thanks to its lower redundancy.
+However, its throughput is not as stable as \sys: random placement group selection results in load imbalance on different nodes.
+As we show later in simulations, this issue cannot be addressed by storing more objects, as the variance of the load increases when more data are stored.
 
 \subsection{Simulation}
 
