@@ -100,14 +100,21 @@ We follow the common practice of signing the message digest.
 
 \subsubsection{\fn{Put} Protocol}
 
-\begin{figure}
+\begin{figure*}
     \centering
-    \includegraphics[width=0.7\columnwidth]{figures/put}
-    \includegraphics[width=0.7\columnwidth]{figures/get}
-    \caption{\fn{Put} and \fn{Get} protocol}
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=0.7\textwidth]{figures/put}
+        \caption{\fn{Put} protocol diagram}
+    \end{subfigure}
+    \begin{subfigure}{0.45\textwidth}
+        \centering
+        \includegraphics[width=0.7\textwidth]{figures/get}
+        \caption{\fn{Get} protocol diagram}
+    \end{subfigure}
+    \caption{The \sys \fn{Put} and \fn{Get} protocols}
     \label{fig:put}
-\end{figure}
-
+\end{figure*}
 
 When a node $c$ invokes $\fn{Put}(\var{obj})$, it broadcasts a message \msig{StoreRequest}{\var{obj}, h}{c}, where $h$ is the hash of $\var{obj}$.
 \lijl{For now, just broadcast the entire object.
