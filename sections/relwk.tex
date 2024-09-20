@@ -4,37 +4,38 @@
 \paragraph{Distributed Storage Systems.}
 Our work is related to a long line of research and production systems in distributed storage~\cite{ceph,gfs,bigtable,dynamo,liquid,amazon_s3,amazon_glacier,google_storage,google_cloudstore,google_coldline}.
 Unlike \sys, all those systems are centrally managed by a single administrative entity, and all participants are assumed to be non-Byzantine.
-Our object store interface is similar to Amazon S3~\cite{amazon_s3} and Google Cloud Storage~\cite{google_cloudstore}.
+%Our object store interface is similar to Amazon S3~\cite{amazon_s3} and Google Cloud Storage~\cite{google_cloudstore}.
 Many prior systems deploy a centralized service to manage storage metadata~\cite{gfs,bigtable}, while metadata management is fully decentralized in \sys.
 Dynamo~\cite{dynamo} uses consistent hashing~\cite{chash} to assign keys to nodes, while object-to-server mapping in Ceph~\cite{ceph} is done through a distribution function CRUSH~\cite{crush} which maps each object to a placement group based on the object hash.
-Our approach of using rateless erasure code is inspired by liquid storage~\cite{liquid}.
-Other erasure codes such as local reconstruction codes~\cite{lrcode}, regenerating codes~\cite{rcode}, and traditional MDS codes have also been used in distributed storage.
-Prior centrally managed systems carefully design placement groups to minimize correlated failures;
-they are not designed for decentralized settings with strong adversaries.
+Our rateless erasure code approach is inspired by liquid storage~\cite{liquid}.
+Other erasure codes such as local reconstruction codes~\cite{lrcode} and regenerating codes~\cite{rcode} have also been used in distributed storage.
+Prior centrally managed systems, however, are not designed for decentralized settings with strong adversaries.
 
 \paragraph{Decentralized Storage.}
-Building reliable storage systems in a fully decentralized environment has been explored extensively~\cite{xfs,farsite,oceanstore,glacier,carbonite,cfs,irisstore,past,ipfs,filecoin,ar}.
+Decentralized storage has been explored extensively~\cite{xfs,farsite,oceanstore,glacier,carbonite,cfs,irisstore,past,ipfs,filecoin,ar}.
 Farsite~\cite{farsite} uses BFT replication for directory metadata and CFT replication for file data.
-Membership management is done through trusted certificate authorities.
-Farsite groups storage nodes into directory groups for scalability.
-However, it cannot handle adversaries that take over the entire directory group.
+%Membership management is done through trusted certificate authorities.
+It groups storage nodes into directory groups for scalability.
+%However, it cannot handle adversaries that take over the entire directory group.
 DHash++~\cite{dhash} and PAST~\cite{past} store object copies and/or encoded fragments on nodes close to the object hashes.
 OceanStore~\cite{oceanstore} stores erasure coded fragments over multiple failure domains.
 However, OceanStore makes centralized placement decisions and relies on trusted, centralized nodes to perform repairs.
 Glacier~\cite{glacier} stores both full object copy and encoded fragments at fixed displacements on a DHT ring.
-Carbonite~\cite{carbonite} reduces network bandwidth cost due to transient failures while maintaining durability.
+%Carbonite~\cite{carbonite} reduces network bandwidth cost due to transient failures while maintaining durability.
 IrisStore~\cite{irisstore} quantifies the challenge of failure correlation prediction, and proposes a more sophisticated online prediction model.
-As shown in \autoref{sec:background}, storing objects in small placement groups fail to prevent data losses when adversaries have attack power proportional to the system size.
+As shown in \autoref{sec:background}, storing objects in fixed placement groups fail to prevent data losses when adversaries are proportional to the system size.
 \sys ensures data durability by distributing object fragments to \emph{all} storage nodes while maintaining system scalability;
-it also avoids centralized trust or costly BFT consensus protocols for fragment distribution.
-IPFS~\cite{ipfs} uses DHT to store publisher record without centralization, but offers no mechanism to reliably store objects.
-Filecoin~\cite{filecoin} and Arweave~\cite{ar} both use tokens to incentivize nodes to store objects longer, but has weak durability guarantees in the presence of failures.
+it also avoids BFT consensus protocols for fragment distribution.
+%IPFS~\cite{ipfs} uses DHT to store publisher record without centralization, but offers no mechanism to reliably store objects.
+%Filecoin~\cite{filecoin} and Arweave~\cite{ar} both use tokens to incentivize nodes to store objects longer, but has weak durability guarantees in the presence of failures.
 
+\ifspace
 \paragraph{BFT Replication.}
 State machine replication protocols that tolerant Byzantine failures~\cite{pbft,algorand,hotstuff,bitcoin,ethereum} can also ensure data durability in the presence of strong adversaries.
 These protocols, however, require data to be replicated on all participants;
 the capacity limitation makes them impractical for large-scale storage systems.
 \sys leverages rateless erasure code and a novel fragment distribution scheme to maintain constant per-object redundancy, regardless of the scale of the system, without compromising durability.
+\fi
 
 \iffalse
 
