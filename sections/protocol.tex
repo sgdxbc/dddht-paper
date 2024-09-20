@@ -31,8 +31,6 @@ All other recoverable failures (\eg, nodes rebooting after a kernel crash) are e
 \subsection{Base Protocol}
 \label{sec:protocol:base}
 
-
-
 \begin{figure}
 \begin{mdframed}
 \textbf{Storage API}
@@ -85,7 +83,7 @@ All other recoverable failures (\eg, nodes rebooting after a kernel crash) are e
 \end{figure}
 
 We start with a base \sys protocol that ensures object durability.
-The protocol fulfills the goals and addresses the challenges in \XXX, but is rather inefficient.
+The protocol, however, is rather inefficient.
 We present protocol and design optimizations which improve the practicality of \sys in \autoref{sec:optz}.
 
 The top-level storage API, the local state on each node, and the auxiliary functions used by the protocol are shown in \autoref{fig:node-state} and \autoref{fig:node-aux}.
