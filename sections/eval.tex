@@ -139,7 +139,7 @@ Eventually the system load is unevenly distributed among the nodes.
     \hspace{-10pt}\includegraphics[width=0.7\columnwidth]{graphs/s_scale_static}
     \includegraphics[width=0.7\columnwidth]{graphs/s_scale}
     \caption{Average redundancy with increasing system scales (top).
-    Redundancy of \sys during system scaling up (bottom).}
+    Redundancy in dynamic system scale (bottom).}
     \label{fig:simulate-scale}
 \end{figure}
 
@@ -171,9 +171,9 @@ As shown in \autoref{fig:simulate-scale}, even in the one-shot setting, the incr
 The newly-joined nodes are initialized with the proper redundancy, while old nodes who store unnecessary redundancy gradually leave the system.
 When the system stops growing, the redundancy growth drops, and eventually drops to the expected level.
 
-Under the ideal setting, all the nodes reduce their redundancy after $N$ estimation, resulting in significant redundancy drop in short intervals.
-Due to rounding errors, the redundancy curve shows a sawtooth wave, but is still much lower than the one-shot setting.
-Finally, when performing $N$ less frequently, the system reacts slower than the ideal setting, but eventually matches its redundancy level.
+Under the ideal setting, all nodes reduce their redundancy right after $N$ estimation, resulting in fast redundancy drop in short intervals.
+Due to rounding errors, the curve shows a sawtooth wave, but is still lower than the one-shot setting.
+Finally, when estimating $N$ less frequently, the system reacts slower than the ideal setting, but eventually matches its redundancy.
 
 \begin{figure*}
     % \centering
