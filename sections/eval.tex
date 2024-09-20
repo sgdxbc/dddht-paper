@@ -204,15 +204,11 @@ The graph \autoref{fig:simulate-repair} shows the average traffic of different s
 %     \label{fig:simulate-repair}
 % \end{figure}
 
-In both systems every node only need to transfer few block size amount of repair data during its lifetime, and the overhead decreases as the number of nodes increases.
-The repair overhead of \sys is smaller than DHT-based storage thanks to the flattened view fragments (\autoref{sec:optz}).
-In \sys only chunks that directly required by the remote node need to be transferred, and no reconstruct is necessary.
-The larger $k$ results in smaller chunk size, which leads to better repair traffic efficiency.
-
-\paragraph{Redundancy over time.}
-In the last simulation we check for the safety guarantee of \sys.
-Unlike the other two systems that eagerly detect and repair for failures and maintain a near-constant redundancy level, \sys takes a more lazy approach (\autoref{sec:protocol:reconfig}), results in a more fluctuated redundancy.
-In this simulation, we collect the \emph{logical redundancy} data, \ie the number of available fragments divided by $k$, instead of the \emph{physical redundancy} showing in the above simulations.
+For both systems, each node only transfers a few block-size amount of repair data during its lifetime;
+the overhead also decreases as the system scales up.
+The repair overhead of \sys is smaller than DHT storage, thanks to the flattened view of \code (\autoref{sec:optz}).
+In \sys, only chunks that directly required by the remote node are transferred, and no object reconstruction is necessary.
+The larger $k$ results in smaller chunk size, which also leads to better repair traffic efficiency.
 
 % \begin{figure}
 %     \centering
@@ -221,11 +217,15 @@ In this simulation, we collect the \emph{logical redundancy} data, \ie the numbe
 %     \label{fig:simulate-logical}
 % \end{figure}
 
-The results are shown in \autoref{fig:simulate-logical}.
-As the number of nodes increases, the fluctuation of redundancy decreases.
-But the redundancy is never going below 3x \ie the system never violates durability guarantee in the presence of $N/3$ faulty nodes.
+\paragraph{Durability.}
+In the last simulation we verify the durability guarantee of \sys.
+Unlike the other two systems which eagerly detect and repair objects, \sys takes a more lazy approach (\autoref{sec:protocol:reconfig}), resulting in a more fluctuated redundancy.
+In this simulation, we measure \emph{logical redundancy}, \ie, the number of available \emph{fragments} divided by $k$, instead of the \emph{physical redundancy} (data chunks) in previous simulations.
+As shown in \autoref{fig:simulate-logical}, when the system size increases, the redundancy fluctuation decreases.
+But most critically, the logical redundancy of any setup never goes below 3x.
+This demonstrates that \sys never violates the durability guarantee, even in the presence of \emph{arbitrary} $N/3$ faulty nodes.
 
-\subsection{Coding Microbenchmark}
+\subsection{Coding Micro-Benchmark}
 
 % \begin{figure}
 %     \centering
@@ -234,15 +234,15 @@ But the redundancy is never going below 3x \ie the system never violates durabil
 %     \label{fig:op}
 % \end{figure}
 
-\autoref{fig:op} shows the overhead of \code compares to LT code.
-Both code uses $k = 2^{15}$ and 1GB block size.
-The benchmark generates a block filled with random bytes (where \code additionally initialize the Merkle tree), then repeat encode-decode cycle until the block is reconstructed.
-For \code the encoded fragment is verified before decoded.
-The accumulated time spent on each kind of operation is then reported.
+Lastly, \autoref{fig:op} shows the CPU overhead of our \code compared to the original LT code.
+Both codes use $k = 2^{15}$ and 1~GB block size.
+The benchmark generates a block filled with random bytes (\code also initializes the Merkle tree), then repeat an encode-decode cycle until the block is reconstructed.
+For \code, each fragment is validated before decoding.
+The overall time spent on each type of operation is then reported.
 
-As shown in the graph, \code is significantly more efficient than LT code in both encoding (3.30s vs 44.99s) and decoding (0.16s vs 1.24s).
-This is because \code eliminate the XOR operations with its flattened view representation, so both encoding and decoding are mostly pure data copying.
-As the result, although \code introduces extra initialize (0.74s) and verify (9.19s) operations for self-certifying, the overall overhead is still less than LT code.
+\code is significantly more efficient than LT code in both encoding (3.30s vs 44.99s) and decoding (0.16s vs 1.24s).
+\code eliminates the XOR operations with its flattened view representation, so both encoding and decoding only involve data copying.
+Although \code introduces extra initialization (0.74s) and validation (9.19s) operations for self-certifying fragments, the overall overhead is still less than LT codes.
 
 \iffalse
 Potential comparison systems to evaluate:
