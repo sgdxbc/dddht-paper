@@ -1,0 +1,45 @@
+\section{Introduction}
+\label{sec:intro}
+
+\begin{outline}
+Blockchains are important consensus facilities for decentralized systems.
+
+Challenge: the state size of blockchains overwhelms consensus nodes.
+
+Approach: offload immutable data \ie \emph{contents} to permanent storage and off-chain access.
+
+Notice: even though read-only contents are off consensus path and self-certifiable, they still need to meet the implicit durability requirement expected by decentralized apps.
+
+Where to store then?
+Centralized storage is not desirable.
+\xxx{Pick a good angle to argue.}
+
+Introduce decentralized storage.
+Introduce FileCoin.
+
+Problem with FileCoin: impose high durability requirement on each \emph{individual} participants.
+High barriers to entry.
+Tricky to design effective incentive when expecting high return to cover the cost.
+
+Observation: much more nodes are available than BFT can scale.
+Nowadays (even permissionless) BFTs seek high quality \emph{professional} consensus nodes.
+Unreliable devices cannot meet the requirement and only serve as thin clients, and their storage capacity is underutilized.
+
+Goals:
+\begin{itemize}
+    \item Co-design with BFT.
+    Propose \emph{storage client} in addition to (Ethereum's) existing consensus, execution and thin clients.
+    Storage clients are like thin clients but hold responsibility of storing contents.
+    They don't need to be available 24/7 (unlike consensus clients) but need to be periodically online to produce proofs (unlike thin clients).
+    \item The system should be as secure as pure BFT.
+    Regarding durability, that means the system can tolerate any up to $f$ portion of storage capacity managed by faulty participants while still ensuring durability of contents referenced by consensus state.
+    Durable means retrieving any previously-stored content will eventually success.
+    \item Bounded redundancy.
+\end{itemize}
+
+Design: efficiently disseminate (encoded fragments of) contents to more than $f+k$ portion of the storage capacity, where the fragments stored by every $k$ portion of the storage capacity can recover the contents.
+Periodically attempt to produce \emph{proof of durability} (PoD) for contents: the contents are not only stored with sufficient redundancy, but also the redundancy is properly scattered across more than $f+k$ portion of the storage capacity.
+If the attempt fails (either because failures or storage capacity shifts), disseminate the content again.
+
+Notice: not saying it takes $f+k$ portion of the storage capacity to store a content, but every piece \xxx{what is piece?} of that $f+k$ portion contribute a tiny slice of storage to hold one fragment. 
+\end{outline}
