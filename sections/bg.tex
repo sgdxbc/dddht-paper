@@ -17,17 +17,17 @@ Systems that orchestrate dissemination and repairing: Storj, Swarm.
 \begin{table}
 \caption{Comparison of Decentralized Storage Networks}
 \label{tab:dsn}
-\begin{tabularx}{\columnwidth}{lXX}
+\begin{tabularx}{\columnwidth}{lXXX}
     \toprule
-                & System Responsibility         & Node Responsibility\\
+                & Node Durability   & Redundancy    & \xxx{Security} \\
     \midrule
     
-    Filecoin    & Market, audit \& reward       & Reliably store contents\\
-    EthStorage  & Market, audit \& reward       & Monitor requests \& replicate\\
-    Arweave     & Reward                        & Find least-replicated contents \& replicate\\
-    Sia         & Market                        & Earn scores through metrics\\
-    Storj       & Detect failure \& repair      & Best-effort store contents\\
-    Swarm       & Detect failure \& repair      & Best-effort store contents\\
+    Filecoin    & High              & Low           & \\
+    Sia         & High              & Low           & \\
+    EthStorage  & Moderate          & High          & \\
+    Arweave     & Moderate          & High          & \\
+    Storj       & Moderate          & \XXX          & \\
+    Swarm       & Moderate          & \XXX          & \\
     \bottomrule
 \end{tabularx}
 \end{table}

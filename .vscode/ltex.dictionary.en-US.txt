@@ -5,3 +5,4 @@ EthStorage
 Arweave
 Sia
 Storj
+DSNs

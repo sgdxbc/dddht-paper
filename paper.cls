@@ -63,6 +63,7 @@
 \RequirePackage{amsthm}
 \RequirePackage{comment}
 \RequirePackage{tabularx}
+\RequirePackage[dvipsnames]{xcolor}
 \ifacm
 \else
 \RequirePackage{amsmath}

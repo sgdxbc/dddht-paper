@@ -6,40 +6,53 @@ Blockchains are important consensus facilities for decentralized systems.
 
 Challenge: the state size of blockchains overwhelms consensus nodes.
 
-Approach: offload immutable data \ie \emph{contents} to permanent storage and off-chain access.
+Approach: offload immutable data \ie \emph{contents} to permanent storage and access to them off-chain.
 
-Notice: even though read-only contents are off consensus path and self-certifiable, they still need to meet the implicit durability requirement expected by decentralized apps.
+Notice: blockchain implicitly guarantees durability state.
+Any content that is referenced by the state, \ie logically still part of the state, must obey this guarantee as well.
 
 Where to store then?
-Centralized storage is not desirable.
-\xxx{Pick a good angle to argue.}
-
-Introduce decentralized storage.
-Introduce Filecoin.
-
-Problem with Filecoin: impose high durability requirement on each \emph{individual} participants.
-High barriers to entry.
-Tricky to design effective incentive when expecting high return to cover the cost.
-
 Observation: much more nodes are available than BFT can scale.
 Nowadays (even permissionless) BFTs seek high quality \emph{professional} consensus nodes.
 Unreliable devices cannot meet the requirement and only serve as thin clients, and their storage capacity is underutilized.
 
+Introduce decentralized storage network (DSN).
+Make use of the spare storage capacity in the decentralized system.
+
+Introduce storage nodes.
+Too slow/unavailable to participant consensus, but can contribute storage capacity.
+Key point: storage nodes share the same Byzantine fault model with consensus nodes.
+
+One approach: storage auditing \eg Filecoin.
+Problem with Filecoin: impose high durability requirement on each \emph{individual} participants.
+High barriers to entry.
+Tricky to design effective incentive when storage nodes expecting high return to cover the cost.
+
+Another approach: incentive-based replication \eg Arweave.
+Redundancy is not controllable and probably overwhelming.
+Rely on storage nodes to discover profitable storing deals.
+\xxx{Elaborate.}
+
+Insight: system should supervise/coordinate for dissemination and repairing, only then DSN can be efficiently built upon on-average reliable storage nodes.
+Introduce Swarm.
+
+However, currently such storage systems diverge from BFT in the threat model.
+BFT protocols tolerate failures that may come from \emph{any} $\frac{1}{3}$ nodes, while Swarm expects random failure combinations and sparse adversaries.
+
 Goals:
 \begin{itemize}
     \item Co-design with BFT.
-    Propose \emph{storage client} in addition to (Ethereum's) existing consensus, execution and thin clients.
-    Storage clients are like thin clients but hold responsibility of storing contents.
-    They don't need to be available 24/7 (unlike consensus clients) but need to be periodically online to produce proofs (unlike thin clients).
-    \item The system should be as secure as pure BFT.
-    Regarding durability, that means the system can tolerate any up to $f$ portion of storage capacity managed by faulty participants while still ensuring durability of contents referenced by consensus state.
-    Durable means retrieving any previously-stored content will eventually success.
-    \item Bounded redundancy.
+    No special requirement/incentive regarding durability, enabling wide participation.
+    \item As secure as pure BFT.
+    If under certain situation a pure BFT system is durable, so should be the DSN.
+    \item Bounded \& controllable redundancy.
 \end{itemize}
 
-Design: efficiently disseminate (encoded fragments of) contents to more than $f+k$ portion of the storage capacity, where the fragments stored by every $k$ portion of the storage capacity can recover the contents.
-Periodically attempt to produce \emph{proof of durability} (PoD) for contents: the contents are not only stored with sufficient redundancy, but also the redundancy is properly scattered across more than $f+k$ portion of the storage capacity.
-If the attempt fails (either because failures or storage capacity shifts), disseminate the content again.
-
-Notice: not saying it takes $f+k$ portion of the storage capacity to store a content, but every piece \xxx{what is piece?} of that $f+k$ portion contribute a tiny slice of storage to hold one fragment. 
+Contributions:
+\begin{itemize}
+    \item Develop a security model of durability for DSNs that are intended to extend blockchains' capacity.
+    \item Analyze current DSNs' durability.
+    \item Design \sys, analyze its durability.
+    \item Evaluate durability and performance of \sys compared with current systems.
+\end{itemize}
 \end{outline}
