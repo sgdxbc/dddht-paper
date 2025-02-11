@@ -1,3 +1,7 @@
-FileCoin
+Filecoin
 permissionless
 BFTs
+EthStorage
+Arweave
+Sia
+Storj

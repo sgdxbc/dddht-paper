@@ -1,0 +1,34 @@
+\section{Background}
+\label{sec:bg}
+
+\begin{outline}
+Systems that do not repair at all: Filecoin, Sia.
+Push the repair burden to storage nodes.
+Increase centralization.
+
+Systems that ``implicitly repair'' by encouraging replication: EthStorage, Arweave.
+Overwhelming redundancy.
+Replications do not guarantee better durability.
+
+Systems that orchestrate dissemination and repairing: Storj, Swarm.
+\xxx{Shortage.}
+\end{outline}
+
+\begin{table}
+\caption{Comparison of Decentralized Storage Networks}
+\label{tab:dsn}
+\begin{tabularx}{\columnwidth}{lXX}
+    \toprule
+                & System Responsibility         & Node Responsibility\\
+    \midrule
+    
+    Filecoin    & Market, audit \& reward       & Reliably store contents\\
+    EthStorage  & Market, audit \& reward       & Monitor requests \& replicate\\
+    Arweave     & Reward                        & Find least-replicated contents \& replicate\\
+    Sia         & Market                        & Earn scores through metrics\\
+    Storj       & Detect failure \& repair      & Best-effort store contents\\
+    Swarm       & Detect failure \& repair      & Best-effort store contents\\
+    \bottomrule
+\end{tabularx}
+\end{table}
+

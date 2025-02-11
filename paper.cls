@@ -56,19 +56,20 @@
 \RequirePackage{subcaption}
 \RequirePackage{enumitem}
 \RequirePackage[framemethod=tikz]{mdframed}
-\mdfdefinestyle{protocol}{,,roundcorner=10pt,}
 \RequirePackage{algorithm}
 \RequirePackage[noend]{algpseudocode}
 \RequirePackage{braket}
 \RequirePackage{tikz}
 \RequirePackage{amsthm}
 \RequirePackage{comment}
+\RequirePackage{tabularx}
 \ifacm
 \else
 \RequirePackage{amsmath}
 \RequirePackage{amssymb}
 \fi
 
+\mdfdefinestyle{protocol}{,,roundcorner=10pt,}
 
 \hypersetup{linkcolor=blue}
 
