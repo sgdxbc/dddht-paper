@@ -7,28 +7,24 @@ Push the repair burden to storage nodes.
 Increase centralization.
 
 Systems that ``implicitly repair'' by encouraging replication: EthStorage, Arweave.
-Overwhelming redundancy.
-Replications do not guarantee better durability.
+Usually not deploy erasure codes; low space efficiency.
+Rely on storage nodes to discover profitable storing opportunities; either full replica or costly scanning.
 
 Systems that orchestrate dissemination and repairing: Storj, Swarm.
 \xxx{Shortage.}
 \end{outline}
 
-\begin{table}
+\begin{table*}
 \caption{Comparison of Decentralized Storage Networks}
 \label{tab:dsn}
-\begin{tabularx}{\columnwidth}{lXXX}
+\begin{tabularx}{\textwidth}{XXXXXX}
     \toprule
-                & Node Durability   & Redundancy    & \xxx{Security} \\
+    Category            & Works                 & Who decides placement & Redundancy    & Global dissemination  & Storage Auditing  \\
     \midrule
     
-    Filecoin    & High              & Low           & \\
-    Sia         & High              & Low           & \\
-    EthStorage  & Moderate          & High          & \\
-    Arweave     & Moderate          & High          & \\
-    Storj       & Moderate          & \XXX          & \\
-    Swarm       & Moderate          & \XXX          & \\
+    Static seeder       & Filecoin, Sia         & Client/market         & Low           & No                    & Yes               \\
+    Strategic placement & Swarm, Storj          & Protocol              & Medium        & Yes                   & Yes               \\
+    Unstructured        & Arweave, EthStorage   & Storage nodes         & High          & Yes                   & No                \\
     \bottomrule
 \end{tabularx}
-\end{table}
-
+\end{table*}

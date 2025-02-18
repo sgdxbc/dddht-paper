@@ -1,0 +1,86 @@
+\section{A Security Analysis on Decentralized Blockchain Storage Networks}
+\label{sec:model}
+
+\subsection{Fault Model}
+
+We propose a universal fault model that fits the scenario of blockchain storage.
+
+\paragraph{Storage unit (SU).}
+The atomic failure unit of storage.
+A storage unit is either alive or failed, but not partially failed.
+There could be correlated failures among storage units \eg the storage units of a hard disk/owned by the same participant fail together.
+A reasonable choice of SU is 1 GB.
+
+\paragraph{Storage size vs. storage supply.}
+Storage size is the total amount of data hold by the DSN \ie the ``effective data size'' that the DSN is recognized.
+Storage supply is the total amount of underlying storage space that is available for DSN to operate.
+It's a precondition that storage supply should always be more than storage size multiplied by targeted (minimum) redundancy, or the DSN is not guaranteed to function reliably.
+On the other hand, more storage supply means more frequent faults and stronger attacking power, and DSN should be able to work with arbitrarily large (and overly sufficient) storage supply.
+
+\paragraph{Storage faults.}
+There are two kinds of faults: ``background'' faults that can be derived from mean time to failure (MTTF), and Byzantine faults.
+
+Many previous works assume background faults are \emph{independent} and unlikely to cluster in a short time interval.
+Glacier, while assumes the possible large-scale correlated failures, still models \emph{random} correlations.
+In another word, in a correlated failure that expects to simultaneously erase $x$ storage units out of the storage supply $S$, every SU is independently erased with identical probability of $\frac{x}{S}$.
+
+\xxx{Explain the drawback of this model.}
+
+\paragraph{Hybrid fault model.}
+We propose a fault model with two parameters: the accidental fault rate $f_a$ and the Byzantine fault rate $f_b$.
+$f_a$ measures the probability of background faults happening in a single time unit and is directly derived from the average/expected MTTF of the storage units.
+It is uniformly applied to both good nodes and faulty nodes.
+$f_b$ measures the portion of Byzantine faulty storage units.
+Notice that different from permissioned BFT protocols which use $f$ to represent the number of faulty nodes, we use $f_b$ to represent the portion of faulty storage supply \ie the number of faulty storage units would be $f_b \times S$, because the participants vary over time in our targeted permissionless blockchain systems.
+
+The fault model can be described as an execution model.
+In a time unit $T_i$, let $S_i$ be the storage capacity at this time unit.
+There will be $P_a$ background faults that are uniformly random across all storage units in the DSN, where $P_a$ is a probabilistic variable whose expectation is $f_a\times C_i$.
+At the same time, there will be a set of storage units $F_i$ with Byzantine faults, where $|F_i|\leq f_b\times S_i$.
+The storage units that are ``selected'' by either kind of fault (or both) are erased in this time unit.
+
+\xxx{Mention that $f_b$ part may also be faulty for activities other than storing data?}
+
+\xxx{Can we represent/approximate the case of nonuniform MTTF or simple correlation with this fault model?}
+
+Notice that DSN cannot determine whether an erasure is attributed to $f_a$ or $f_b$ and response differently, so when choosing DSN parameters (\eg targeted redundancy), the input about faults would be $f=f_a+f_b$ which is typically set to $\frac{1}{3}$.
+
+\paragraph{Durability definition.}
+A DSN is told to be durable 
+\begin{itemize}
+    \item within a time range $T_0,T_1,\dots,T_n$
+    \item storing data sized $D_i$ while gaining storage supply $S_i$ in time unit $T_i$
+    \item with faulty rates $f_a$ and $f_b$
+    \item with probability $1-\epsilon$ (which is expected to be close to 1)
+\end{itemize}
+if 
+\begin{itemize}
+    \item (precondition) as long as $S_i\geq r\times D_i,i=0,1,\dots,n$ where $r$ is a constant targeted redundancy factor specified by DSN given predefined $f=f_a+f_b$
+    \item (universal quantification) $\forall F_0,F_1,\dots,F_n$ where $F_i$ is a set of storage units that are erased in $T_i$ and $|F_i|\leq f_b\times C_i$
+    \item every storage unit (either $\in F_i$ or not) has an independent probability $f_a$ to be erased in every $T_i$
+\end{itemize}
+$$
+P(\text{data lost})\leq\epsilon
+$$
+
+\xxx{Example}
+
+\subsection{Analysis of Fault Tolerance of DSNs}
+
+\paragraph{Static seeder DSNs.}
+Only appliable \ie achieve negligible $\epsilon$ in the case of $f_a\to 0,f_b\to 0$.
+The DSNs do not really expect storage units to fail.
+Effectively, storage nodes must provide ``logical storage units'' that are backed with redundant physical storage and perform local repair mechanism.
+Problem with $f_a\to 0$ is that low-end players are ruled out.
+Problem with $f_b\to 0$ is that the penalty for data lost must be greater than attacker's profit which is hard/impossible to determine.
+\xxx{Also mention the reward vs. storage cost side.}
+
+\paragraph{Strategic placement DSNs.}
+Performs well when $f_b\to 0$.
+The placement group size cannot be easily adjusted according to \eg storage supply.
+Effectively can only tolerate Byzantine faults of absolute number of storage unit, not relative portion to the storage capacity.
+
+\paragraph{Unstructured DSNs.}
+Can tolerate both $f_a\not\to 0$ and $f_b\not\to 0$.
+However, the operational overhead of storage nodes are not affordable for low-end players.
+\xxx{Elaborate}
