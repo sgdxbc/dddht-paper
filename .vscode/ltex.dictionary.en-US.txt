@@ -3,9 +3,13 @@ BFTs
 DSNs
 EthStorage
 Filecoin
+IPFS
+Kademlia
 Permacoin
 permissionless
 Permissionless
+retrievability
 sharding
 Sia
 Storj
+Züs

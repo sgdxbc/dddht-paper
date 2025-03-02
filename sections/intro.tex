@@ -1,59 +1,66 @@
 \section{Introduction}
 \label{sec:intro}
 
-\begin{outline}
 Blockchain scalability issue arises.
 For permissionless blockchains, the bottleneck is network.
 Result: disseminate smaller data size, propagate to smaller group of nodes.
 
 \emph{Disaggregate} storage: scaling up world state while keep dissemination efficiently.
 Leave a stub (\eg content hash) in the state and access content off-chain.
-Example: NFT exchange, off-chain AI inference with on-chain verifiable computation proof.
+Example: NFT exchange, user-generated content, off-chain AI inference with on-chain verifiable computation proof.
 
 BFT guarantees a consistent and \emph{durable} state.
 Durable was implied by full replication in BFT, but now explicitly relies on the disaggregated storage.
-So centralized storage service is not a good idea.
+The preconditions of BFT security include assumptions made on both the consensus and the storage parts.
+Involving centralized storage service would be a major distortion on permissionless blockchains' security model.
 
 Permissionless systems usually consist of abundant devices with moderate hardware.
 Restricted network bandwidth/computation power/storage capacity, excluded from BFT protocol, underutilized as \emph{light clients}.
-Idea: construct decentralized storage network (DSN) with these devices as storage providers.
+Idea: construct decentralized storage network (DSN) with these devices as \emph{light storage providers}.
 
-Challenges/features (vs. storage systems with centralized management).
-Node churns, incur additional repair and more complicated placement management.
-Nodes are unreliable in uncertainty: unknown failure rate, unknown correlation.
-Byzantine nodes may attempt to cheat the system \eg pretend to store a content or pretend to store more redundancies than what they actually do.
+Challenges (vs. storage systems with centralized management).
+Heterogeneous nodes: various storage capacity, content policy \& lifetime.
+Unpredictable node behavior: cannot predict the churning or failure correlation even on the honest ones, not to mention the Byzantine ones.
+
+Two kinds of DSNs.
+The ones that storage providers pick what contents to store; either through market and contract (Sia, Filecoin, Züs) or the storage providers can ``mine'' on arbitrary content managed by the DSN (Arweave, EthStorage, Permacoin).
+Advantage: storage providers can store as much as they can/want.
+Highly competitive storage providers; encouraging large-scale and centralized providers.
+Usually have small numbers of storage providers indeed.
+Not suitable for \emph{light} storage providers.
+
+The ones that network ``pushes'' to storage providers and storage providers cannot choose what and how much to store (Swarm, Glacier).
+Friendly for light storage providers, but uniformly distribute workload to storage providers regardless of their storage capacities.
+IPFS only stores metadata in this way.
+We discover that smaller providers may be saturated long before the whole network and eventually affect durability.
 
 Goals:
 \begin{itemize}
-    \item Enable devices with moderate hardware to take part in the DSN and contribute to storage capacity.
-    Storage providers are not involved in consensus protocol, only infrequently \emph{watch} the updates and \emph{submit} updates to the state.
+    \item Build on light storage providers; algorithmically arrange placement instead of economically.
+    Storage providers do not need to compete with each other.
     \item As secure as pure BFT.
-    If under certain situation a pure BFT system is durable, so should be the DSN.
-    \item More scalable than BFT.
-    Overhead per unit storage remains constant as storing more data, and also remains constant \xxx{or grow in $\log$ speed} as storage supply increases.
-    Overhead means both communication overhead for ingesting / retrieval / maintenance and storage overhead \ie redundancy. 
+    Deliver a probabilistic durability guarantee that only depends on failure/churn rate and the assumptions already made by BFT; not (directly) involve economic model.
+    Standard incentive strategies and proof of storage/retrievability can be applied.
+    \item Be scalable: make efficient use of storage supply.
+    When there are still plenty spare capacities, the network should be able to ingest new data without losing any existing ones.
 \end{itemize}
 
-Three categories of existing DSNs.
-First category (Filecoin, Sia, Züs, etc.) is \emph{static provision}.
-Storage providers and clients establish storage contracts through public markets, and the data will always be stored by the certain contracted storage providers.
-Push the responsibility of repairing for failures and ensuring durability to \emph{individual} storage nodes.
-Consider DSN repairing as last resort, economically discourage DSN-aware failures and repairs to happen.
-Not welcome moderate hardware with insufficient durable duration.
+The key idea is to inform the network about the diversity in storage providers' capacities.
+Consequentially, the network can assign heavier workload to larger storage providers.
+Contrast to the virtual node approach, the network would be fully aware of the underlying correlation pattern and avoid placing redundant segments on the same physical node.
 
-Second category (Arweave, EthStorage, Permacoin) approximates \emph{typical blockchains} that a full copy resides on every node.
-Storage providers are economically encouraged to keep a copy of as much data as they can.
-They usually only reward for storing, not penalize for not storing.
-Storage providers must \emph{discover} profitable storing.
-Storage providers also usually need to participate consensus.
-Not suitable for moderate hardware.
+We modified Kademlia DHT with the concept of \emph{node class}.
+The higher the node class, the more discoverable the node is.
+This is implemented by masking the high bits when computing ID distances, where the number of masked bits correspond to the node class.
+As the result, when the query uniformly distributed across the ID space, the probability of a node to be included in the query result doubles as the node class increase by one.
 
-The category we are looking for is \emph{adaptive dynamic sharding} (Swarm).
-Each storage provider belongs to a group (usually algorithmically according to its identity).
-The storage providers of a group collectively store a shard of data, and repair together for the failures and churning that happen in the shard.
-\xxx{Advantage.}
-However, the durability is yet to improve.
-\xxx{Evidence.}
+With the DHT supporting node class, storage providers can set their node classes based on their storage capacities.
+The most appropriate node class for a storage provider may occasionally change based on the change of the storage capacity of the provider, the number of storage providers, the storage capacity of the whole network and the ingested data size.
+The DHT is further extended to support changing node class efficiently to prevent wasting storage capacity or overwhelming the storage providers.
 
-\xxx{Our design that enhancing adaptive dynamic sharding.}
-\end{outline}
+We further introduce the power of two choices mechanism to the DHT protocol.
+By default, the workload assigned to each storage provider follows normal distribution with an undesirable variance that worsen storage efficiency even when each storage provider has the same storage capacity.
+We follow previous works \xxx{cite}, hash contents twice and choose the placement group with lighter load of the two.
+The node class here provides an adequate estimation on the providers' load; by simply prioritizing the providers with higher node classes, one RTT for querying providers' load can be saved.
+
+\xxx{Evaluation.}
