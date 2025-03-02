@@ -1,24 +1,19 @@
-\documentclass[acm,workingdraft]{paper}
+\documentclass[workingdraft]{paper}
+
+\title{\sys}
+\author{}
 
 \begin{document}
 
-\title{\sys}
-
-\ifacm
-\input{sections/abstract}
-\fi
+\ifacm\input{sections/abstract}\fi
 
 \maketitle
 \pagestyle{plain}
 
-\ifacm
-\else
-\input{sections/abstract}
-\fi
+\ifacm\else\input{sections/abstract}\fi
 
 \input{sections/intro}
-\input{sections/bg}
-\input{sections/model}
+% \input{sections/bg}
 
 \bibliography{paper}
 

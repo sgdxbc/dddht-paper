@@ -2,57 +2,58 @@
 \label{sec:intro}
 
 \begin{outline}
-Blockchains are important consensus facilities for decentralized systems.
+Blockchain scalability issue arises.
+For permissionless blockchains, the bottleneck is network.
+Result: disseminate smaller data size, propagate to smaller group of nodes.
 
-Challenge: the state size of blockchains overwhelms consensus nodes.
+\emph{Disaggregate} storage: scaling up world state while keep dissemination efficiently.
+Leave a stub (\eg content hash) in the state and access content off-chain.
+Example: NFT exchange, off-chain AI inference with on-chain verifiable computation proof.
 
-Approach: offload immutable data \ie \emph{contents} to permanent storage and access to them off-chain.
+BFT guarantees a consistent and \emph{durable} state.
+Durable was implied by full replication in BFT, but now explicitly relies on the disaggregated storage.
+So centralized storage service is not a good idea.
 
-Notice: blockchain implicitly guarantees durability state.
-Any content that is referenced by the state, \ie logically still part of the state, must obey this guarantee as well.
+Permissionless systems usually consist of abundant devices with moderate hardware.
+Restricted network bandwidth/computation power/storage capacity, excluded from BFT protocol, underutilized as \emph{light clients}.
+Idea: construct decentralized storage network (DSN) with these devices as storage providers.
 
-Where to store then?
-Observation: much more nodes are available than BFT can scale.
-Nowadays (even permissionless) BFTs seek high quality \emph{professional} consensus nodes.
-Unreliable devices cannot meet the requirement and only serve as thin clients, and their storage capacity is underutilized.
-
-Introduce decentralized storage network (DSN).
-Make use of the spare storage capacity in the decentralized system.
-
-Introduce storage nodes.
-Too slow/unavailable to participant consensus, but can contribute storage capacity.
-Key point: storage nodes share the same Byzantine fault model with consensus nodes.
-
-One approach: storage auditing \eg Filecoin.
-Problem with Filecoin: impose high durability requirement on each \emph{individual} participants.
-High barriers to entry.
-Tricky to design effective incentive when storage nodes expecting high return to cover the cost.
-
-Another approach: incentive-based replication \eg Arweave.
-Redundancy is not controllable and probably overwhelming.
-Rely on storage nodes to discover profitable storing deals.
-\xxx{Elaborate.}
-
-Insight: system should supervise/coordinate for dissemination and repairing, only then DSN can be efficiently built upon on-average reliable storage nodes.
-Introduce Swarm.
-
-However, currently such storage systems diverge from BFT in the threat model.
-BFT protocols tolerate failures that may come from \emph{any} $\frac{1}{3}$ nodes, while Swarm expects random failure combinations and sparse adversaries.
+Challenges/features (vs. storage systems with centralized management).
+Node churns, incur additional repair and more complicated placement management.
+Nodes are unreliable in uncertainty: unknown failure rate, unknown correlation.
+Byzantine nodes may attempt to cheat the system \eg pretend to store a content or pretend to store more redundancies than what they actually do.
 
 Goals:
 \begin{itemize}
-    \item Co-design with BFT.
-    No special requirement/incentive regarding durability, enabling wide participation.
+    \item Enable devices with moderate hardware to take part in the DSN and contribute to storage capacity.
+    Storage providers are not involved in consensus protocol, only infrequently \emph{watch} the updates and \emph{submit} updates to the state.
     \item As secure as pure BFT.
     If under certain situation a pure BFT system is durable, so should be the DSN.
-    \item Bounded \& controllable redundancy.
+    \item More scalable than BFT.
+    Overhead per unit storage remains constant as storing more data, and also remains constant \xxx{or grow in $\log$ speed} as storage supply increases.
+    Overhead means both communication overhead for ingesting / retrieval / maintenance and storage overhead \ie redundancy. 
 \end{itemize}
 
-Contributions:
-\begin{itemize}
-    \item Develop a security model of durability for DSNs that are intended to extend blockchains' capacity.
-    \item Analyze current DSNs' durability.
-    \item Design \sys, analyze its durability.
-    \item Evaluate durability and performance of \sys compared with current systems.
-\end{itemize}
+Three categories of existing DSNs.
+First category (Filecoin, Sia, Züs, etc.) is \emph{static provision}.
+Storage providers and clients establish storage contracts through public markets, and the data will always be stored by the certain contracted storage providers.
+Push the responsibility of repairing for failures and ensuring durability to \emph{individual} storage nodes.
+Consider DSN repairing as last resort, economically discourage DSN-aware failures and repairs to happen.
+Not welcome moderate hardware with insufficient durable duration.
+
+Second category (Arweave, EthStorage, Permacoin) approximates \emph{typical blockchains} that a full copy resides on every node.
+Storage providers are economically encouraged to keep a copy of as much data as they can.
+They usually only reward for storing, not penalize for not storing.
+Storage providers must \emph{discover} profitable storing.
+Storage providers also usually need to participate consensus.
+Not suitable for moderate hardware.
+
+The category we are looking for is \emph{adaptive dynamic sharding} (Swarm).
+Each storage provider belongs to a group (usually algorithmically according to its identity).
+The storage providers of a group collectively store a shard of data, and repair together for the failures and churning that happen in the shard.
+\xxx{Advantage.}
+However, the durability is yet to improve.
+\xxx{Evidence.}
+
+\xxx{Our design that enhancing adaptive dynamic sharding.}
 \end{outline}

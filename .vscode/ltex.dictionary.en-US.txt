@@ -1,8 +1,11 @@
-Filecoin
-permissionless
-BFTs
-EthStorage
 Arweave
+BFTs
+DSNs
+EthStorage
+Filecoin
+Permacoin
+permissionless
+Permissionless
+sharding
 Sia
 Storj
-DSNs
