@@ -30,9 +30,11 @@ Usually have small numbers of storage providers indeed.
 Not suitable for \emph{light} storage providers.
 
 The ones that network ``pushes'' to storage providers and storage providers cannot choose what and how much to store (Swarm, Glacier).
-Friendly for light storage providers, but uniformly distribute workload to storage providers regardless of their storage capacities.
-IPFS only stores metadata in this way.
-We discover that smaller providers may be saturated long before the whole network and eventually affect durability.
+The placement is implicitly done by DHT primitives.
+Friendly for light storage providers.
+However, we discover that smaller providers may be saturated long before the whole network and eventually affect durability.
+IPFS only stores metadata in this way, occupy a small portion of disk space and will not run into trouble.
+Things are not the same for DSNs that intend to utilize as much disk space as provided.
 
 Goals:
 \begin{itemize}
@@ -42,25 +44,45 @@ Goals:
     Deliver a probabilistic durability guarantee that only depends on failure/churn rate and the assumptions already made by BFT; not (directly) involve economic model.
     Standard incentive strategies and proof of storage/retrievability can be applied.
     \item Be scalable: make efficient use of storage supply.
-    When there are still plenty spare capacities, the network should be able to ingest new data without losing any existing ones.
+    Maximize storage utilization as long as the contents are still secured.
 \end{itemize}
 
-The key idea is to inform the network about the diversity in storage providers' capacities.
-Consequentially, the network can assign heavier workload to larger storage providers.
-Contrast to the virtual node approach, the network would be fully aware of the underlying correlation pattern and avoid placing redundant segments on the same physical node.
+The key idea is to unify \emph{capacity workload frequency} \ie the probability of being allocated for a certain storage capacity.
+Currently, DHT protocols guarantee unified \emph{node discoverability}, which can be considered as \emph{node frequency}.
+However, on one hand that does not translate to unified capacity frequency as storage providers have different capacities.
+On the other hand, the node frequency follows normal distribution.
+The normal distribution brings undesirable variance so that in the worst case a node can be \xxx{formula} ``more discoverable'' with high probability.
+The placement that relies on the node discoverability is highly affected and far from ideal.
+\xxx{State simulation results of Swarm.}
 
-We modified Kademlia DHT with the concept of \emph{node class}.
+We modified Kademlia DHT into discoverability-differentiable DHT (DDDHT) with the concept of \emph{node class}.
 The higher the node class, the more discoverable the node is.
 This is implemented by masking the high bits when computing ID distances, where the number of masked bits correspond to the node class.
-As the result, when the query uniformly distributed across the ID space, the probability of a node to be included in the query result doubles as the node class increase by one.
+Effectively, the class 1 nodes have 2 IDs, one is its actual one and the other one with the highest bit flipped, and class 2 nodes have 4 IDs with all combination of the two highest bits, and so on.
+As the result, when the query uniformly distributed across the ID space, the probability of a node to be included in the query result doubles as the node class increases by one.
+Notice that the high bits of original IDs are preserved even though they may be masked for computing distances.
+This ensures ID uniqueness, and it's not possible for query results to include duplicated node contact.
 
-With the DHT supporting node class, storage providers can set their node classes based on their storage capacities.
+With the DDDHT, storage providers can set their node classes based on their storage capacities.
 The most appropriate node class for a storage provider may occasionally change based on the change of the storage capacity of the provider, the number of storage providers, the storage capacity of the whole network and the ingested data size.
-The DHT is further extended to support changing node class efficiently to prevent wasting storage capacity or overwhelming the storage providers.
+Thus, DDDHT further supports changing node class efficiently to prevent wasting storage capacity or overwhelming the storage providers.
 
+DDDHT correctly balance the capacity frequency of storage providers of different capacities.
+However, the frequency still follows a wide normal distribution.
 We further introduce the power of two choices mechanism to the DHT protocol.
-By default, the workload assigned to each storage provider follows normal distribution with an undesirable variance that worsen storage efficiency even when each storage provider has the same storage capacity.
-We follow previous works \xxx{cite}, hash contents twice and choose the placement group with lighter load of the two.
-The node class here provides an adequate estimation on the providers' load; by simply prioritizing the providers with higher node classes, one RTT for querying providers' load can be saved.
+We follow previous works \xxx{cite}, hash contents twice and choose the placement group with the lighter load of the two.
+\xxx{How to determine the load of placement groups.}
+\xxx{The challenges of incorporate the power of two choices into DDDHT and how to solve them.}
+
+\xxx{\sys the storage network.}
 
 \xxx{Evaluation.}
+
+Contributions:
+\begin{itemize}
+    \item Bring notice to the storage utilization problem of DHT-based DSNs.
+    Analysis the durability vulnerability the caused by overwhelming small storage providers.
+    Frame the problem as the imbalance of capacity frequency among storage providers of different capacities.
+    \item Purpose DDDHT.
+    \item Design and evaluation \sys.
+\end{itemize}
