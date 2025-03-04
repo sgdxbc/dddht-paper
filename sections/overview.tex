@@ -1,0 +1,29 @@
+\section{Overview}
+
+\xxx{Define and formulate node frequency and capacity frequency.}
+
+\xxx{Simulation setup.}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.48\linewidth]{data/simulation/graphs/freq-node}
+    \includegraphics[width=0.48\linewidth]{data/simulation/graphs/freq-capacity}
+    \caption{CDF of node and capacity frequency.}
+    \label{fig:freq}
+\end{figure}
+
+\autoref{fig:freq} shows that current DHT while has a balanced node frequency, the capacity frequency shows long tail.
+As the result, a small fraction of the capacity is overwhelmed.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{data/simulation/graphs/freq-class}
+    \caption{Capacity frequencies of nodes in different size classes; every size class contains nodes within two consecutive the-power-of-two.}
+    \label{fig:freq-class}
+\end{figure}
+
+We further categorize nodes into different size classes and the average capacity frequencies are shown in \autoref{fig:freq-class}.
+The current DHT overlooks the heterogeneous size of the storage providers, so capacity frequency decreases in logarithmic speed from one size class to another.
+
+As the opposite, DDDHT's capacity frequency is balanced across size classes.
+The CDF is also without the long tail.
