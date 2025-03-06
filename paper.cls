@@ -68,6 +68,7 @@
 \else
 \RequirePackage{amsmath}
 \RequirePackage{amssymb}
+\RequirePackage{booktabs}
 \fi
 
 \mdfdefinestyle{protocol}{,,roundcorner=10pt,}

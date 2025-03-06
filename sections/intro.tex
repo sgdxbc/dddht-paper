@@ -30,21 +30,30 @@ Usually have small numbers of storage providers indeed.
 Not suitable for \emph{light} storage providers.
 
 The ones that network ``pushes'' to storage providers and storage providers cannot choose what and how much to store (Swarm, Glacier).
-The placement is implicitly done by DHT primitives.
+The placement is automatically done by DHT primitives.
 Friendly for light storage providers.
+
 However, we discover that smaller providers may be saturated long before the whole network and eventually affect durability.
+Then those storage providers are forced to evict upon more ingestion or DSN scale down (even just temporarily).
+This eventually results in degraded durability.
 IPFS only stores metadata in this way, occupy a small portion of disk space and will not run into trouble.
 Things are not the same for DSNs that intend to utilize as much disk space as provided.
+
+We argue that the \emph{effective capacity} of such DSNs are much lower than expect \ie the total storage supply divided by the average redundancy.
+Because of the limitation of relying on DHT's placement, a significant portion of storage capacity cannot be made use of.
+As the result, the \emph{effective storage amplification} is much higher than the \emph{useful} amplification \ie the actual redundancy.
 
 Goals:
 \begin{itemize}
     \item Build on light storage providers; algorithmically arrange placement instead of economically.
     Storage providers do not need to compete with each other.
     \item As secure as pure BFT.
-    Deliver a probabilistic durability guarantee that only depends on failure/churn rate and the assumptions already made by BFT; not (directly) involve economic model.
+    Deliver a probabilistic durability guarantee that only depends on failure/churn rate and the assumptions already made by BFT.
+    Most noticeably, keep data alive as long as the overall capacity is considerably higher than demanded (\ie stored data size times redundancy), so matter how the capacity is distributed across the storage providers and even in the presence of DSN scaling down.
     Standard incentive strategies and proof of storage/retrievability can be applied.
-    \item Be scalable: make efficient use of storage supply.
-    Maximize storage utilization as long as the contents are still secured.
+    \item Be scalable: make exhaustive use of storage supply.
+    It would be trivial to keep a tiny piece of data safe if a huge amount of storage is holding or \emph{ready to be holding} it.
+    Maximize storage utilization and keep the storage amplification close to redundancy as long as the contents are still secured.
 \end{itemize}
 
 The key idea is to unify \emph{capacity workload frequency} \ie the probability of being allocated for a certain storage capacity.
