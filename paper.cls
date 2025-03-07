@@ -51,19 +51,19 @@
 \RequirePackage{authblk}
 \fi
 
-\RequirePackage{xspace}
-\RequirePackage{graphicx}
-\RequirePackage{subcaption}
-\RequirePackage{enumitem}
-\RequirePackage[framemethod=tikz]{mdframed}
 \RequirePackage{algorithm}
 \RequirePackage[noend]{algpseudocode}
-\RequirePackage{braket}
-\RequirePackage{tikz}
 \RequirePackage{amsthm}
+\RequirePackage{braket}
 \RequirePackage{comment}
+\RequirePackage{enumitem}
+\RequirePackage{graphicx}
+\RequirePackage[framemethod=tikz]{mdframed}
+\RequirePackage{subcaption}
 \RequirePackage{tabularx}
+\RequirePackage{tikz}
 \RequirePackage[dvipsnames]{xcolor}
+\RequirePackage{xspace}
 \ifacm
 \else
 \RequirePackage{amsmath}
@@ -77,13 +77,12 @@
 
 \theoremstyle{definition}
 \newtheorem{invariant}{Invariant}
-
+\newtheorem{principle}{Principle}
 \ifacm
 \else
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
 \fi
-\newtheorem{principle}{Principle}
 
 \def\Snospace~{\S{}}
 % Autoref
