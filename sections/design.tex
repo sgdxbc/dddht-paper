@@ -1,0 +1,103 @@
+\section{\dht}
+\label{sec:dht}
+
+In this section we describe the design outline of the \dht, an DHT protocol that can differentiate discoverability among nodes, \ie, assign different node frequencies to different nodes.
+As many DHT predecessors, \dht can support both distributed routing or key-value store (KVS).
+For the sake of brevity we only describe the KVS functionality here which is used as a storage service in this work, and state that the routing functionality can be also easily modified based on this.
+
+\paragraph{Node interfaces.}
+\dht providers the same KVS interfaces as other DHTs:
+\begin{itemize}
+    \item \fput(\var{k}, \var{v}) stores value \var{v} associated with key \var{k} on $r$ different nodes, where $r$ is the configured redundancy level.
+    \item \fget(\var{k}) $\to$ \var{v} queries value that is associated with key \var{k}.
+\end{itemize}
+\noindent and guarantees that if \fget returns a value \var{v} for key \var{k}, there must be a \fput happened before with the same \var{v} for \var{k}.
+
+However, \dht modifies the node identities and related interfaces.
+A node identity consists of an \vid and a \emph{node class} \vclass.
+The \vid is a random unsigned integer, and in practice \vid is usually the hash (\eg SHA256 or Keccak) of node's public key to enable self-certifying \vid.
+The \vclass is a small unsigned integer that is less than the number of bits of \vid.
+\dht provides
+\begin{itemize}
+    \item \fboot(\vid, \vclass) initializes a node to be able to discover and be discoverable by the network with \vid and \vclass.
+    \item \fupdate(\vclass) announces a new \vclass of the node to the network.
+\end{itemize}
+\noindent to support nodes to assign appropriate node classes to themselves based on their storage capacities, and update their node classes when their storage capacities change.
+The class of a node should be set to $\log(C)$ rounded to the closest integer where $C$ is the node's current capacity.
+
+In order to implement these interfaces, internally \dht invokes two kinds of remote procedure calls (RPC) on the nodes
+\begin{itemize}
+    \item \ffind(\var{k}, \var{r}) $\to$ \var{v} $|$ \var{contacts} finds about the key \var{k}.
+    It returns either the associated value \var{v} or at most \var{r} node contacts that the remote node believes to be the ``best'' candidates to store for the \var{k} among all nodes it knows.
+    \item \fpush(\var{k}, \var{v}) pushes value associated with \var{k} to the remote node.
+\end{itemize}
+\noindent next, we first discuss how to implement these RPCs, then we will implement the interfaces with these RPCs.
+
+\paragraph{Classified \var{xor} distance.}
+\dht's distance function \fdist makes a simple extension to Kademlia's distance function by taking an additional \vclass input and masking the output according to it
+\begin{quotation}
+    \texttt{\fdist(\vid, \var{target\_id}, \vclass) = \\
+    (\vid \^{} \var{target\_id}) \& (1<<(B-\vclass) - 1)}
+\end{quotation}
+\noindent where \var{B} is the bit width of \var{id} \eg 256 for hash functions like SHA256.
+
+\paragraph{\ffind RPC\@.}
+Each node maintains contact tables that are propagated with contacts of nodes of different distances to itself.
+A node contact is a node's \vid paired with the node's dialable network address \eg TCP/IP tuple, with an optional \var{score} field indicating the remaining capacity of the node.
+Different from Kademlia DHT, in \dht node allocates a contact table for each node class.
+Every contact table is managed in the same way as Kademlia: the table keeps $k$ contacts for every distance magnitude, \ie, the length of the common prefix between the remote node's \vid and the local one, where $k$ is a configurable parameter that is usually set to 20.
+Nodes insert contacts of other nodes when they are handling \ffind RPCs.
+When there are more than $k$ node contacts available for a distance magnitude, some node contacts are evicted based on the metrics including last seen time and connection established duration.
+Each node also maintains a store table for holding key-value pairs.
+
+When \ffind(\var{k}, \var{r}) is invoked, the node first look up the store table for \var{k}.
+If associated value is found, the value is returned.
+Otherwise, the node looks up \var{r} node contacts from \emph{every} contact table that have the closest \vid to \var{k} within the contact table.
+Then, the node contacts from the contact tables are paired with the \vclass of the contact tables and concatenated as candidate list and the node's self contact is also added to the list.
+Then the candidate list is sorted based on the classified \var{xor} distance \ie \fdist(\vid, \var{k}, \vclass), and the first \var{r} node contacts in the list are returned.
+
+Finally, when inserting the node's self contact into the candidate list, the optional \var{score} field is set according to the node's current remaining capacity.
+
+\paragraph{\fpush RPC\@.}
+When \fpush(\var{k}, \var{v}) is invoked, the key-value pair is inserted into the store table.
+If the invoked node is full after storing the key-value pair, it decreases its node class and call \fupdate.
+The node should not be full before the invocation, but that may happen in the corner cases such as highly asynchrony network or the system's overall capacity is exhausted.
+Then it may choose between reject the invocation (which lowering availability) or randomly evict a stored key-value pair (which lowering durability).
+
+\paragraph{\fput and \fget interface.}
+We start by describing the \fput and \fget in Kademlia, which involves an iterative invocation of \ffind and \dht's interfaces are based on them.
+The procedures start by invoking \ffind(\var{k}, $r$) on the node itself and get a list of candidate nodes to contact.
+The node then continuously dials the yet-to-contact node that is closest to \var{k} in the list.
+For \fget, the procedure ends when any \ffind RPC returns value.
+For \fput, the iterative invocation continue until the $r$ closest nodes in the list are all contacted.
+Then the node invokes \fpush on these $r$ nodes and finishes.
+
+In \dht, the power of two choices technique is deployed.
+Two iterative invocation instances of \ffind are performed simultaneously, one with \var{k} and the other with the hash of \var{k}.
+For \fput, the two instances are synchronized before the \fpush, and \fpush is only invoked in one instance whose nodes have more minimum remaining storage capacity.
+The remaining storage capacities are collected through the optional \var{score} field of the node contacts returned by \ffind invocations.
+The node compare the minimum \var{score} of the two sets of $r$ nodes and only \fpush on the set with higher minimum \var{score}.
+For \fget, one of the two instances will return value, and the whole \fget can end after that.
+
+\paragraph{Periodical re-replication.}
+Similar to Kademlia, after every fixed interval (e.g. 24 hours) nodes will re-replicate the stored values to tolerate churning and failure.
+The re-replication is performed as normal \fput calls.
+
+\paragraph{\fboot and \fupdate interfaces.}
+The \fboot and \fupdate are both similar to Kademlia.
+The node performs a \ffind with \var{k} set to its own \vid, in order to propagate its own contact tables and update the contact of itself on remote nodes.
+For \fboot and \fupdate with increased class, no special treatment is required and the node will be pushed with values in later re-replications.
+However, for \fupdate with decreased class, the node should immediately transfer the affected values out, or the local redundancy will not be discoverable because of the decrease of the discoverability of the node itself.
+So the node will iterate all stored key-value pairs and \fput them immediately.
+
+\paragraph{Differential discoverability.}
+The \emph{discoverability} of a node is measured by the frequency of \fpush invoked on the node.
+\dht guarantees that the discoverability of a node is \emph{tightly bound} by its \vclass.
+More precisely,
+\begin{itemize}
+    \item For any two nodes with \vclass set to $c_1$ and $c_2$, the expected values of their frequencies $E(f_1)$ and $E(f_2)$ satisfies
+    \[ \frac{E(f_1)}{E(f_2)}=2^{c_1-c_2} \]
+    \item For any two nodes that set to the same \vclass, their frequencies will be very close.
+    \xxx{Formula for bounded delta with high probability.}
+\end{itemize}
+\xxx{Further prove the durability.}
