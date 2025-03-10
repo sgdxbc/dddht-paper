@@ -80,10 +80,8 @@ DDDHT correctly balance the capacity frequency of storage providers of different
 However, the frequency still follows a wide normal distribution.
 We further introduce the power of two choices mechanism to the DHT protocol.
 We follow previous works \xxx{cite}, hash contents twice and choose the placement group with the lighter load of the two.
-\xxx{How to determine the load of placement groups.}
-\xxx{The challenges of incorporate the power of two choices into DDDHT and how to solve them.}
-
-\xxx{\sys the storage network.}
+The information about the load of the storage providers is integrated into the DHT protocol.
+As the result, the storage providers are assigned workload that is closely matching each other, given that they have the same node class.
 
 \xxx{Evaluation.}
 
