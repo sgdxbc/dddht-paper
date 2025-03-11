@@ -5,26 +5,15 @@
 \begin{table}
 \caption{Comparison of Decentralized Storage Networks}
 \label{tab:dsn}
-% \begin{tabularx}{\linewidth}{XXXXX}
-%     \toprule
-%     Works       & Systematic placement  & Configurable redundancy   & Friendly to light nodes   & Effective redundancy  \\
-%     \midrule
-%     Filecoin    & No                    & \good{Yes}                & No                        & \good{Low}            \\
-%     Arweave     & No                    & No                        & No                        & High                  \\
-%     Storj       & Centralized           & \good{Yes}                & \good{Yes}                & \good{Low}            \\
-%     Swarm       & \good{Decentralized}  & \good{Yes}                & \good{Yes}                & High                  \\
-%     \sys        & \good{Decentralized}  & \good{Yes}                & \good{Yes}                & \good{Low}            \\
-%     \bottomrule
-% \end{tabularx}
 \begin{tabularx}{\linewidth}{lXXX}
     \toprule
-    Works       & Friendly to light nodes   & Systematic placement  & Effective redundancy  \\
+    Works       & Metadata  & Competitive   & Efficiency    \\
     \midrule
-    Filecoin    & No                        & No                    & \good{Low}            \\
-    Arweave     & No                        & No                    & High                  \\
-    Storj       & \good{Yes}                & Centralized           & \good{Low}            \\
-    Swarm       & \good{Yes}                & \good{Decentralized}  & High                  \\
-    \sys        & \good{Yes}                & \good{Decentralized}  & \good{Low}            \\
+    Filecoin    & Yes       & Yes           & \good{High}   \\
+    Arweave     & \good{No} & Yes           & Low           \\
+    Storj       & Yes       & \good{No}     & \good{High}   \\
+    Swarm       & \good{No} & \good{No}     & Low           \\
+    \sys        & \good{No} & \good{No}     & \good{High}   \\
     \bottomrule
 \end{tabularx}
 \end{table}
@@ -54,39 +43,25 @@ We assume that at most $\frac{1}{3}$ of the storage capacity can be faulty in a 
 We also assume that in a proof period the system is able to finish repairing for any repairable faults.
 For a system that only employs replication as redundancy, a fault is repairable means not all copies of the data are lost.
 
+\paragraph{Previous DSNs.}
+Some DSNs do not control the placement groups of contents.
+Filecoin and Sia provide a storage market and on-chain storage contracts and storage providers bid for storage tasks.
+High requirements on storage providers.
+Arweave and EthStorage do not use explicit contract, instead all storage providers that store a content share the profit.
+Rely on storage providers to discover profitable storage tasks \ie the contents that have fewer copies and are more risky to lose.
+Inefficient resource configuration.
+
+The common property is that these DSNs require storage providers to compete with each other for lower storage cost.
+Storage providers also need to frequently poll the blockchain or participant into consensus protocol.
+Encourage fewer, more powerful storage providers, increase the centralization of the system.
+
+Other DSNs directly control the placement groups of contents.
+Storj centrally tracks the behavior of storage providers, and allocates the placement group based on the trust level of the storage providers.
+It's a centralized approach with single point of failure.
+
+Swarm replaces the centralized allocator with DHT and allocates placement groups with consistent hashing.
+The DHT randomly samples storage providers to form placement groups.
+Since the sampling on storage providers is independent, the placement group contains at least certain number of honest storage providers for high probability.
+Any faulty redundancy is detected by proof of storage and repaired timely.
+
 \subsection{The Problem with DHT}
-
-Some storage providers, especially the ones with smaller capacities, are full before the others.
-
-\xxx{A graph that samples utilization of random storage providers at a time point, showing imbalance.}
-
-\xxx{Or a graph that traces utilization of random storage providers over time, showing inconsistent growing speed.}
-
-\xxx{Or a graph that where x-axis is the overall utilization and y-axis is the portion of nodes with at least X utilization, showing many nodes are saturated while system is still at a low utilization.}
-
-Even if the storage providers are already full, DHT still ``can't help'' to push more data to them because who to push is strictly enforced by the DHT protocol and the distance algorithm.
-
-\paragraph{Simply asking users to store ``somewhere else'' is not a solution.}
-One simple workaround is to manipulate the content hash by \eg equipping the content with a nonce, and choose a hash where the closest storage providers in the DHT have sufficient remaining storage capacity.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=\linewidth]{data/simulation/graphs/ingest-reject}
-    \caption{Number of attempts per ingestion at different utilization.}
-    \label{fig:ingest-reject}
-\end{figure}
-
-As \autoref{fig:ingest-reject} shows, this does not work well for ingestion.
-\xxx{Not a good graph, maybe change to utilization vs. average number of attempts.}
-
-And this trick completely doesn't work when the DSN scales down.
-
-\paragraph{Virtual node.}
-Balance storage providers' capacity by splitting larger storage providers into smaller virtual ones.
-
-As we will see in \autoref{sec:overview}, this only solves half of the problem.
-Even in a DSN where most of the storage providers have equal capacity still suffers from low utilization.
-
-Virtual nodes also introduce artificial correlation that DHT protocol is not aware and cannot account for.
-DHT protocol could place redundancy of the same content repeatedly on the same physical storage provider.
-\xxx{Some simulation if desired.}
