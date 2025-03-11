@@ -19,9 +19,10 @@ Enable wide adoption of \emph{lightweight} storage providers \ie consumer device
 
 Observation: imbalanced utilization across the storage providers.
 As shown in \xxx{a heatmap with x-axis storage provider size, y-axis utilization}, the utilization scatters in a wide range.
-Firstly, because the placement groups are uniformly chosen across the nodes regardless of their storage capacities, the system utilizes same amount of storage capacity from storage providers of various sizes which results in lower utilization on larger storage providers.
-Secondly, even among the storage providers of the same size, the utilization does not closely match the expected value but follows a wide normal distribution.
-Some storage providers are overwhelmed while the overall utilization is still low.
+The imbalance is both out of the \emph{spatial} and \emph{temporal} factors.
+Spatially, the storage providers have different storage capacities; temporally, they join the network at different time.
+However, the content placement strategy of DHT completely ignores these differences but simply uniformly samples every storage provider.
+As the result, the larger and later storage providers have low utilization while the smaller and earlier ones are overwhelmed much ahead of the whole network.
 
 Problem: degraded availability or durability.
 The overwhelmed storage providers have to reject the new storing requests or evict previously-stored contents.
@@ -45,16 +46,16 @@ DHT-based for efficient decentralized placement of contents.
 Optimized tail utilization results in better durability guarantee.
 \dht is the first work that can prove durability even assuming size-limited storage providers.
 
-\dht is based on Kademlia DHT protocol but with two novel designs.
-The first one is introducing \emph{node class} to differentiate the discoverability of storage providers of different sizes.
+\dht is based on Kademlia DHT protocol but with two novel designs that differentiate the discoverability of the storage providers for their spatial and temporal differences.
+The first one is introducing \emph{node class} to differentiate storage providers of different sizes.
 The node class makes a similar effect to virtual node: a node's discoverability is doubled when its node class is increased by one, effectively equals to double the number of virtual nodes in that approach.
 However, node class is implemented by modifying the Kademlia's \texttt{xor} distance definition: the highest bits of the \texttt{xor} distance is masked out and the number of masked bits equals to the node class.
 The node class mechanism preserves the one-to-one mapping between node \vid and physical storage provider, so it does not bring additional failure correlations, and it allows nodes to decrease their discoverability without increasing the risk of losing data.
 
-Then, \dht further employs \emph{the power of two random choices} (2RC) to narrow the distribution of the utilization of storage providers.
+Then, \dht further employs \emph{the power of two random choices} (2RC) to differentiate storage providers of different ages as well as narrow the distribution of the utilization of storage providers.
 Unlike previous works \xxx{cite} that aim to balance the workload on every node, \dht uses 2RC to balance the \emph{remaining capacity} of the storage providers.
 In \dht, the \fput operation re-hash the key and consider the placement group around the hash of the key as an alternative candidate to the one around the key.
 The storage providers from the two candidate placement groups report their remaining capacities, and \fput will upload the content to the placement group that with higher \emph{minimum} remaining capacity.
-This novel way of employing 2RC results in a highly balanced consumption of the remaining capacity on the storage providers.
+The feedback provided by 2RC ensures late and underutilized storage providers are more discoverable than the early and saturated ones, and it further eliminates the probabilistic fluctuation across the storage providers (as its original use cases).
 
 \xxx{Evaluation.}

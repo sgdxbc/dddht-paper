@@ -31,6 +31,29 @@
 
 \subsection{Decentralized Storage Networks}
 
+Decentralized storage networks are widely used to outsource bulk data from blockchains.
+\xxx{Facts.}
+
+\xxx{Arch: read/update metadata on chain, read/append content data off chain.}
+
+DSNs are under the same critical attack vector as the blockchains.
+By utilizing DSNs, the durability of DSNs becomes part of the safety guarantee of blockchains themselves.
+Proof of storage can rapidly detect faults and allows DSNs to repair (relatively) timely.
+
+\paragraph{Threat model.}
+The time is divided into \emph{proof periods}.
+Storage providers submit proof of storage for the contents they stored in every proof period.
+The proofs attest:
+\begin{inparaenum}
+    \item the stored contents are durable with sufficient redundancy, which enables external auditing, and
+    \item the utilized capacities of storage providers.
+\end{inparaenum}
+The storage capacity must be correctly utilized in a proof period, even if it belongs to a Byzantine faulty storage provider, as long as a proof of storage is submitted for it.
+On the other hand, any faulty storage capacity can only be detected at the end of the proof period because of the lack of proof of storage.
+We assume that at most $\frac{1}{3}$ of the storage capacity can be faulty in a proof period.
+We also assume that in a proof period the system is able to finish repairing for any repairable faults.
+For a system that only employs replication as redundancy, a fault is repairable means not all copies of the data are lost.
+
 \subsection{The Problem with DHT}
 
 Some storage providers, especially the ones with smaller capacities, are full before the others.

@@ -56,8 +56,9 @@
 \RequirePackage{amsthm}
 \RequirePackage{braket}
 \RequirePackage{comment}
-\RequirePackage{enumitem}
+% \RequirePackage{enumitem}
 \RequirePackage{graphicx}
+\RequirePackage{paralist}
 \RequirePackage[framemethod=tikz]{mdframed}
 \RequirePackage{subcaption}
 \RequirePackage{tabularx}
