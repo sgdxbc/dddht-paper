@@ -14,18 +14,16 @@ Nevertheless, should tolerate up to 1/3 faulty capacities emerging in the single
 
 DHT-based decentralized storage networks (DSN).
 Assign placement groups for contents automatically based on their hashes.
-Advantage: relief storage providers from discovering profitable storing tasks by themselves and avoid storage providers competing with each other.
-Enable wide adoption of \emph{lightweight} storage providers \ie consumer devices that providing their spare storage capacities.
+Advantage: relief storage nodes from discovering profitable storing tasks by themselves and competing with each other.
+Enable wide adoption of \emph{lightweight} storage nodes \ie consumer devices that providing their spare storage capacities.
 
-Observation: imbalanced utilization across the storage providers.
-As shown in \xxx{a heatmap with x-axis storage provider size, y-axis utilization}, the utilization scatters in a wide range.
-The imbalance is both out of the \emph{spatial} and \emph{temporal} factors.
-Spatially, the storage providers have different storage capacities; temporally, they join the network at different time.
-However, the content placement strategy of DHT completely ignores these differences but simply uniformly samples every storage provider.
-As the result, the larger and later storage providers have low utilization while the smaller and earlier ones are overwhelmed much ahead of the whole network.
+Observation: some storage nodes are overwhelmed even when the overall utilization is still low.
+As shown in \xxx{a heatmap with x-axis storage nodes size, y-axis available capacity}, the available capacity scatters in a wide range.
+As the overall workload increases, the available capacity shifts downward as a whole.
+Eventually, some nodes hit the 0 available capacity \ie be overwhelmed while the others may still have abundant available capacity.
 
 Problem: degraded availability or durability.
-The overwhelmed storage providers have to reject the new storing requests or evict previously-stored contents.
+The overwhelmed storage nodes have to reject the new storing requests or evict previously-stored contents.
 If it chooses the former, \xxx{a graph shows number of storing attempts vs. number of stored content}.
 Otherwise, \xxx{a graph shows number of data loss vs. overall utilization}.
 
@@ -34,28 +32,28 @@ Scaling down can happen (temporarily) even just because network partitioning.
 As shown in \xxx{a graph shows number of remaining nodes vs. data loss}.
 
 Virtual node approach is not effective.
-As shown in \xxx{a heatmap like the previous one but with virtual nodes}, although the utilization of large storage providers is close to each other and much the overall average, the utilization of small storage providers is still widely scattered.
-As the result, the \emph{physically} small storage providers will still be overwhelmed much ahead of the whole network.
+As shown in \xxx{a heatmap like the previous one but with virtual nodes}, although the available capacities of large storage nodes are close to each other, they are still higher than the average available capacities of smaller nodes, because the virtual nodes can only balance for the utilization, not the available capacity.
+And the available capacities of small storage nodes is still widely scattered.
+As the result, some \emph{physically} small storage nodes will still be overwhelmed much ahead of the whole network.
 At the same time, virtual nodes also bring correlation among the node failures, which is both unknown to the DHT protocol and the DSN and unwanted by any storage system.
-\xxx{A graph shows content size vs. the number of unique physical storage providers.}
-The unawareness of DHT brings another side effect: there's no way for storage providers to gracefully reduce the number of virtual nodes.
+\xxx{A graph shows content size vs. the number of unique physical storage nodes.}
+The unawareness of DHT brings another side effect: there's no way for storage nodes to gracefully reduce the number of virtual nodes.
 Eventually the scaling down becomes artificial churning that DSN must additionally tolerate.
 
-Problem definition: a DHT-based DSN that is optimized for P99 (tail) utilization of storage providers.
-DHT-based for efficient decentralized placement of contents.
-Optimized tail utilization results in better durability guarantee.
-\dht is the first work that can prove durability even assuming size-limited storage providers.
+Problem definition: a DHT-based DSN that balances according to available capacities of storage nodes and can avoid overwhelming storage nodes.
+\dht is the first work that can prove durability even assuming size-limited storage nodes.
 
-\dht is based on Kademlia DHT protocol but with two novel designs that differentiate the discoverability of the storage providers for their spatial and temporal differences.
-The first one is introducing \emph{node class} to differentiate storage providers of different sizes.
+\dht is based on Kademlia DHT protocol but with two novel designs that differentiate the discoverability of the storage nodes.
+The first one is to \emph{macro-balance} by introducing \emph{node class} to differentiate storage nodes of different sizes.
 The node class makes a similar effect to virtual node: a node's discoverability is doubled when its node class is increased by one, effectively equals to double the number of virtual nodes in that approach.
 However, node class is implemented by modifying the Kademlia's \texttt{xor} distance definition: the highest bits of the \texttt{xor} distance are masked out and the number of masked bits equals to the node class.
-The node class mechanism preserves the one-to-one mapping between node \vid and physical storage provider, so it does not bring additional failure correlations, and it allows nodes to decrease their discoverability without increasing the risk of losing data.
+The node class mechanism preserves the one-to-one mapping between node \vid and physical storage node, so it does not bring additional failure correlations, and it allows nodes to decrease their discoverability without increasing the risk of losing data.
 
-Then, \dht further employs \emph{the power of two random choices} (2RC) to differentiate storage providers of different ages as well as narrow the distribution of the utilization of storage providers.
-Unlike previous works \xxx{cite} that aim to balance the workload on every node, \dht uses 2RC to balance the \emph{remaining capacity} of the storage providers.
+However, just as the virtual node approach, node class balances utilization instead of available capacities of the nodes.
+\dht further employs \emph{the power of two random choices} (2RC) to perform precise \emph{micro-balancing}.
+Unlike previous works \xxx{cite} that aim to balance the workload on every node, \dht uses 2RC to balance the available capacity of the storage node.
 In \dht, the \fput operation re-hash the key and consider the placement group around the hash of the key as an alternative candidate to the one around the key.
-The storage providers from the two candidate placement groups report their remaining capacities, and \fput will upload the content to the placement group that with higher \emph{minimum} remaining capacity.
-The feedback provided by 2RC ensures late and underutilized storage providers are more discoverable than the early and saturated ones, and it further eliminates the probabilistic fluctuation across the storage providers (as its original use cases).
+The storage nodes from the two candidate placement groups report their remaining capacities, and \fput will upload the content to the placement group that with higher \emph{minimum} available capacity.
+The novel use of 2RC fixes the balancing error introduced by the node class and is a good complement to it.
 
 \xxx{Evaluation.}
