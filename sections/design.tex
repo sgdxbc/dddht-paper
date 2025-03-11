@@ -33,14 +33,6 @@ In order to implement these interfaces, internally \dht invokes two kinds of rem
 \end{itemize}
 \noindent next, we first discuss how to implement these RPCs, then we will implement the interfaces with these RPCs.
 
-\paragraph{Classified \var{xor} distance.}
-\dht's distance function \fdist makes a simple extension to Kademlia's distance function by taking an additional \vclass input and masking the output according to it
-\begin{quotation}
-    \texttt{\fdist(\vid, \var{target\_id}, \vclass) = \\
-    (\vid \^{} \var{target\_id}) \& (1<<(B-\vclass) - 1)}
-\end{quotation}
-\noindent where \var{B} is the bit width of \var{id} \eg 256 for hash functions like SHA256.
-
 \paragraph{\ffind RPC\@.}
 Each node maintains contact tables that are propagated with contacts of nodes of different distances to itself.
 A node contact is a node's \vid paired with the node's dialable network address \eg TCP/IP tuple, with an optional \var{score} field indicating the remaining capacity of the node.

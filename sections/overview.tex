@@ -1,9 +1,30 @@
 \section{Overview}
 \label{sec:overview}
 
-\xxx{Define and formulate node frequency and capacity frequency.}
+The key idea of \dht is to differentiate the discoverability storage providers based on the remaining capacities they have.
+As described in \xxx{the second half of background}, with DHT protocols like Kademlia and \dht, the placement groups are constructed by invoking \ffind calls, which returns a list of candidate nodes that are \emph{discovered} to be the closest ones to the storing content.
+The more frequent a node is discovered by the \ffind calls, the more placement groups the node is included, and the more storing tasks is allocated to the node.
+However, in Kademlia, the frequency of \ffind returning every node is the same, regardless of their remaining capacities.
+\dht makes two changes to Kademlia to differentiate the nodes based on their spatial and temporal differences respectively.
 
-\xxx{Simulation setup.}
+\paragraph{Node class and classified \texttt{xor} distance.}
+Spatially, storage providers have different available storage capacities.
+The discoverability of storage providers should be proportional to their storage capacities.
+In \dht every node is assigned a \emph{node class}, which how to calculate the distance between a node's \vid to a content's one.
+In the distance function \fdist, after \texttt{xor} the two \vid{}s, and result is further masked out the highest bits whose number equals to the node's \vclass
+\begin{quotation}
+    \texttt{\fdist(\vid, \var{target\_id}, \vclass) = \\
+    (\vid \^{} \var{target\_id}) \& (1<<(B-\vclass) - 1)}
+\end{quotation}
+\noindent where \var{B} is the bit width of \var{id} \eg 256 for hash functions like SHA256.
+This is called the \emph{classified \texttt{xor} distance}.
+
+The effect of node class is similar to virtual node.
+The classified \texttt{xor} distance for class 0 is identical to the original \texttt{xor} distance in Kademlia, and corresponds to one virtual node.
+For class 1, the distance is same as calculate the original \texttt{xor} distance for both the node's \vid and its ``opposite'' which flips the first bit of \vid, and takes the smaller distances of the two.
+This effectively ``spawns'' two virtual nodes at the corresponding \vid{}s.
+Similarly, we have class $c$ equals to have $2^c$ virtual nodes.
+However, with node class each node still has one single \vid, so \ffind will only include each physical node at most once, which is unlike with virtual nodes where \ffind may return multiple \vid{}s that belong to the same physical node.
 
 \begin{figure}
     \centering
@@ -13,9 +34,6 @@
     \label{fig:freq}
 \end{figure}
 
-\autoref{fig:freq} shows that current DHT while has a balanced node frequency, the capacity frequency shows long tail.
-As the result, a small fraction of the capacity is overwhelmed.
-
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{data/simulation/graphs/freq-class}
@@ -23,8 +41,5 @@ As the result, a small fraction of the capacity is overwhelmed.
     \label{fig:freq-class}
 \end{figure}
 
-We further categorize nodes into different size classes and the average capacity frequencies are shown in \autoref{fig:freq-class}.
-The current DHT overlooks the heterogeneous size of the storage providers, so capacity frequency decreases in logarithmic speed from one size class to another.
-
-As the opposite, DDDHT's capacity frequency is balanced across size classes.
-The CDF is also without the long tail.
+\paragraph{The power of two random choices.}
+In DSNs storage providers may join at any time, and the storage providers that join recently 

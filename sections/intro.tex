@@ -49,7 +49,7 @@ Optimized tail utilization results in better durability guarantee.
 \dht is based on Kademlia DHT protocol but with two novel designs that differentiate the discoverability of the storage providers for their spatial and temporal differences.
 The first one is introducing \emph{node class} to differentiate storage providers of different sizes.
 The node class makes a similar effect to virtual node: a node's discoverability is doubled when its node class is increased by one, effectively equals to double the number of virtual nodes in that approach.
-However, node class is implemented by modifying the Kademlia's \texttt{xor} distance definition: the highest bits of the \texttt{xor} distance is masked out and the number of masked bits equals to the node class.
+However, node class is implemented by modifying the Kademlia's \texttt{xor} distance definition: the highest bits of the \texttt{xor} distance are masked out and the number of masked bits equals to the node class.
 The node class mechanism preserves the one-to-one mapping between node \vid and physical storage provider, so it does not bring additional failure correlations, and it allows nodes to decrease their discoverability without increasing the risk of losing data.
 
 Then, \dht further employs \emph{the power of two random choices} (2RC) to differentiate storage providers of different ages as well as narrow the distribution of the utilization of storage providers.
