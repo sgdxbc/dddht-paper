@@ -1,95 +1,60 @@
 \section{Introduction}
 \label{sec:intro}
 
-Blockchain scalability issue arises.
-For permissionless blockchains, the bottleneck is network.
-Result: disseminate smaller data size, propagate to smaller group of nodes.
-
-\emph{Disaggregate} storage: scaling up world state while keep dissemination efficiently.
+Blockchain storage scalability issue.
+\emph{Outsource} storage: extract large content data from fully-replicated world state.
 Leave a stub (\eg content hash) in the state and access content off-chain.
 Example: NFT exchange, user-generated content, off-chain AI inference with on-chain verifiable computation proof.
 
-BFT guarantees a consistent and \emph{durable} state.
-Durable was implied by full replication in BFT, but now explicitly relies on the disaggregated storage.
-The preconditions of BFT security include assumptions made on both the consensus and the storage parts.
-Involving centralized storage service would be a major distortion on permissionless blockchains' security model.
+Requirement: works with a similar setup to blockchain.
+Allow anyone to store redundancy for contents and make profit.
+Tolerate Byzantine behaviors.
+Proof of storage can assist to detect faults rapidly.
+Nevertheless, should tolerate up to 1/3 faulty capacities emerging in the single proof period.
 
-Permissionless systems usually consist of abundant devices with moderate hardware.
-Restricted network bandwidth/computation power/storage capacity, excluded from BFT protocol, underutilized as \emph{light clients}.
-Idea: construct decentralized storage network (DSN) with these devices as \emph{light storage providers}.
+DHT-based decentralized storage networks (DSN).
+Assign placement groups for contents automatically based on their hashes.
+Advantage: relief storage providers from discovering profitable storing tasks by themselves and avoid storage providers competing with each other.
+Enable wide adoption of \emph{lightweight} storage providers \ie consumer devices that providing their spare storage capacities.
 
-Challenges (vs. storage systems with centralized management).
-Heterogeneous nodes: various storage capacity, content policy \& lifetime.
-Unpredictable node behavior: cannot predict the churning or failure correlation even on the honest ones, not to mention the Byzantine ones.
+Observation: imbalanced utilization across the storage providers.
+As shown in \xxx{a heatmap with x-axis storage provider size, y-axis utilization}, the utilization scatters in a wide range.
+Firstly, because the placement groups are uniformly chosen across the nodes regardless of their storage capacities, the system utilizes same amount of storage capacity from storage providers of various sizes which results in lower utilization on larger storage providers.
+Secondly, even among the storage providers of the same size, the utilization does not closely match the expected value but follows a wide normal distribution.
+Some storage providers are overwhelmed while the overall utilization is still low.
 
-Two kinds of DSNs.
-The ones that storage providers pick what contents to store; either through market and contract (Sia, Filecoin, Züs) or the storage providers can ``mine'' on arbitrary content managed by the DSN (Arweave, EthStorage, Permacoin).
-Advantage: storage providers can store as much as they can/want.
-Highly competitive storage providers; encouraging large-scale and centralized providers.
-Usually have small numbers of storage providers indeed.
-Not suitable for \emph{light} storage providers.
+Problem: degraded availability or durability.
+The overwhelmed storage providers have to reject the new storing requests or evict previously-stored contents.
+If it chooses the former, \xxx{a graph shows number of storing attempts vs. number of stored content}.
+Otherwise, \xxx{a graph shows number of data loss vs. overall utilization}.
 
-The ones that network ``pushes'' to storage providers and storage providers cannot choose what and how much to store (Swarm, Glacier).
-The placement is automatically done by DHT primitives.
-Friendly for light storage providers.
+Bigger problem: degraded durability during scaling down.
+Scaling down can happen (temporarily) even just because network partitioning.
+As shown in \xxx{a graph shows number of remaining nodes vs. data loss}.
 
-However, we discover that smaller providers may be saturated long before the whole network and eventually affect durability.
-Then those storage providers are forced to evict upon more ingestion or DSN scale down (even just temporarily).
-This eventually results in degraded durability.
-IPFS only stores metadata in this way, occupy a small portion of disk space and will not run into trouble.
-Things are not the same for DSNs that intend to utilize as much disk space as provided.
+Virtual node approach is not effective.
+As shown in \xxx{a heatmap like the previous one but with virtual nodes}, although the utilization of large storage providers is close to each other and much the overall average, the utilization of small storage providers is still widely scattered.
+As the result, the \emph{physically} small storage providers will still be overwhelmed much ahead of the whole network.
+At the same time, virtual nodes also bring correlation among the node failures, which is both unknown to the DHT protocol and the DSN and unwanted by any storage system.
+\xxx{A graph shows content size vs. the number of unique physical storage providers.}
+The unawareness of DHT brings another side effect: there's no way for storage providers to gracefully reduce the number of virtual nodes.
+Eventually the scaling down becomes artificial churning that DSN must additionally tolerate.
 
-We argue that the \emph{effective capacity} of such DSNs are much lower than expect \ie the total storage supply divided by the average redundancy.
-Because of the limitation of relying on DHT's placement, a significant portion of storage capacity cannot be made use of.
-As the result, the \emph{effective storage amplification} is much higher than the \emph{useful} amplification \ie the actual redundancy.
+Problem definition: a DHT-based DSN that is optimized for P99 (tail) utilization of storage providers.
+DHT-based for efficient decentralized placement of contents.
+Optimized tail utilization results in better durability guarantee.
+\dht is the first work that can prove durability even assuming size-limited storage providers.
 
-Goals:
-\begin{itemize}
-    \item Build on light storage providers; algorithmically arrange placement instead of economically.
-    Storage providers do not need to compete with each other.
-    \item As secure as pure BFT.
-    Deliver a probabilistic durability guarantee that only depends on failure/churn rate and the assumptions already made by BFT.
-    Most noticeably, keep data alive as long as the overall capacity is considerably higher than demanded (\ie stored data size times redundancy), so matter how the capacity is distributed across the storage providers and even in the presence of DSN scaling down.
-    Standard incentive strategies and proof of storage/retrievability can be applied.
-    \item Be scalable: make exhaustive use of storage supply.
-    It would be trivial to keep a tiny piece of data safe if a huge amount of storage is holding or \emph{ready to be holding} it.
-    Maximize storage utilization and keep the storage amplification close to redundancy as long as the contents are still secured.
-\end{itemize}
+\dht is based on Kademlia DHT protocol but with two novel designs.
+The first one is introducing \emph{node class} to differentiate the discoverability of storage providers of different sizes.
+The node class makes a similar effect to virtual node: a node's discoverability is doubled when its node class is increased by one, effectively equals to double the number of virtual nodes in that approach.
+However, node class is implemented by modifying the Kademlia's \texttt{xor} distance definition: the highest bits of the \texttt{xor} distance is masked out and the number of masked bits equals to the node class.
+The node class mechanism preserves the one-to-one mapping between node \vid and physical storage provider, so it does not bring additional failure correlations, and it allows nodes to decrease their discoverability without increasing the risk of losing data.
 
-The key idea is to unify \emph{capacity workload frequency} \ie the probability of being allocated for a certain storage capacity.
-Currently, DHT protocols guarantee unified \emph{node discoverability}, which can be considered as \emph{node frequency}.
-However, on one hand that does not translate to unified capacity frequency as storage providers have different capacities.
-On the other hand, the node frequency follows normal distribution.
-The normal distribution brings undesirable variance so that in the worst case a node can be \xxx{formula} ``more discoverable'' with high probability.
-The placement that relies on the node discoverability is highly affected and far from ideal.
-\xxx{State simulation results of Swarm.}
-
-We modified Kademlia DHT into discoverability-differentiable DHT (DDDHT) with the concept of \emph{node class}.
-The higher the node class, the more discoverable the node is.
-This is implemented by masking the high bits when computing ID distances, where the number of masked bits correspond to the node class.
-Effectively, the class 1 nodes have 2 IDs, one is its actual one and the other one with the highest bit flipped, and class 2 nodes have 4 IDs with all combination of the two highest bits, and so on.
-As the result, when the query uniformly distributed across the ID space, the probability of a node to be included in the query result doubles as the node class increases by one.
-Notice that the high bits of original IDs are preserved even though they may be masked for computing distances.
-This ensures ID uniqueness, and it's not possible for query results to include duplicated node contact.
-
-With the DDDHT, storage providers can set their node classes based on their storage capacities.
-The most appropriate node class for a storage provider may occasionally change based on the change of the storage capacity of the provider, the number of storage providers, the storage capacity of the whole network and the ingested data size.
-Thus, DDDHT further supports changing node class efficiently to prevent wasting storage capacity or overwhelming the storage providers.
-
-DDDHT correctly balance the capacity frequency of storage providers of different capacities.
-However, the frequency still follows a wide normal distribution.
-We further introduce the power of two choices mechanism to the DHT protocol.
-We follow previous works \xxx{cite}, hash contents twice and choose the placement group with the lighter load of the two.
-The information about the load of the storage providers is integrated into the DHT protocol.
-As the result, the storage providers are assigned workload that is closely matching each other, given that they have the same node class.
+Then, \dht further employs \emph{the power of two random choices} (2RC) to narrow the distribution of the utilization of storage providers.
+Unlike previous works \xxx{cite} that aim to balance the workload on every node, \dht uses 2RC to balance the \emph{remaining capacity} of the storage providers.
+In \dht, the \fput operation re-hash the key and consider the placement group around the hash of the key as an alternative candidate to the one around the key.
+The storage providers from the two candidate placement groups report their remaining capacities, and \fput will upload the content to the placement group that with higher \emph{minimum} remaining capacity.
+This novel way of employing 2RC results in a highly balanced consumption of the remaining capacity on the storage providers.
 
 \xxx{Evaluation.}
-
-Contributions:
-\begin{itemize}
-    \item Bring notice to the storage utilization problem of DHT-based DSNs.
-    Analysis the durability vulnerability the caused by overwhelming small storage providers.
-    Frame the problem as the imbalance of capacity frequency among storage providers of different capacities.
-    \item Purpose DDDHT.
-    \item Design and evaluation \sys.
-\end{itemize}
