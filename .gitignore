@@ -1,2 +1,5 @@
-latex.out/
+.latex.out/
+arxiv/
 paper.pdf
+suppl.pdf
+arxiv.tar.gz
