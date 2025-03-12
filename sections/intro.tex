@@ -48,7 +48,7 @@ This makes \dht to be the first work that can guarantee durability with the assu
 
 We argue that the problem of virtual node approach is because it attempts to solve the problem ``on the back of'' DHT (by building another layer on top of it).
 Instead, we directly modify the DHT protocol to differentiate the \emph{discoverability} of nodes.
-While previous works define the discoverability of a node as a binary property of whether the node is included in any \ffind results, we extend this definition to a continuous value to represent how \emph{frequent} the node appears in the results of \ffind that the target \vid is uniformly distributed in the \vid's domain space.
+While previous works define the discoverability of a node as a binary property of whether the node is included in any \ffind results, we extend this definition to an ordinal value to represent how \emph{frequent} the node appears in the results of \ffind that the target \vid is uniformly distributed in the \vid's domain space.
 In \dht the discoverability of nodes is adjusted according to the nodes' AC, and the nodes with higher AC, \ie, are capable to handle more storing requests, are more discoverable, thus more storing requests are dispatched to them.
 On the other hand, the nodes that are running out of AC are least discoverable, and DSN would not allocate much placement groups including them to avoid overwhelming them.
 
