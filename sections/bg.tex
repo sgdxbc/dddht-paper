@@ -94,3 +94,51 @@ The DSN is responsible for allocating storing tasks to storage nodes, and DHT un
 The nodes cannot and do not need to compete for the tasks.
 
 \subsection{The Problem with DHT}
+\label{sec:bg:problem}
+
+DHT relives the burden of the storage nodes by taking the responsibility of placing contents on them, so it becomes critical that how well DHT can make proper placement decisions.
+Since the network \emph{pushes} storing requests to the storage nodes, it's hard for the storage nodes to reject the requests or hand off to other nodes.
+However, as previously mentioned, DHT actually randomly samples the nodes in a uniform manner.
+This means that similar amount of storing requests are pushed to every node.
+
+However, storage nodes are different.
+They may provide different storage capacities, and they may already be holding different size of contents: because of probabilistic fluctuation or the contents have different expiration duration.
+So the abilities of the storage nodes to serve storing requests are different.
+We measure this ability with \emph{available capacity}, the number of contents a node can hold with its unused storage capacity.
+\footnote{In this work we only consider fixed-size contents and state that varied-size contents can be split into fixed-size chunks.}
+A node with zero AC is considered \emph{overwhelmed}.
+The overwhelmed nodes cannot serve any further storing request, and may cause serious problems if DHT keeps pushing storing requests to them.
+
+We simulate Swarm to provide a comprehensive study on the available capacities of storage nodes in a DHT storage network.
+\xxx{Setup.}
+
+\xxx{A heatmap with x-axis storage nodes size, y-axis available capacity.}
+The AC of storage nodes scatters across the large range, indicating a high imbalance in the serving ability of the storage nodes.
+In general, AC increases as the node capacity.
+This is because the expected utilized capacity of every node is the same, regardless of the storage node size.
+So larger nodes have more AC than the smaller ones.
+Moreover, even AC of the nodes of the similar size varies a lot.
+As the result, while some nodes have already hit zero AC and been overwhelmed, \XXX nodes still have at least \XXX AC, and the overall utilization is just \XXX\%.
+
+\paragraph{Problem with overwhelmed nodes.}
+If DHT still pushes storing requests to an overwhelmed node, it can only choose between reject the requests or evict previously-stored contents.
+\xxx{A graph shows number of storing attempts vs. number of stored content}.
+\xxx{A graph shows number of data loss vs. overall utilization}.
+
+And even worse, the durability can be affected even when no new request is coming externally.
+When the nearby nodes churn, internal re-replication may be pushed to overwhelmed nodes as well.
+Not to mention in the case of network scaling down, which could due to the normal fluctuation or simply false positive caused by transient network partitioning, the redundancy kept by the left nodes ``collapses'' on the remaining nodes. 
+\xxx{A graph shows number of remaining nodes vs. data loss}.
+
+\paragraph{The virtual node approach is not effective.}
+The previous works \xxx{cite} widely use the virtual node approach to load balance in DHT.
+In this approach, a storage node spawns variable number of virtual nodes, which participant into DHT normally.
+In this case each virtual node receives similar workload, and the storage nodes that spawn more virtual nodes can receive more workload and utilize more capacity.
+
+\xxx{A heatmap like the previous one but with virtual nodes}
+Unfortunately, the virtual node approach is not as promising as it looks like.
+
+\xxx{A graph shows content size vs. the number of unique physical storage nodes.}
+
+In conclusion, while today's DHT can \emph{balance} well across homogeneous nodes, it fails to \emph{differentiate} well across heterogeneous nodes.
+The heterogeneity nature of decentralized systems captures this inability, and results in the suffering durability of DSNs.

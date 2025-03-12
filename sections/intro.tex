@@ -23,26 +23,20 @@ As DSN storing more contents, storage nodes are saturated at different rate, and
 A storage node is said to be \emph{overwhelmed} if its capacity is full while the DSN still pushes more storing requests to it.
 
 We use available capacity (AC) to measure how ``far'' the node is from being overwhelmed.
-\xxx{A heatmap with x-axis storage nodes size, y-axis available capacity}
-According our simulation of Swarm, the AC of nodes scatters in a wide range.
+According to our simulation of Swarm (\autoref{sec:bg:problem}), the AC of nodes scatters in a wide range.
 In general, the average AC is proportional to the storage node's capacity.
 However, even for the storage nodes of similar capacities, their AC still varies a lot.
 Eventually, some nodes are overwhelmed first while the other ones are still underutilized.
 
 Problem: degraded availability or durability.
-The overwhelmed storage nodes have to reject the new storing requests or evict previously-stored contents.
-If it chooses the former, \xxx{a graph shows number of storing attempts vs. number of stored content}.
-Otherwise, \xxx{a graph shows number of data loss vs. overall utilization}.
+The overwhelmed storage nodes have to reject the new storing requests or evict previously-stored contents, leads to either availability or durability degradation.
 Bigger problem: degraded durability during scaling down.
 Scaling down can happen (temporarily) even just because network partitioning.
-As shown in \xxx{a graph shows number of remaining nodes vs. data loss}.
 
 Virtual node approach is not effective.
-\xxx{A heatmap like the previous one but with virtual nodes}
 Although the AC of large storage nodes is clustered thanks to the load balance across the virtual nodes, it is still higher than the average AC of smaller nodes, because each virtual node has the same expected AC, so the larger storage nodes, which spawn more virtual nodes, have higher aggregated AC than the smaller ones.
 And also, the AC of small storage nodes is still widely scattered because they are not able to spawn sufficient virtual nodes to balance the workload.
 At the same time, virtual nodes create artificially correlated node failures unknown to the DHT and more correlation is unwelcomed by any storage system.
-\xxx{A graph shows content size vs. the number of unique physical storage nodes.}
 Moreover, there's no way for storage nodes to gracefully reduce the number of virtual nodes in case they want to shrink capacities.
 Eventually the shrinking becomes artificial churning that DSN must additionally tolerate.
 
