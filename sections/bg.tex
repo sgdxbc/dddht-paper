@@ -30,38 +30,67 @@ By utilizing DSNs, the durability of DSNs becomes part of the safety guarantee o
 Proof of storage can rapidly detect faults and allows DSNs to repair (relatively) timely.
 
 \paragraph{Threat model.}
-The time is divided into \emph{proof periods}.
-Storage providers submit proof of storage for the contents they stored in every proof period.
+Time is divided into \emph{proof periods}.
+Storage nodes submit proof of storage for the contents they stored in every proof period.
 The proofs attest:
-\begin{inparaenum}
+\begin{enumerate*}
     \item the stored contents are durable with sufficient redundancy, which enables external auditing, and
-    \item the utilized capacities of storage providers.
-\end{inparaenum}
+    \item the utilized capacities of storage nodes.
+\end{enumerate*}
 The storage capacity must be correctly utilized in a proof period, even if it belongs to a Byzantine faulty storage provider, as long as a proof of storage is submitted for it.
-On the other hand, any faulty storage capacity can only be detected at the end of the proof period because of the lack of proof of storage.
-We assume that at most $\frac{1}{3}$ of the storage capacity can be faulty in a proof period.
+On the other hand, any faulty storage capacity can only be detected at the end of the proof period for the lack of proof of storage.
 We also assume that in a proof period the system is able to finish repairing for any repairable faults.
 For a system that only employs replication as redundancy, a fault is repairable means not all copies of the data are lost.
+As the result, a DSN is durable as long as it can preserve some copies of every stored data in every proof period.
 
-\paragraph{Previous DSNs.}
+We assume that at most $\frac{1}{3}$ of the storage capacity can be faulty in a proof period.
+This includes innocent faults, \eg, disk failure and node churning, and Byzantine faults.
+The faulty capacity can be arbitrarily distributed across the faulty nodes.
+We assume Sybil attack is mitigated through mechanism like staking, so the number of Byzantine nodes is limited.
+\xxx{Figure out whether this is necessary, since the more faulty nodes the less capacity per faulty node the less discoverable faulty nodes.}
+We also assume the identities of Byzantine nodes are uniformly distributed across the domain.
+
+\paragraph{Alternative DSN approaches.}
+We have different kinds of DSNs curated in \autoref{tab:dsn}.
+We compare the DSNs in three metrics: whether they require explicitly maintaining metadata about contents \emph{placement group} i.e. where to find them, whether they put storage nodes into a competitive environment and whether they can efficiently achieve durable, that is, the data size that they are durably stored versus the total storage supply.
+
 Some DSNs do not control the placement groups of contents.
-Filecoin and Sia provide a storage market and on-chain storage contracts and storage providers bid for storage tasks.
-High requirements on storage providers.
-Arweave and EthStorage do not use explicit contract, instead all storage providers that store a content share the profit.
-Rely on storage providers to discover profitable storage tasks \ie the contents that have fewer copies and are more risky to lose.
-Inefficient resource configuration.
+Filecoin and Sia provide a storage market and on-chain storage contracts and storage nodes bid for storage tasks.
+Arweave and EthStorage do not use explicit contract, instead all storage nodes that store a content share the profit.
+Both rely on storage nodes to discover profitable storage tasks (storage contracts with high reward or the contents that have fewer copies and are more risky to lose).
+Requires frequent polling on the blockchain.
+In Filecoin nodes moreover competes for lowest storage cost and the winner wins all.
+In Arweave, through there is no direct competition among nodes, it has no control on how many copies are stored results in inefficient utilization of storage supply.
 
-The common property is that these DSNs require storage providers to compete with each other for lower storage cost.
-Storage providers also need to frequently poll the blockchain or participant into consensus protocol.
+The common property is that in these DSNs storage nodes are under a competitive environment, each storage node can only rely on its own.
 Encourage fewer, more powerful storage providers, increase the centralization of the system.
+\xxx{Number of nodes in these networks.}
 
+\paragraph{The DHT approach.}
 Other DSNs directly control the placement groups of contents.
 Storj centrally tracks the behavior of storage providers, and allocates the placement group based on the trust level of the storage providers.
-It's a centralized approach with single point of failure.
-
 Swarm replaces the centralized allocator with DHT and allocates placement groups with consistent hashing.
 The DHT randomly samples storage providers to form placement groups.
 Since the sampling on storage providers is independent, the placement group contains at least certain number of honest storage providers for high probability.
 Any faulty redundancy is detected by proof of storage and repaired timely.
+
+In Kademlia DHT every content and node have an \vid.
+The \vid is usually the hash of the content or the node's public key to enable self-certifying contents and nodes.
+Then we can calculate the \texttt{xor} distance between node and content \vid{}s.
+A content is assigned to the $r$ nodes whose \vid{}s are the closest ones to the content's \vid, which becomes the content's placement group, and $r$ is the targeted redundancy level.
+Kademlia providers an operation \ffind(\var{k}, \var{r}) to the nodes, which can discover the \var{r} closest nodes to \var{k} in the network.
+The \ffind operation is implemented in an iterative approach that is expected to finish in $\log(N)$ steps where $N$ is the number of nodes.
+To tolerate node failures and churns, Kademlia periodically re-discover the placement group of the content, and re-replicate the content if the discovered nodes are different.
+
+Because the node and content's \vid{}s are uniformly distributed in the \vid{}'s domain space, the placement groups of contents can be considered as $r$ random samples of storage nodes that are uniformly distributed across all nodes without replacement.
+So the probability of data loss in a time unit $\epsilon$ can be derived from the failure rate $f$, \ie, the probability for a storage node to fail in the time unit, and the redundancy level $r$
+\[ \epsilon = f^r \]
+If the failure rate is set to $f=\frac{1}{3}$, a redundancy level $r=13$ yields $1-\epsilon>99.9999\%$ \ie the durability is over ``six nines''.
+The mean time to data lost (MTTDL) can further be derived as $\frac{1}{\epsilon}$ time units, which are about 4368 years when a time unit equals one day or 182 years when equals to an hour.
+
+The DHT approach is the most ideal one for DSN with lightweight storage nodes.
+There's no metadata management, so no need to introduce centralized controller or require storage nodes to frequently operate the blockchain to update the metadata.
+The DSN is responsible for allocating storing tasks to storage nodes, and DHT uniformly allocates tasks to random storage nodes.
+The nodes cannot and do not need to compete for the tasks.
 
 \subsection{The Problem with DHT}
