@@ -20,13 +20,15 @@ dist(id,target_id,class) = (id^target_id) & (~0>>class)
 \end{verbatim}
 That is, the Kademlia's \texttt{xor} distance is masked out the highest bits, and the number of masked bits equals node's \vclass.
 This is called the \emph{classified {\normalfont \texttt{xor}} distance}.
+\autoref{fig:distance} shows an example of the same node with different classes.
 
-\begin{figure}
+\begin{figure*}
     \centering
-    \includegraphics[width=\linewidth]{figs/distance.drawio.pdf}
-    \caption{}
+    \includegraphics[width=\linewidth]{figs/distance}
+    \caption{A node with different \vclass values.
+    The blue regions are ``covered'' by the studied node, \ie, the node will be returned when \ffind \vid in the regions.}
     \label{fig:distance}
-\end{figure}
+\end{figure*}
 
 The effect of node class is similar to virtual node.
 The classified \texttt{xor} distance for class 0 is identical to the original \texttt{xor} distance in Kademlia, and corresponds to one virtual node.
