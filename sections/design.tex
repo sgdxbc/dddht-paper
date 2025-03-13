@@ -1,4 +1,4 @@
-\section{\dht}
+\section{Design for Differential Discoverability}
 \label{sec:dht}
 
 In this section we describe the design outline of the \dht, an DHT protocol that can differentiate discoverability among nodes, \ie, assign different node frequencies to different nodes.
@@ -33,7 +33,7 @@ In order to implement these interfaces, internally \dht invokes two kinds of rem
 \end{itemize}
 \noindent next, we first discuss how to implement these RPCs, then we will implement the interfaces with these RPCs.
 
-\paragraph{\ffind RPC\@.}
+\paragraph{{\normalfont\ffind} RPC\@.}
 Each node maintains contact tables that are propagated with contacts of nodes of different distances to itself.
 A node contact is a node's \vid paired with the node's dialable network address \eg TCP/IP tuple, with an optional \var{score} field indicating the remaining capacity of the node.
 Different from Kademlia DHT, in \dht node allocates a contact table for each node class.
@@ -50,13 +50,13 @@ Then the candidate list is sorted based on the classified \var{xor} distance \ie
 
 Finally, when inserting the node's self contact into the candidate list, the optional \var{score} field is set according to the node's current remaining capacity.
 
-\paragraph{\fpush RPC\@.}
+\paragraph{{\normalfont\fpush} RPC\@.}
 When \fpush(\var{k}, \var{v}) is invoked, the key-value pair is inserted into the store table.
 If the invoked node is full after storing the key-value pair, it decreases its node class and call \fupdate.
 The node should not be full before the invocation, but that may happen in the corner cases such as highly asynchrony network or the system's overall capacity is exhausted.
 Then it may choose between reject the invocation (which lowering availability) or randomly evict a stored key-value pair (which lowering durability).
 
-\paragraph{\fput and \fget interface.}
+\paragraph{{\normalfont\fput} and {\normalfont\fget} interface.}
 We start by describing the \fput and \fget in Kademlia, which involves an iterative invocation of \ffind and \dht's interfaces are based on them.
 The procedures start by invoking \ffind(\var{k}, $r$) on the node itself and get a list of candidate nodes to contact.
 The node then continuously dials the yet-to-contact node that is closest to \var{k} in the list.
@@ -75,7 +75,7 @@ For \fget, one of the two instances will return value, and the whole \fget can e
 Similar to Kademlia, after every fixed interval (e.g. 24 hours) nodes will re-replicate the stored values to tolerate churning and failure.
 The re-replication is performed as normal \fput calls.
 
-\paragraph{\fboot and \fupdate interfaces.}
+\paragraph{{\normalfont\fboot} and {\normalfont\fupdate} interfaces.}
 The \fboot and \fupdate are both similar to Kademlia.
 The node performs a \ffind with \var{k} set to its own \vid, in order to propagate its own contact tables and update the contact of itself on remote nodes.
 For \fboot and \fupdate with increased class, no special treatment is required and the node will be pushed with values in later re-replications.

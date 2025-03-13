@@ -12,14 +12,21 @@ Although the virtual node approach is a simple and flexible design, we believe t
 By feeding DHT with more information instead of trying to ``workaround'' it, we trade a little more complexity in DHT design and implementation with a huge improvement in the quality of differentiation.
 In this work the discoverability is differentiated only based on the availability capacities, but the differentiation should be useful in more context \eg bandwidth.
 
-\paragraph{Node class and classified \texttt{xor} distance.}
+\paragraph{Node class and classified {\normalfont \texttt{xor}} distance.}
 \dht performs a \emph{macro} differentiation on the nodes through a \emph{classification}.
 In \dht every node is assigned a \emph{node class}, which participants in calculating the node's distance to an \vid:
 \begin{verbatim}
 dist(id,target_id,class) = (id^target_id) & (~0>>class)
 \end{verbatim}
 That is, the Kademlia's \texttt{xor} distance is masked out the highest bits, and the number of masked bits equals node's \vclass.
-This is called the \emph{classified \texttt{xor} distance}.
+This is called the \emph{classified {\normalfont \texttt{xor}} distance}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{figs/distance.drawio.pdf}
+    \caption{}
+    \label{fig:distance}
+\end{figure}
 
 The effect of node class is similar to virtual node.
 The classified \texttt{xor} distance for class 0 is identical to the original \texttt{xor} distance in Kademlia, and corresponds to one virtual node.

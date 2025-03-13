@@ -1,23 +1,6 @@
 \section{Background}
 \label{sec:bg}
 
-\newcommand{\good}[1]{\leavevmode\color{Green}{#1}}
-\begin{table}
-\caption{Comparison of Decentralized Storage Networks}
-\label{tab:dsn}
-\begin{tabularx}{\linewidth}{lXXX}
-    \toprule
-    Works       & Metadata  & Competitive   & Efficiency    \\
-    \midrule
-    Filecoin    & Yes       & Yes           & \good{High}   \\
-    Arweave     & \good{No} & Yes           & Low           \\
-    Storj       & Yes       & \good{No}     & \good{High}   \\
-    Swarm       & \good{No} & \good{No}     & Low           \\
-    \dht        & \good{No} & \good{No}     & \good{High}   \\
-    \bottomrule
-\end{tabularx}
-\end{table}
-
 \subsection{Decentralized Storage Networks}
 \label{sec:bg:dsn}
 
@@ -58,6 +41,23 @@ We assume Sybil attack is mitigated through mechanism like staking, so the numbe
 \xxx{Figure out whether this is necessary, since the more faulty nodes the less capacity per faulty node the less discoverable faulty nodes.}
 We also assume the identities of Byzantine nodes are uniformly distributed across the domain.
 \lijl{What is a domain?}
+
+\newcommand{\good}[1]{\leavevmode\color{Green}{#1}}
+\begin{table}
+\caption{Comparison of Decentralized Storage Networks}
+\label{tab:dsn}
+\begin{tabularx}{\linewidth}{lXXX}
+    \toprule
+    Works       & Metadata  & Competitive   & Efficiency    \\
+    \midrule
+    Filecoin    & Yes       & Yes           & \good{High}   \\
+    Arweave     & \good{No} & Yes           & Low           \\
+    Storj       & Yes       & \good{No}     & \good{High}   \\
+    Swarm       & \good{No} & \good{No}     & Low           \\
+    \dht        & \good{No} & \good{No}     & \good{High}   \\
+    \bottomrule
+\end{tabularx}
+\end{table}
 
 \paragraph{Alternative DSN approaches.}
 We have different kinds of DSNs curated in \autoref{tab:dsn}.
