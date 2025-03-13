@@ -37,21 +37,11 @@ This effectively ``spawns'' two virtual nodes at the corresponding \vid{}s.
 Similarly, we have class $c$ equals to have $2^c$ virtual nodes.
 However, with node class each node still has one single \vid, so \ffind will only include each physical node at most once, which is unlike with virtual nodes where \ffind may return multiple \vid{}s that belong to the same physical node.
 
-\xxx{Illustrate the range covered by different node classes.}
-
 \begin{figure}
     \centering
-    \includegraphics[width=0.48\linewidth]{data/simulation/graphs/freq-node}
-    \includegraphics[width=0.48\linewidth]{data/simulation/graphs/freq-capacity}
-    \caption{CDF of node and capacity frequency.}
-    \label{fig:freq}
-\end{figure}
-
-\begin{figure}
-    \centering
-    \includegraphics[width=\linewidth]{data/simulation/graphs/freq-class}
-    \caption{Capacity frequencies of nodes in different size classes; every size class contains nodes within two consecutive the-power-of-two.}
-    \label{fig:freq-class}
+    \includegraphics[width=\linewidth]{data/simulation/graphs/nc-ac}
+    \caption{Average available capacity of nodes of different sizes.}
+    \label{fig:nc-ac}
 \end{figure}
 
 \paragraph{The power of two random choices (2RC).}
@@ -71,4 +61,25 @@ To compensate for the real time dynamics, \dht performs \emph{micro} differentia
 However unlike the typical employment of 2RC that pick the nodes with lighter load, \dht picks the nodes with more AC.
 By \emph{balancing} the AC of the nodes, \dht manages to \emph{differentiate} the discoverability of nodes with different AC, as the nodes with more AC will be more discoverable until their AC is balanced with the others.
 
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{data/simulation/graphs/ac-distr}
+    \caption{Available capacity distribution of the nodes of the same size.}
+    \label{fig:ac-distr}
+\end{figure}
+
 \xxx{Describe the remaining results.}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{data/simulation/graphs/capacity-freq}
+    \caption{The CDF and per-class averages of capacity discoverability.}
+    \label{fig:freq}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{data/simulation/graphs/util}
+    \caption{Overall utilization when DSN starts to loss data.}
+    \label{fig:util-loss}
+\end{figure}

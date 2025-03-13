@@ -142,8 +142,14 @@ As the result, while some nodes have already hit zero AC and been overwhelmed, \
 
 \paragraph{Problem with overwhelmed nodes.}
 If DHT still pushes storing requests to an overwhelmed node, it can only choose between reject the requests or evict previously-stored contents.
-\xxx{A graph shows number of storing attempts vs. number of stored content}.
-\xxx{A graph shows number of data loss vs. overall utilization}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{data/simulation/graphs/overwhelm}
+    \caption{Left: the overall utilization and rejection rate when overwhelmed nodes reject storing requests.
+    Right: the data loss rate and the overall utilization when overwhelmed nodes evicts randomly.}
+    \label{fig:overwhelm}
+\end{figure}
 
 And even worse, the durability can be affected even when no new request is coming externally.
 When the nearby nodes churn, internal re-replication may be pushed to overwhelmed nodes as well.
