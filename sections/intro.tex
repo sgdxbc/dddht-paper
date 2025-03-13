@@ -5,56 +5,71 @@ Blockchain storage scalability issue.
 \emph{Outsource} storage: extract large content data from fully-replicated world state.
 Leave a stub (\eg content hash) in the state and access content off-chain.
 Example: NFT exchange, user-generated content, off-chain AI inference with on-chain verifiable computation proof.
+\lijl{What are the existing blockchain solutions? What are the issues?}
 
 Requirement: works with a similar setup to blockchain.
+\lijl{Meaning permissionless? PoS?}
 Allow anyone to store redundancy for contents and make profit.
 Tolerate Byzantine behaviors.
 Proof of storage can assist to detect faults rapidly.
+\lijl{Does the safety of the protocol depend on proof of storage?}
 Nevertheless, should tolerate up to 1/3 faulty capacities emerging in the single proof period.
 
 DHT-based decentralized storage networks (DSN).
 Assign placement groups for contents automatically based on their hashes.
 Advantage: relief storage nodes from discovering profitable storing tasks by themselves and competing with each other.
 Enable wide adoption of \emph{lightweight} storage nodes \ie consumer devices that provide their spare storage capacities.
+\lijl{I think this is true. But likely that most reviewers do not have the background knowledge to understand this issue.}
 
 Observation: DHT balances workload across the storage nodes.
+\lijl{Should point out the assumptions made by prior DHTs (all nodes have enough capacity?), and the difference in our scenario.}
 Each storage node receives storing requests at the same rate, but their abilities to handle storing requests \ie storage capacity are different.
 As DSN storing more contents, storage nodes are saturated at different rate, and some storage nodes are overwhelmed even when the overall utilization is still low.
 A storage node is said to be \emph{overwhelmed} if its capacity is full while the DSN still pushes more storing requests to it.
+\lijl{Can also briefly discuss why this is not an issue in centralized storage, and why this is a hard problem in decentralized network.}
 
 We use available capacity (AC) to measure how ``far'' the node is from being overwhelmed.
 According to our simulation of Swarm (\autoref{sec:bg:problem}), the AC of nodes scatters in a wide range.
 In general, the average AC is proportional to the storage node's capacity.
 However, even for the storage nodes of similar capacities, their AC still varies a lot.
+\lijl{What's the reason for that?}
 Eventually, some nodes are overwhelmed first while the other ones are still underutilized.
 
 Problem: degraded availability or durability.
 The overwhelmed storage nodes have to reject the new storing requests or evict previously-stored contents, leads to either availability or durability degradation.
+\lijl{What is the original behavior of a DHT when a peer can't or refuse to store some data? Does it try other peers? At least in Dynamo, it will keep walking the hash ring.}
 Bigger problem: degraded durability during scaling down.
 Scaling down can happen (temporarily) even just because network partitioning.
+\lijl{Need to link back to AC. What AC property does the system need to enforce to improve durability?}
 
 Virtual node approach is not effective.
 Although the AC of large storage nodes is clustered thanks to the load balance across the virtual nodes, it is still higher than the average AC of smaller nodes, because each virtual node has the same expected AC, so the larger storage nodes, which spawn more virtual nodes, have higher aggregated AC than the smaller ones.
 And also, the AC of small storage nodes is still widely scattered because they are not able to spawn sufficient virtual nodes to balance the workload.
 At the same time, virtual nodes create artificially correlated node failures unknown to the DHT and more correlation is unwelcomed by any storage system.
+\lijl{This is an interesting point. Virtual nodes are used for load balancing. Wonder if anyone has looked at the fault tolerance implications.}
 Moreover, there's no way for storage nodes to gracefully reduce the number of virtual nodes in case they want to shrink capacities.
 Eventually the shrinking becomes artificial churning that DSN must additionally tolerate.
 
 Differentiable Discoverability DHT (\dht) is a decentralized storage network that performs efficient random placement with DHT but \emph{differentiate} workload of storage nodes based on their available capacities.
 In \dht, storage nodes are highly unlikely to be overwhelmed given that the total storage supply of DSN is sufficient for storing the contents with targeted redundancy level.
+\lijl{Make sufficient overall capacity an assumption, and state the global AC property.}
 This means that \dht can deliver strong durability guarantee: the probability of data loss can be derived from the redundancy level, the portion of storage capacity that is controlled by faulty nodes and the skewness of storage capacities across the nodes.
 Thus, given the faulty portion and the skewness of capacity, we can always determine a minimum redundancy level so that the probability of data loss is negligible.
+\lijl{Is the point that prior DHTs can't derive this redundancy level, or their minimum redundancy level is higher than us?}
 This makes \dht to be the first work that can guarantee durability with the assumption of size-limited, permissionless and Byzantine storage nodes.
 
 We argue that the problem of virtual node approach is because it attempts to solve the problem ``on the back of'' DHT (by building another layer on top of it).
+\lijl{Is virtual node the only approach to address this issue? The previous sentence might make the scope a bit narrow.}
 Instead, we directly modify the DHT protocol to differentiate the \emph{discoverability} of nodes.
 While previous works define the discoverability of a node as a binary property of whether the node is included in any \ffind results, we extend this definition to an ordinal value to represent how \emph{frequent} the node appears in the results of \ffind that the target \vid is uniformly distributed in the \vid's domain space.
 In \dht the discoverability of nodes is adjusted according to the nodes' AC, and the nodes with higher AC, \ie, are capable to handle more storing requests, are more discoverable, thus more storing requests are dispatched to them.
 On the other hand, the nodes that are running out of AC are least discoverable, and DSN would not allocate much placement groups including them to avoid overwhelming them.
+\lijl{``DSN allocate placement groups'' sounds like a centralized approach.}
 
 Based on Kademlia DHT, \dht introduces two novel modifications to differentiate the discoverability of storage nodes with different AC.
 The first one is to perform \emph{macro} differentiation of storage nodes of different sizes with \emph{node class}.
 This is a highly effective global differentiation but approximates the nodes' AC with their total capacities, and it is a rather static method \ie the node class cannot be adjusted based on the current AC.
+\lijl{After applying node class, what properties do the system have? What are the remaining ``errors''?}
 To compensate the error, we use \emph{the power of two choices} (2RC) for \emph{micro} differentiation.
 It can perform accurate local differentiation but only among few nodes from two candidate placement groups.
 Combining the two methods results in surprisingly balanced AC, and nodes only start to be overwhelmed when the whole system is about to be so.
@@ -69,5 +84,6 @@ In \dht, \ffind operation discovers placement groups for the hash of the key add
 The storage nodes from the two candidate placement groups report their current AC, and \ffind will pick the placement group that with higher \emph{minimum} AC.
 By doing this in every \ffind, the discoverability of storage nodes are differentiated according to their AC at the time of \ffind.
 }
+\lijl{Do we need to discuss adversarial behaviors and how the protocol handles them?}
 
 \xxx{Evaluation.}
