@@ -81,22 +81,24 @@ In Arweave, though there is no direct competition among nodes, it has no control
 The common property is that in these DSNs storage nodes are under a competitive environment, each storage node can only rely on its own.
 Encourage fewer, more powerful storage providers, increase the centralization of the system.
 \xxx{Number of nodes in these networks.}
+\lijl{We should make an argument that such approaches would eventually lead to weaker durability guarantees, based on our model and definition.}
 
 \paragraph{The DHT approach.}
 Other DSNs directly control the placement groups of contents.
 Storj centrally tracks the behavior of storage providers, and allocates the placement group based on the trust level of the storage providers.
 Swarm replaces the centralized allocator with DHT and allocates placement groups with consistent hashing.
 The DHT randomly samples storage providers to form placement groups.
-Since the sampling on storage providers is independent, the placement group contains at least certain number of honest storage providers for high probability.
+Since the sampling on storage providers is independent, the placement group contains at least certain number of honest storage providers with high probability.
 Any faulty redundancy is detected by proof of storage and repaired timely.
 
 In Kademlia DHT every content and node have an \vid.
 The \vid is usually the hash of the content or the node's public key to enable self-certifying contents and nodes.
 Then we can calculate the \texttt{xor} distance between node and content \vid{}s.
 A content is assigned to the $r$ nodes whose \vid{}s are the closest ones to the content's \vid, which becomes the content's placement group, and $r$ is the targeted redundancy level.
-Kademlia providers an operation \ffind(\var{k}, \var{r}) to the nodes, which can discover the \var{r} closest nodes to \var{k} in the network.
+Kademlia provides an operation \ffind(\var{k}, \var{r}) to the nodes, which can discover the \var{r} closest nodes to \var{k} in the network.
 The \ffind operation is implemented in an iterative approach that is expected to finish in $\log(N)$ steps where $N$ is the number of nodes.
 To tolerate node failures and churns, Kademlia periodically re-discover the placement group of the content, and re-replicate the content if the discovered nodes are different.
+\lijl{Who initiates re-replication? If two \ffind return different results, would it lead to extra redundancy?}
 
 Because the node and content's \vid{}s are uniformly distributed in the \vid{}'s domain space, the placement groups of contents can be considered as $r$ random samples of storage nodes that are uniformly distributed across all nodes without replacement.
 So the probability of data loss in a time unit $\epsilon$ can be derived from the failure rate $f$, \ie, the probability for a storage node to fail in the time unit, and the redundancy level $r$
@@ -105,7 +107,7 @@ If the failure rate is set to $f=\frac{1}{3}$, a redundancy level $r=13$ yields 
 The mean time to data lost (MTTDL) can further be derived as $\frac{1}{\epsilon}$ time units, which are about 4368 years when a time unit equals one day or 182 years when equals to an hour.
 
 The DHT approach is the most ideal one for DSN with lightweight storage nodes.
-There's no metadata management, so no need to introduce centralized controller or require storage nodes to frequently operate the blockchain to update the metadata.
+There's no metadata management, so no need to introduce centralized controller or require storage nodes to frequently query the blockchain to update the metadata.
 The DSN is responsible for allocating storing tasks to storage nodes, and DHT uniformly allocates tasks to random storage nodes.
 The nodes cannot and do not need to compete for the tasks.
 
@@ -114,16 +116,18 @@ The nodes cannot and do not need to compete for the tasks.
 
 DHT relives the burden of the storage nodes by taking the responsibility of placing contents on them, so it becomes critical that how well DHT can make proper placement decisions.
 Since the network \emph{pushes} storing requests to the storage nodes, it's hard for the storage nodes to reject the requests or hand off to other nodes.
+\lijl{Why is this the case?}
 However, as previously mentioned, DHT actually randomly samples the nodes in a uniform manner.
 This means that similar amount of storing requests are pushed to every node.
 
-However, storage nodes are different.
+However, storage nodes are heterogeneous.
 They may provide different storage capacities, and they may already be holding different size of contents: because of probabilistic fluctuation or the contents have different expiration duration.
 So the abilities of the storage nodes to serve storing requests are different.
 We measure this ability with \emph{available capacity}, the number of contents a node can hold with its unused storage capacity.
 \footnote{In this work we only consider fixed-size contents and state that varied-size contents can be split into fixed-size chunks.}
 A node with zero AC is considered \emph{overwhelmed}.
 The overwhelmed nodes cannot serve any further storing request, and may cause serious problems if DHT keeps pushing storing requests to them.
+\lijl{One way to rephrase this point: guarantees of traditional DHT assume that each node always accepts a store request. Violating that assumption will break the guarantees.}
 
 We simulate Swarm to provide a comprehensive study on the available capacities of storage nodes in a DHT storage network.
 \xxx{Setup.}
