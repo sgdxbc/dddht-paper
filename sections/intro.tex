@@ -92,40 +92,42 @@ The issue is even more severe when the network scales down (e.g., nodes churning
 %Moreover, there's no way for storage nodes to gracefully reduce the number of virtual nodes in case they want to shrink capacities.
 %Eventually the shrinking becomes artificial churning that DSN must additionally tolerate.
 
-Differentiable Discoverability DHT (\dht) is a decentralized storage network that performs efficient random placement with DHT but \emph{differentiate} workload of storage nodes based on their available capacities.
-In \dht, storage nodes are highly unlikely to be overwhelmed given that the total storage supply of DSN is sufficient for storing the contents with targeted redundancy level.
-\lijl{Make sufficient overall capacity an assumption, and state the global AC property.}
-This means that \dht can deliver strong durability guarantee: the probability of data loss can be derived from the redundancy level, the portion of storage capacity that is controlled by faulty nodes and the skewness of storage capacities across the nodes.
-Thus, given the faulty portion and the skewness of capacity, we can always determine a minimum redundancy level so that the probability of data loss is negligible.
+To address these limitations, we propose Differentiable Discoverability DHT (\dht), a decentralized storage network that augments DHT by \emph{differentiating} workloads on storage nodes based on their available capacities.
+Compared to traditional DHTs, \dht ensures balanced available capacities across all storage nodes, regardless of their total capacity, request patterns, or lifetime.
+Such property enables strong durability guarantee: the data loss probability can be derived entirely from the redundancy level, the proportion of faulty nodes, and the skewness of storage capacities across the network.
+Conversely, given the faulty proportion (similar to existing BFT protocols) and the capacity skewness, we can determine a minimum redundancy level such that the data loss probability is negligible.
 \lijl{Is the point that prior DHTs can't derive this redundancy level, or their minimum redundancy level is higher than us?}
-This makes \dht to be the first work that can guarantee durability with the assumption of size-limited, permissionless and Byzantine storage nodes.
+This makes \dht the first work that guarantees data availability when operating under permissionless, Byzantine storage nodes with bounded storage size.
 
-We argue that the problem of virtual node approach is because it attempts to solve the problem ``on the back of'' DHT (by building another layer on top of it).
-\lijl{Is virtual node the only approach to address this issue? The previous sentence might make the scope a bit narrow.}
-Instead, we directly modify the DHT protocol to differentiate the \emph{discoverability} of nodes.
-While previous works define the discoverability of a node as a binary property of whether the node is included in any \ffind results, we extend this definition to an ordinal value to represent how \emph{frequent} the node appears in the results of \ffind that the target \vid is uniformly distributed in the \vid's domain space.
-In \dht the discoverability of nodes is adjusted according to the nodes' AC, and the nodes with higher AC, \ie, are capable to handle more storing requests, are more discoverable, thus more storing requests are dispatched to them.
-On the other hand, the nodes that are running out of AC are least discoverable, and DSN would not allocate much placement groups including them to avoid overwhelming them.
-\lijl{``DSN allocate placement groups'' sounds like a centralized approach.}
+%We argue that the problem of virtual node approach is because it attempts to solve the problem ``on the back of'' DHT (by building another layer on top of it).
+%\lijl{Is virtual node the only approach to address this issue? The previous sentence might make the scope a bit narrow.}
+Our key insight is to redefine the concept of node \emph{discoverability} in DHT.
+While discoverability of a node has been a binary property (whether the node is included in any DHT \ffind), we extend this definition to an ordinal value to represent how \emph{frequent} the node appears in the results of \ffind.
+%that the target \vid is uniformly distributed in the \vid's domain space.
+In \dht, the discoverability of nodes is proportional to the nodes' AC, \ie, nodes with higher AC are discovered with higher frequency, and thus receive more storage requests.
+On the other hand, nodes with low remaining capacity receive few storage requests, reducing the likelihood of forced eviction and data losses.
 
-Based on Kademlia DHT, \dht introduces two novel modifications to differentiate the discoverability of storage nodes with different AC.
-The first one is to perform \emph{macro} differentiation of storage nodes of different sizes with \emph{node class}.
-This is a highly effective global differentiation but approximates the nodes' AC with their total capacities, and it is a rather static method \ie the node class cannot be adjusted based on the current AC.
+\dht augments Kademlia~\cite{maymounkov2002kademlia} by introducing two novel designs to differentiate the discoverability of storage nodes with different AC.
+The first design applies \emph{macro} differentiation of storage nodes by defining \emph{node classes}: nodes are classified based on their total capacity.
+\dht implements this classification by modifying the Kademlia's \texttt{xor} distance definition.
+Node classes approximate the nodes' AC with their total capacity.
+A weakness of this static approach is that the node class cannot be adjusted based on the current AC.
 \lijl{After applying node class, what properties do the system have? What are the remaining ``errors''?}
-To compensate the error, we use \emph{the power of two choices} (2RC) for \emph{micro} differentiation.
-It can perform accurate local differentiation but only among few nodes from two candidate placement groups.
-Combining the two methods results in surprisingly balanced AC, and nodes only start to be overwhelmed when the whole system is about to be so.
+To compensate such shortcoming, we apply \emph{the power of two choices} (2RC) for \emph{micro} differentiation.
+Specifically, each \ffind operation locates two candidate placement groups, and chooses the group with the higher \emph{minimum} AC.
+As such, 2RC performs accurate local differentiation but only among a few nodes from the two candidate placement groups.
+Combining the two methods results in balanced AC without degrading DHT performance, leading to improved data availability guarantees.
 
-{\color{gray}
-The node class makes a similar effect to virtual node: a node's discoverability is doubled when its node class is increased by one, effectively equals to double the number of virtual nodes in that approach.
-However, node class is implemented by modifying the Kademlia's \texttt{xor} distance definition: the highest bits of the \texttt{xor} distance are masked out and the number of masked bits equals to the node class.
-The node class mechanism preserves the one-to-one mapping between node \vid and physical storage node, so it does not bring additional failure correlations, and it allows nodes to decrease their discoverability without increasing the risk of losing data.
+%{\color{gray}
+%The node class makes a similar effect to virtual node: a node's discoverability is doubled when its node class is increased by one, effectively equals to double the number of virtual nodes in that approach.
+%However, node class is implemented by modifying the Kademlia's \texttt{xor} distance definition: the highest bits of the \texttt{xor} distance are masked out and the number of masked bits equals to the node class.
+%The node class mechanism preserves the one-to-one mapping between node \vid and physical storage node, so it does not bring additional failure correlations, and it allows nodes to decrease their discoverability without increasing the risk of losing data.
+%
+%Unlike previous works \xxx{cite} that leverage 2RC to balance the workload on every node, \dht uses 2RC to balance the AC of the storage node.
+%In \dht, \ffind operation discovers placement groups for the hash of the key addition to the key as an alternative candidate.
+%The storage nodes from the two candidate placement groups report their current AC, and \ffind will pick the placement group that with higher \emph{minimum} AC.
+%By doing this in every \ffind, the discoverability of storage nodes are differentiated according to their AC at the time of \ffind.
+%}
+%\lijl{Do we need to discuss adversarial behaviors and how the protocol handles them?}
 
-Unlike previous works \xxx{cite} that leverage 2RC to balance the workload on every node, \dht uses 2RC to balance the AC of the storage node.
-In \dht, \ffind operation discovers placement groups for the hash of the key addition to the key as an alternative candidate.
-The storage nodes from the two candidate placement groups report their current AC, and \ffind will pick the placement group that with higher \emph{minimum} AC.
-By doing this in every \ffind, the discoverability of storage nodes are differentiated according to their AC at the time of \ffind.
-}
-\lijl{Do we need to discuss adversarial behaviors and how the protocol handles them?}
-
-\xxx{Evaluation.}
+Our preliminary evaluation shows that \XXX
