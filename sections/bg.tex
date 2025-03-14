@@ -108,6 +108,7 @@ The mean time to data lost (MTTDL) can further be derived as $\frac{1}{\epsilon}
 
 The DHT approach is the most ideal one for DSN with lightweight storage nodes.
 There's no metadata management, so no need to introduce centralized controller or require storage nodes to frequently query the blockchain to update the metadata.
+\lijl{Decentralized metadata is the key problem here. IPFS address how to store metadata in a decentralized network, but it doesn't solve how the assignment metadata is generated in a decentralized manner. The other approaches help, but their assignment strategies still have issues.}
 The DSN is responsible for allocating storing tasks to storage nodes, and DHT uniformly allocates tasks to random storage nodes.
 The nodes cannot and do not need to compete for the tasks.
 
@@ -138,6 +139,7 @@ In general, AC increases as the node capacity.
 This is because the expected utilized capacity of every node is the same, regardless of the storage node size.
 So larger nodes have more AC than the smaller ones.
 Moreover, even AC of the nodes of the similar size varies a lot.
+\lijl{Due to some random distribution?}
 As the result, while some nodes have already hit zero AC and been overwhelmed, \XXX nodes still have at least \XXX AC, and the overall utilization is just \XXX\%.
 
 \paragraph{Problem with overwhelmed nodes.}
