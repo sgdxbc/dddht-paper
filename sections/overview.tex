@@ -46,14 +46,15 @@ That is, the Kademlia's \texttt{xor} distance is masked out the highest bits, an
 This is called the \emph{classified {\normalfont \texttt{xor}} distance}.
 \autoref{fig:distance} shows an example of the same node with different classes.
 
-\begin{figure*}
+\begin{figure}
     \centering
-    \includegraphics[width=\linewidth]{figs/distance}
+    % \includegraphics[width=\linewidth]{figs/distance}
+    \includegraphics[width=\linewidth]{figs/WechatIMG5182}
     \caption{A node with different \vclass values.
     The blue regions are ``covered'' by the studied node, \ie, the node will be returned when \ffind \vid in the regions.}
     \label{fig:distance}
     \Description{}
-\end{figure*}
+\end{figure}
 
 The effect of node class is similar to virtual node.
 The classified \texttt{xor} distance for class 0 is identical to the original \texttt{xor} distance in Kademlia, and corresponds to one virtual node.
@@ -109,7 +110,8 @@ With \dht there is no single node that is overwhelmed, while the results with th
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\linewidth]{data/simulation/graphs/ac-distr}
+    \includegraphics[align=t,width=0.16\linewidth]{data/simulation/graphs/ac-distr}
+    \includegraphics[align=t,width=0.53\linewidth]{data/simulation/graphs/nc-ac}
     \caption{Available capacity distribution of the nodes of the same size, and the average available capacities of nodes of different sizes.}
     \label{fig:ac-distr}
     \Description{}
@@ -130,7 +132,7 @@ The micro-differentiation, on the other hand, yields perfect utilization at high
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\linewidth]{data/simulation/graphs/util}
+    \includegraphics[width=0.7\linewidth]{data/simulation/graphs/util}
     \caption{Overall utilization when DSN starts to loss data.}
     \label{fig:util-loss}
     \Description{}

@@ -57,6 +57,7 @@
 \RequirePackage{braket}
 \RequirePackage{comment}
 \RequirePackage[inline]{enumitem}
+\RequirePackage{graphbox}
 \RequirePackage{graphicx}
 \RequirePackage[framemethod=tikz]{mdframed}
 \RequirePackage{subcaption}
