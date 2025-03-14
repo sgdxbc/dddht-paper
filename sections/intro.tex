@@ -9,10 +9,9 @@
 
 Permissionless blockchains~\cite{bitcoin,ethereum} build fully decentralized ledgers, enabling cryptocurrencies and broader set of applications without centralized trust.
 At the core of a blockchain protocol is state machine replication~\cite{smr}, where all blockchain participants execute the same sequence of transactions to derive the same state machine.
-However, as blockchains gain popularity and expand their use cases, the size of the state machine continues to grow.
-For instance, there has been proposals to support images, videos, AI models, and other large data in blockchains.
-\lijl{Add references?}
-Requiring all blockchain participants to maintain this growing state machine is infeasible.
+However, as blockchains gain popularity and expand their use cases, the cost of full-replicating the state machine continues to grow.
+For example, the price of uploading 1 GB data to Ethereum is more than 7 million US dollars.~\cite{ethereum-cost}
+The expensive blockchain storage impedes the adoption of blockchain applications and makes it impractical to further scaling up blockchain.
 
 %Requirement: works with a similar setup to blockchain.
 %\lijl{Meaning permissionless? PoS?}
@@ -22,8 +21,7 @@ Requiring all blockchain participants to maintain this growing state machine is 
 %\lijl{Does the safety of the protocol depend on proof of storage?}
 %Nevertheless, should tolerate up to 1/3 faulty capacities emerging in the single proof period.
 
-Decentralized storage offers an attractive solution to this scalability challenge.
-\lijl{Cite existing decentralized storage here.}
+Decentralized storage offers an attractive solution to this scalability challenge.~\cite{storj2018storj, williams2019arweave, miller2014permacoin, EthStorage, filecoin, vorick2014sia, team2021swarm}
 Instead of storing large state (e.g., AI models) directly on-chain, the state is maintained on off-chain storage servers, while the blockchain nodes only save small state hashes.
 Unlike a blockchain, a decentralized storage system can perfectly scale its storage capacity by incorporating more storage servers into the network.
 In the meantime, such storage network maintains key properties of a blockchain, such as decentralization and Byzantine fault tolerance.

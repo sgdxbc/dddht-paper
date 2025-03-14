@@ -82,11 +82,11 @@ However unlike the typical employment of 2RC that pick the nodes with lighter lo
 By \emph{balancing} the AC of the nodes, \dht manages to \emph{differentiate} the discoverability of nodes with different AC, as the nodes with more AC will be more discoverable until their AC is balanced with the others.
 
 \paragraph{Simulation setup.}
-We than verify the effectiveness of \sys with various simulations.
+We than verify the effectiveness of \dht with various simulations.
 Without further statement the simulations are performed with 12k nodes, and each node can store $2^{10}$ contents at minimum and $2^{17}$ at maximum.
 This means the node classes are between 10 and 17.
 The node capacities follow a shifted Zipf distribution~\cite{zipf} with skewness set to $1$.
-Besides \sys, we also simulate a vanilla DHT as the compared baseline.
+Besides \dht, we also simulate a vanilla DHT as the compared baseline.
 We replicate each content with 3 copies.
 Finally, we repeat each simulation 100 times and report the average and error of the results.
 
@@ -102,7 +102,7 @@ In \autoref{fig:freq} we show the CDF and per-class averages of \emph{capacity d
 In this simulation we perform 1 million \ffind with uniformly random \vid{}s.
 The node discoverability is measured by the frequencies of the nodes appears in the results, and we report capacity discoverability, which is node discoverability divided by the node's capacity.
 The CDF shows that \dht's capacity discoverability is more balanced while the vanilla DHT has a long tail \ie some capacity has much higher discoverability than the others.
-The per-class averages reveal the source of this difference: in the vanilla DHT, the storage nodes with lower classes has exponentially higher capacity discoverability, while in \sys, thanks to the macro-differentiation, capacities that belong to various sizes of nodes have balanced discoverability.
+The per-class averages reveal the source of this difference: in the vanilla DHT, the storage nodes with lower classes has exponentially higher capacity discoverability, while in \dht, thanks to the macro-differentiation, capacities that belong to various sizes of nodes have balanced discoverability.
 
 Then, we perform 10 million \fput of random contents into the simulated DSNs.
 With \dht there is no single node that is overwhelmed, while the results with the vanilla DHT is shown in \autoref{fig:overwhelm} and described in \autoref{sec:bg:problem}.
