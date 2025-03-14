@@ -1,19 +1,40 @@
 \section{Overview}
 \label{sec:overview}
 
+\dht is a decentralized storage system that can provide better durability guarantee by preventing overwhelming storage nodes.
+Similar to other DSNs, \dht provides two operations
+\begin{itemize}
+    \item \fput(\var{k}, \var{v}) stores value \var{v} associated with key \var{k} on $r$ different nodes, where $r$ is the configured redundancy level.
+    \item \fget(\var{k}) $\to$ \var{v} queries value that is associated with key \var{k}.
+\end{itemize}
+\noindent \dht can guarantee durability without assuming the storage nodes can store arbitrary size of contents.
+Given the contents to be stored and the targeted redundancy level, \dht guarantees that
+\begin{theorem}
+    As long as the total storage supply is more than the required capacity (\ie the content size multiplied by the redundancy level) by a safe margin, the contents will be placed onto the storage nodes without exceeding the storage capacity of any storage node regardless of how much storage capacity each node has.
+\end{theorem}
+\noindent with high probability.
+\footnote{The mathematical formalization of this theorem is work in progress.}
+This guarantees that the placement groups are always \emph{valid} \ie they do not include any overwhelmed node, and the redundancy is actually stored.
+Afterward, given capacity's failure rate \ie the maximum portion of capacity that can fail in a proof period (\ie fail to submit proof of storage) and redundancy level, the probability of data loss in the proof period can be derived just as other DHT networks.
+What's unique to \dht is that the redundancy can always \emph{recover} to the expected level at the end of each proof period (given sufficient bandwidth resource), because the above theorem guarantees that the repair for the failed capacity and that new \fput will not overwhelm any storage node.
+So the durability of a proof period will remain the same as the system running.
+Thus, the MTTDL can be derived from the durability of a proof period as we previously do for DHT in \autoref{sec:bg:dsn}.
+
 The key idea of \dht is to differentiate the discoverability storage nodes based on the available capacities they have.
 As described in \autoref{sec:bg:dsn}, with DHT protocols like Kademlia and \dht, the placement groups are determined via \ffind operations, which returns a list of candidate nodes that are \emph{discovered} to be the closest ones to the storing content.
-The more frequent a node is discovered by the \ffind operations, the more placement groups the node is included, and the more storing requests are routed to the node.
-In Kademlia, the frequency of \ffind returning every node is the same \lijl{not sure how to interpret this claim. Over all \ffind?}, and the definition of \emph{discoverability} is usually binary: whether the node ever appears in any \ffind result.
+When invoking \ffind with uniformly random \vid, the more frequent a node is discovered by the \ffind operations, the more placement groups the node is included, and the more storing requests are routed to the node.
+In Kademlia, the frequency of \ffind returning every node overall \ffind is the same \lijl{not sure how to interpret this claim. Over all \ffind?}\gd{Changed}, and the definition of \emph{discoverability} is usually binary: whether the node ever appears in any \ffind result.
 \xxx{Cite}
 In the contrary, \dht is able to \ffind nodes with different frequencies, and discoverability is extended into an ordinal concept: given the discovered \vid uniformly distributed across the \vid{}'s domain space, the more probable a node's \vid is returned, the more discoverable the node is.
 \lijl{Probably need to give a more proper definition.}
+\gd{I don't have it now...}
 
 Although the virtual node approach is a simple and flexible design, we believe that differentiating nodes directly in the core DHT protocol is both necessary and a better approach.
 By feeding DHT with more information instead of trying to ``workaround'' it, we trade a little more complexity in DHT design and implementation with a huge improvement in the quality of differentiation.
 In this work the discoverability is differentiated only based on the availability capacities, but the differentiation should be useful in more context \eg bandwidth.
 
 \lijl{Before discussing the designs, we should give formal properties and semantics of \dht}
+\gd{Added at the top}
 
 \paragraph{Node class and classified {\normalfont \texttt{xor}} distance.}
 \dht performs a \emph{macro} differentiation on the nodes through a \emph{classification}.
@@ -25,7 +46,7 @@ That is, the Kademlia's \texttt{xor} distance is masked out the highest bits, an
 This is called the \emph{classified {\normalfont \texttt{xor}} distance}.
 \autoref{fig:distance} shows an example of the same node with different classes.
 
-\begin{figure*}
+\begin{figure*}[H]
     \centering
     \includegraphics[width=\linewidth]{figs/distance}
     \caption{A node with different \vclass values.
@@ -41,6 +62,7 @@ This effectively ``spawns'' two virtual nodes at the corresponding \vid{}s.
 Similarly, we have class $c$ equals to have $2^c$ virtual nodes.
 However, with node class each node still has one single \vid, so \ffind will only include each physical node at most once, which is unlike with virtual nodes where \ffind may return multiple \vid{}s that belong to the same physical node.
 \lijl{Are we going to show the impact on durability?}
+\gd{Planned.}
 
 \paragraph{The power of two random choices (2RC).}
 The node class is a powerful, exponential differentiation.
@@ -63,12 +85,12 @@ By \emph{balancing} the AC of the nodes, \dht manages to \emph{differentiate} th
 We than verify the effectiveness of \sys with various simulations.
 Without further statement the simulations are performed with 12k nodes, and each node can store $2^{10}$ contents at minimum and $2^{17}$ at maximum.
 This means the node classes are between 10 and 17.
-The node capacities follow a shifted Zipf distribution \xxx{cite} with skewness set to $1$.
+The node capacities follow a shifted Zipf distribution~\cite{zipf} with skewness set to $1$.
 Besides \sys, we also simulate a vanilla DHT as the compared baseline.
 We replicate each content with 3 copies.
 Finally, we repeat each simulation 100 times and report the average and error of the results.
 
-\begin{figure}
+\begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{data/simulation/graphs/capacity-freq}
     \caption{The CDF and per-class averages of capacity discoverability.}
@@ -76,7 +98,7 @@ Finally, we repeat each simulation 100 times and report the average and error of
     \Description{}
 \end{figure}
 
-In \XXX we show the CDF and per-class averages of \emph{capacity discoverability}.
+In \autoref{fig:freq} we show the CDF and per-class averages of \emph{capacity discoverability}.
 In this simulation we perform 1 million \ffind with uniformly random \vid{}s.
 The node discoverability is measured by the frequencies of the nodes appears in the results, and we report capacity discoverability, which is node discoverability divided by the node's capacity.
 The CDF shows that \dht's capacity discoverability is more balanced while the vanilla DHT has a long tail \ie some capacity has much higher discoverability than the others.
@@ -85,7 +107,7 @@ The per-class averages reveal the source of this difference: in the vanilla DHT,
 Then, we perform 10 million \fput of random contents into the simulated DSNs.
 With \dht there is no single node that is overwhelmed, while the results with the vanilla DHT is shown in \autoref{fig:overwhelm} and described in \autoref{sec:bg:problem}.
 
-\begin{figure}
+\begin{figure}[H]
     \centering
     \includegraphics[width=\linewidth]{data/simulation/graphs/ac-distr}
     \caption{Available capacity distribution of the nodes of the same size, and the average available capacities of nodes of different sizes.}
@@ -98,14 +120,6 @@ In \dht the nodes with $2^{10}$ capacity have basically all their capacities ava
 As shown in the line plot, the AC of larger nodes is significantly lower than the vanilla DHT.
 The saw shape line is because of the error introduced by node class: the node capacity is approximated with the closest power-of-two, which causes over- and under-utilization of nodes whose capacities are in the middle of consecutive power-of-two.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=\linewidth]{data/simulation/graphs/util}
-    \caption{Overall utilization when DSN starts to loss data.}
-    \label{fig:util-loss}
-    \Description{}
-\end{figure}
-
 Finally, we perform a stress simulation by continuing \fput random contents (with random eviction on overwhelmed nodes) until data loss, and report the overall utilization in \autoref{fig:util-loss}.
 We simulate with different skewness of node capacities, from 1 where the capacities are highly nonuniform, to 2 where most of the nodes have the same $2^{10}$ capacity.
 We further perform ablation study on the effectiveness of the macro- and micro-differentiation.
@@ -113,3 +127,11 @@ The results show that both differentiation provide improvement.
 The macro-differentiation is effective with imbalance capacity, and degrade to vanilla DHT when the skewness is high and most nodes have the same node class.
 The micro-differentiation, on the other hand, yields perfect utilization at high skewness, but becomes ineffective when the capacity is imbalanced.
 \dht combines the two improvement and outperforms vanilla DHT by more than 60\% utilization at any skewness, and can reach at most 100\% utilization at high skewness.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{data/simulation/graphs/util}
+    \caption{Overall utilization when DSN starts to loss data.}
+    \label{fig:util-loss}
+    \Description{}
+\end{figure}
