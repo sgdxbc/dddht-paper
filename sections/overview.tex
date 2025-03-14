@@ -4,13 +4,16 @@
 The key idea of \dht is to differentiate the discoverability storage nodes based on the available capacities they have.
 As described in \autoref{sec:bg:dsn}, with DHT protocols like Kademlia and \dht, the placement groups are determined via \ffind operations, which returns a list of candidate nodes that are \emph{discovered} to be the closest ones to the storing content.
 The more frequent a node is discovered by the \ffind operations, the more placement groups the node is included, and the more storing requests are routed to the node.
-In Kademlia, the frequency of \ffind returning every node is the same, and the definition of \emph{discoverability} is usually binary: whether the node ever appears in any \ffind result.
+In Kademlia, the frequency of \ffind returning every node is the same \lijl{not sure how to interpret this claim. Over all \ffind?}, and the definition of \emph{discoverability} is usually binary: whether the node ever appears in any \ffind result.
 \xxx{Cite}
 In the contrary, \dht is able to \ffind nodes with different frequencies, and discoverability is extended into an ordinal concept: given the discovered \vid uniformly distributed across the \vid{}'s domain space, the more probable a node's \vid is returned, the more discoverable the node is.
+\lijl{Probably need to give a more proper definition.}
 
 Although the virtual node approach is a simple and flexible design, we believe that differentiating nodes directly in the core DHT protocol is both necessary and a better approach.
 By feeding DHT with more information instead of trying to ``workaround'' it, we trade a little more complexity in DHT design and implementation with a huge improvement in the quality of differentiation.
 In this work the discoverability is differentiated only based on the availability capacities, but the differentiation should be useful in more context \eg bandwidth.
+
+\lijl{Before discussing the designs, we should give formal properties and semantics of \dht}
 
 \paragraph{Node class and classified {\normalfont \texttt{xor}} distance.}
 \dht performs a \emph{macro} differentiation on the nodes through a \emph{classification}.
@@ -36,12 +39,14 @@ For class 1, the distance is same as calculating the original \texttt{xor} dista
 This effectively ``spawns'' two virtual nodes at the corresponding \vid{}s.
 Similarly, we have class $c$ equals to have $2^c$ virtual nodes.
 However, with node class each node still has one single \vid, so \ffind will only include each physical node at most once, which is unlike with virtual nodes where \ffind may return multiple \vid{}s that belong to the same physical node.
+\lijl{Are we going to show the impact on durability?}
 
 \paragraph{The power of two random choices (2RC).}
 The node class is a powerful, exponential differentiation.
 However, it is not without shortcoming.
 If a node is discoverable for a \fput, it must be discoverable for the following \fget as well, otherwise the stored data cannot be retrieved.
 This symmetry forbids us to adjust node class according to its current AC.
+\lijl{We can discuss why this violates our target properties of \dht.}
 In \dht the node class is set based on its total capacity.
 Effectively the nodes are classified into different (exponential) levels of sizes, and we assign an initial discoverability for each level accordingly.
 
