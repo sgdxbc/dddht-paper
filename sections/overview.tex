@@ -31,6 +31,7 @@ This is called the \emph{classified {\normalfont \texttt{xor}} distance}.
     \caption{A node with different \vclass values.
     The blue regions are ``covered'' by the studied node, \ie, the node will be returned when \ffind \vid in the regions.}
     \label{fig:distance}
+    \Description{}
 \end{figure*}
 
 The effect of node class is similar to virtual node.
@@ -72,25 +73,27 @@ Finally, we repeat each simulation 100 times and report the average and error of
     \includegraphics[width=\linewidth]{data/simulation/graphs/capacity-freq}
     \caption{The CDF and per-class averages of capacity discoverability.}
     \label{fig:freq}
+    \Description{}
 \end{figure}
 
-In \autoref{fig:freq} we show the CDF and per-class averages of \emph{capacity discoverability}.
+In \XXX we show the CDF and per-class averages of \emph{capacity discoverability}.
 In this simulation we perform 1 million \ffind with uniformly random \vid{}s.
 The node discoverability is measured by the frequencies of the nodes appears in the results, and we report capacity discoverability, which is node discoverability divided by the node's capacity.
 The CDF shows that \dht's capacity discoverability is more balanced while the vanilla DHT has a long tail \ie some capacity has much higher discoverability than the others.
 The per-class averages reveal the source of this difference: in the vanilla DHT, the storage nodes with lower classes has exponentially higher capacity discoverability, while \sys correctly balance across nodes of various sizes.
 
 Then, we perform 10 million \fput of random contents into the simulated DSNs.
-With \dht there is no single node that is overwhelmed, while the results with the vanilla DHT is shown in \autoref{fig:overwhelmed} and described in \autoref{sec:bg:problem}.
+With \dht there is no single node that is overwhelmed, while the results with the vanilla DHT is shown in \autoref{fig:overwhelm} and described in \autoref{sec:bg:problem}.
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{data/simulation/graphs/ac-distr}
     \caption{Available capacity distribution of the nodes of the same size, and the average available capacities of nodes of different sizes.}
     \label{fig:ac-distr}
+    \Description{}
 \end{figure}
 
-To further study how well \dht can balance the availability capacity, in \autoref{fig:ac-distir} we plot the AC of all nodes with $2^{10}$ capacity, and the average AC of nodes of different sizes.
+To further study how well \dht can balance the availability capacity, in \autoref{fig:ac-distr} we plot the AC of all nodes with $2^{10}$ capacity, and the average AC of nodes of different sizes.
 In \dht the nodes with $2^{10}$ capacity have basically all their capacities available, because \dht tends to first utilize the larger nodes for their higher AC.
 As shown in the line plot, the AC of larger nodes is significantly lower than the vanilla DHT.
 The saw shape line is because of the error introduced by node class: the node capacity is approximated with the closest power-of-two, which causes over- and under-utilization of nodes whose capacities are in the middle of consecutive power-of-two.
@@ -100,6 +103,7 @@ The saw shape line is because of the error introduced by node class: the node ca
     \includegraphics[width=\linewidth]{data/simulation/graphs/util}
     \caption{Overall utilization when DSN starts to loss data.}
     \label{fig:util-loss}
+    \Description{}
 \end{figure}
 
 Finally, we perform a stress simulation by continuing \fput random contents (with random eviction on overwhelmed nodes) until data loss, and report the overall utilization in \autoref{fig:util-loss}.

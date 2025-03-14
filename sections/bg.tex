@@ -1,25 +1,44 @@
 \section{Background}
 \label{sec:bg}
 
-\subsection{Decentralized Storage Networks}
+\subsection{Decentralized Storage Networks in Blockchains}
 \label{sec:bg:dsn}
 
 \lijl{Before discussing DSN, should give some context about blockchain and the issue of state scalability.}
+It is costly to store data on blockchains.
+For example, there are more than 6000 full nodes operating on Ethereum~\cite{ethereum-node}, and the data stored on Ethereum (which is around 1256 GB~\cite{ethereum-size} nowadays) are replicated to all of them.
+The fully-replicated nature of BFT protocols causes large consumption on storage and network resources, and results in economically costly on-chain storage.
+In 2021, the famous CryptoPunks NFT stores 10,000 24$\times$24 pixel avatars into Ethereum's on-chain storage.
+Despite extremely compressed the data that still costed the developer about 12,205 US dollars.~\cite{on-chain-cryptopunks}
+As today storing 1 GB data on Ethereum costs over 7 million US dollars~\cite{ethereum-cost}, which is unaffordable to most users and ridiculous compared to cloud storage.
 
-Decentralized storage networks are widely used to outsource bulk data from blockchains.
-\xxx{Facts.}
+Decentralized storage networks~\cite{storj2018storj, williams2019arweave, miller2014permacoin, EthStorage, filecoin, vorick2014sia} are widely used to outsource bulk data from blockchains.
+Study~\cite{balduf2022dude} found that for the top 1000 most popular NFTs, more than half of them are stored off-chain.
+Another study~\cite{nft-apocalypse} reports that only 10\% of NFTs are stored on-chain, and about half of them are stored in DSNs.
+As today, NFT.Storage~\cite{nft-storage}, a storage service based on the leading DSN Filecoin~\cite{filecoin}, hosts 704 TB data.
+EthStorage~\cite{EthStorage} claims that it ``decreases Ethereum's storage costs by more than 1000 times''.
+Sia~\cite{vorick2014sia} hosts report storage price from lower than 1 to 3 US dollars per TB.
 
-\xxx{Arch: read/update metadata on chain, read/append content data off chain.}
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{figs/arch}
     \caption{Extend blockchain's capacity with decentralized storage network.}
     \label{fig:arch}
+    \Description{}
 \end{figure}
 
-DSNs are under the same critical attack vector as the blockchains.
-By utilizing DSNs, the durability of DSNs becomes part of the safety guarantee of blockchains themselves.
-Proof of storage can rapidly detect faults and allows DSNs to repair (relatively) timely.
+\autoref{fig:arch} shows the overall architecture of integrating DSN as off-chain storage for blockchains.
+Instead of the original content, a \emph{stub} for the content, \eg, CID with content-addressing~\cite{benet2014ipfs}, is stored on-chain, and the content is stored in DSN.
+The stub is a tiny identifier that usually consists of less than 100 bytes, and it can refer to arbitrary large contents that is usually represented by a Merkle DAG~\cite{benet2014ipfs} that is rooted with the stub.
+Blockchain transactions cannot directly access to the off-chain data during execution, but they can manipulate the data indirectly through the stub, \eg, transfer a NFT to another user or replace the content with a newer version.
+In many blockchains, the storage nodes in DSN also prove that they have correctly stored the contents by submitting proof of storage~\cite{fisch2018scaling} to the blockchain.
+The proof shows that the storage node has utilized its storage capacity to store a specific content at the given period, and the smart contract running on the blockchain can reward the node accordingly or penalize nodes for missing proof of storage.
+There are active ongoing research on constructing proof of storage \eg with random sampling and Merkle tree-based inclusion proof.
+The proof of storage guarantees that the probability for a faulty storage node to construct a valid proof without storing the data is negligible.
+
+The major challenge of off-chain storage is to ensure durability.
+As reported~\cite{nft-storage}, $\frac{1}{3}$ of all NFTs went dead in 2023, and the average lifespan of NFTs is 1.14 years.
+Similar to permissionless BFTs, the DSNs must also tolerate Byzantine~\cite{bgp} nodes.
 
 \paragraph{Threat model.}
 \lijl{People might be confused if we start the thread model with storage proofs. Maybe summarize the different faulty behaviors. Storage proofs address one of them, i.e., claiming objects are stored but actually not.}
@@ -145,6 +164,7 @@ As the result, while some of the smallest ($2^{10}$) nodes have already hit zero
     \caption{Left: the overall utilization (solid) and rejection rate (dashed) when overwhelmed nodes reject storing requests.
     Right: the data loss rate (solid) and the overall utilization (dashed) when overwhelmed nodes evicts randomly.}
     \label{fig:overwhelm}
+    \Description{}
 \end{figure}
 
 \paragraph{Problem with overwhelmed nodes.}
