@@ -1,19 +1,45 @@
 \section{Introduction}
 \label{sec:intro}
 
-Blockchain storage scalability issue.
-\emph{Outsource} storage: extract large content data from fully-replicated world state.
-Leave a stub (\eg content hash) in the state and access content off-chain.
-Example: NFT exchange, user-generated content, off-chain AI inference with on-chain verifiable computation proof.
-\lijl{What are the existing blockchain solutions? What are the issues?}
+%Blockchain storage scalability issue.
+%\emph{Outsource} storage: extract large content data from fully-replicated world state.
+%Leave a stub (\eg content hash) in the state and access content off-chain.
+%Example: NFT exchange, user-generated content, off-chain AI inference with on-chain verifiable computation proof.
+%\lijl{What are the existing blockchain solutions? What are the issues?}
 
-Requirement: works with a similar setup to blockchain.
-\lijl{Meaning permissionless? PoS?}
-Allow anyone to store redundancy for contents and make profit.
-Tolerate Byzantine behaviors.
-Proof of storage can assist to detect faults rapidly.
-\lijl{Does the safety of the protocol depend on proof of storage?}
-Nevertheless, should tolerate up to 1/3 faulty capacities emerging in the single proof period.
+Permissionless blockchains~\cite{bitcoin,ethereum} build fully decentralized ledgers, enabling cryptocurrencies and broader set of applications without centralized trust.
+At the core of a blockchain protocol is state machine replication~\cite{smr}, where all blockchain participants execute the same sequence of transactions to derive the same state machine.
+However, as blockchains gain popularity and expand their use cases, the size of the state machine continues to grow.
+For instance, there has been proposals to support images, videos, AI models, and other large data in blockchains.
+\lijl{Add references?}
+Requiring all blockchain participants to maintain this growing state machine is infeasible.
+
+%Requirement: works with a similar setup to blockchain.
+%\lijl{Meaning permissionless? PoS?}
+%Allow anyone to store redundancy for contents and make profit.
+%Tolerate Byzantine behaviors.
+%Proof of storage can assist to detect faults rapidly.
+%\lijl{Does the safety of the protocol depend on proof of storage?}
+%Nevertheless, should tolerate up to 1/3 faulty capacities emerging in the single proof period.
+
+Decentralized storage offers an attractive solution to this scalability challenge.
+\lijl{Cite existing decentralized storage here.}
+Instead of storing large state (e.g., AI models) directly on-chain, the state is maintained on off-chain storage servers, while the blockchain nodes only save small state hashes.
+Unlike a blockchain, a decentralized storage system can perfectly scale its storage capacity by incorporating more storage servers into the network.
+In the meantime, such storage network maintains key properties of a blockchain, such as decentralization and Byzantine fault tolerance.
+
+This approach of scaling blockchain, however, faces a data availability challenge.
+\lijl{Is it okay to reuse the DA terminology here? Or should we just use durability?}
+A blockchain protocol guarantees that the system is available when up to $1/3$ of the participants are faulty.
+To maintain this strong guarantee, the state offloaded to the storage network also needs to be available when $1/3$ of the storage network is faulty.
+Otherwise, a transaction accessing an unavailable offloaded state would stall the entire blockchain state machine.
+
+Guaranteeing data availability in decentralized storage is inherently harder than a blockchain.
+Blockchain applies full replication;
+when any $1/3$ of the nodes fail, the remaining nodes always possess the full state.
+For scalability, decentralized storage assigns each data only to a subset of storage nodes.
+The assignment protocol is therefore critical to data availability.
+Data loss can happen when all copies of a data are assigned to faulty servers or nodes without sufficient storage capacity.
 
 DHT-based decentralized storage networks (DSN).
 Assign placement groups for contents automatically based on their hashes.
