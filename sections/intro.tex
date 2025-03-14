@@ -41,40 +41,56 @@ For scalability, decentralized storage assigns each data only to a subset of sto
 The assignment protocol is therefore critical to data availability.
 Data loss can happen when all copies of a data are assigned to faulty servers or nodes without sufficient storage capacity.
 
-DHT-based decentralized storage networks (DSN).
-Assign placement groups for contents automatically based on their hashes.
-Advantage: relief storage nodes from discovering profitable storing tasks by themselves and competing with each other.
-Enable wide adoption of \emph{lightweight} storage nodes \ie consumer devices that provide their spare storage capacities.
-\lijl{I think this is true. But likely that most reviewers do not have the background knowledge to understand this issue.}
+%DHT-based decentralized storage networks (DSN).
+%Assign placement groups for contents automatically based on their hashes.
+%Advantage: relief storage nodes from discovering profitable storing tasks by themselves and competing with each other.
+%Enable wide adoption of \emph{lightweight} storage nodes \ie consumer devices that provide their spare storage capacities.
+%\lijl{I think this is true. But likely that most reviewers do not have the background knowledge to understand this issue.}
 
-Observation: DHT balances workload across the storage nodes.
-\lijl{Should point out the assumptions made by prior DHTs (all nodes have enough capacity?), and the difference in our scenario.}
-Each storage node receives storing requests at the same rate, but their abilities to handle storing requests \ie storage capacity are different.
-As DSN storing more contents, storage nodes are saturated at different rate, and some storage nodes are overwhelmed even when the overall utilization is still low.
-A storage node is said to be \emph{overwhelmed} if its capacity is full while the DSN still pushes more storing requests to it.
-\lijl{Can also briefly discuss why this is not an issue in centralized storage, and why this is a hard problem in decentralized network.}
+A well-established approach to assigning data to servers in a decentralized network is using distributed hash tables (DHTs)~\cite{chash,chord,maymounkov2002kademlia}.
+A DHT projects both data and node hashes onto the same hash ring;
+an object is assigned to $n$ nodes whose node hashes are closest to the object hash on the ring.
+The assignment is done in a fully decentralized manner;
+no centralized entities control or maintain the mapping metadata.
+The approach is also amenable to a permissionless setting: Nodes can freely join and leave the network at any time.
 
-We use available capacity (AC) to measure how ``far'' the node is from being overwhelmed.
-According to our simulation of Swarm (\autoref{sec:bg:problem}), the AC of nodes scatters in a wide range.
-In general, the average AC is proportional to the storage node's capacity.
-However, even for the storage nodes of similar capacities, their AC still varies a lot.
-\lijl{What's the reason for that?}
-Eventually, some nodes are overwhelmed first while the other ones are still underutilized.
+%Observation: DHT balances workload across the storage nodes.
+%\lijl{Should point out the assumptions made by prior DHTs (all nodes have enough capacity?), and the difference in our scenario.}
+%Each storage node receives storing requests at the same rate, but their abilities to handle storing requests \ie storage capacity are different.
+%As DSN storing more contents, storage nodes are saturated at different rate, and some storage nodes are overwhelmed even when the overall utilization is still low.
+%A storage node is said to be \emph{overwhelmed} if its capacity is full while the DSN still pushes more storing requests to it.
+%\lijl{Can also briefly discuss why this is not an issue in centralized storage, and why this is a hard problem in decentralized network.}
+%
+%We use available capacity (AC) to measure how ``far'' the node is from being overwhelmed.
+%According to our simulation of Swarm (\autoref{sec:bg:problem}), the AC of nodes scatters in a wide range.
+%In general, the average AC is proportional to the storage node's capacity.
+%However, even for the storage nodes of similar capacities, their AC still varies a lot.
+%\lijl{What's the reason for that?}
+%Eventually, some nodes are overwhelmed first while the other ones are still underutilized.
 
-Problem: degraded availability or durability.
-The overwhelmed storage nodes have to reject the new storing requests or evict previously-stored contents, leads to either availability or durability degradation.
-\lijl{What is the original behavior of a DHT when a peer can't or refuse to store some data? Does it try other peers? At least in Dynamo, it will keep walking the hash ring.}
-Bigger problem: degraded durability during scaling down.
-Scaling down can happen (temporarily) even just because network partitioning.
-\lijl{Need to link back to AC. What AC property does the system need to enforce to improve durability?}
+%Problem: degraded availability or durability.
+%The overwhelmed storage nodes have to reject the new storing requests or evict previously-stored contents, leads to either availability or durability degradation.
+%\lijl{What is the original behavior of a DHT when a peer can't or refuse to store some data? Does it try other peers? At least in Dynamo, it will keep walking the hash ring.}
+%Bigger problem: degraded durability during scaling down.
+%Scaling down can happen (temporarily) even just because network partitioning.
+%\lijl{Need to link back to AC. What AC property does the system need to enforce to improve durability?}
 
-Virtual node approach is not effective.
-Although the AC of large storage nodes is clustered thanks to the load balance across the virtual nodes, it is still higher than the average AC of smaller nodes, because each virtual node has the same expected AC, so the larger storage nodes, which spawn more virtual nodes, have higher aggregated AC than the smaller ones.
-And also, the AC of small storage nodes is still widely scattered because they are not able to spawn sufficient virtual nodes to balance the workload.
-At the same time, virtual nodes create artificially correlated node failures unknown to the DHT and more correlation is unwelcomed by any storage system.
-\lijl{This is an interesting point. Virtual nodes are used for load balancing. Wonder if anyone has looked at the fault tolerance implications.}
-Moreover, there's no way for storage nodes to gracefully reduce the number of virtual nodes in case they want to shrink capacities.
-Eventually the shrinking becomes artificial churning that DSN must additionally tolerate.
+DHTs are effective at balancing request load across nodes in a network.
+They, however, make a critical assumption that every node always has sufficient storage capacity to store all mapped objects.
+In a permissionless network where participants exhibit significant heterogeneity, such assumption is no longer valid.
+Even when there is sufficient aggregated capacity in network, the available capacity (AC) on each node can have large variance due to different initial capacity, request distribution, and lifetime.
+We validate this hypothesis using simulations in \autoref{sec:bg:problem}.
+Variance in AC directly leads to degraded data availability.
+Since DHTs distribute storage requests uniformly across the network, a node with insufficient AC has to either reject a storage request or evict existing objects when other nodes still have spare capacity, resulting in lower redundancy level.
+The issue is even more severe when the network scales down (e.g., nodes churning and network partitions).
+
+%Virtual node approach is not effective.
+%Although the AC of large storage nodes is clustered thanks to the load balance across the virtual nodes, it is still higher than the average AC of smaller nodes, because each virtual node has the same expected AC, so the larger storage nodes, which spawn more virtual nodes, have higher aggregated AC than the smaller ones.
+%And also, the AC of small storage nodes is still widely scattered because they are not able to spawn sufficient virtual nodes to balance the workload.
+%At the same time, virtual nodes create artificially correlated node failures unknown to the DHT and more correlation is unwelcomed by any storage system.
+%\lijl{This is an interesting point. Virtual nodes are used for load balancing. Wonder if anyone has looked at the fault tolerance implications.}
+%Moreover, there's no way for storage nodes to gracefully reduce the number of virtual nodes in case they want to shrink capacities.
+%Eventually the shrinking becomes artificial churning that DSN must additionally tolerate.
 
 Differentiable Discoverability DHT (\dht) is a decentralized storage network that performs efficient random placement with DHT but \emph{differentiate} workload of storage nodes based on their available capacities.
 In \dht, storage nodes are highly unlikely to be overwhelmed given that the total storage supply of DSN is sufficient for storing the contents with targeted redundancy level.
