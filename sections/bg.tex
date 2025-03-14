@@ -157,18 +157,23 @@ On the other hand, the nodes do not and cannot decide what to store, so they do 
 
 DHT relives the burden of the storage nodes by taking the responsibility of placing contents on them, so it becomes critical that how well DHT can make proper placement decisions.
 Since the network \emph{pushes} storing requests to the storage nodes, it's hard for the storage nodes to reject the requests or hand off to other nodes.
+This is because DHT's consistent hashing is symmetrically applied to \fput and \fget{}: no matter whether the requested nodes store the contents or not, the following retrieval will be routed to them nonetheless.
+The lack of stored metadata means that the outcomes of \fput cannot affect the later \fget.
 \lijl{Why is this the case?}
+\gd{Explained.}
 However, as previously mentioned, DHT actually randomly samples the nodes in a uniform manner.
 This means that similar amount of storing requests are pushed to every node.
 
-However, storage nodes are heterogeneous.
-They may provide different storage capacities, and they may already be holding different size of contents: because of probabilistic fluctuation or the contents have different expiration duration.
-So the abilities of the storage nodes to serve storing requests are different.
-We measure this ability with \emph{available capacity}, the number of contents a node can hold with its unused storage capacity.
+The durability guarantees of traditional DHTs assume that the storage nodes always accept store requests.
+The assumption is valid for metadata service like IPFS, where the actual content is stored external to the DHT, and only MB-scale data is stored on each node.
+However, it's not the case for DSNs like Swarm which directly utilize DHT as content storage, and the durability guarantee may be broken because of this.
+The storage capacity on the nodes may be exhausted.
+We measure how far the storage nodes are from exhausted with \emph{available capacity}, the number of contents a node can hold with its unused storage capacity.
 \footnote{In this work we only consider fixed-size contents and state that varied-size contents can be split into fixed-size chunks.}
 A node with zero AC is considered \emph{overwhelmed}.
-The overwhelmed nodes cannot serve any further storing request, and may cause serious problems if DHT keeps pushing storing requests to them.
+The overwhelmed nodes cannot serve any further storing request, and may cause serious durability problems if DHT keeps pushing storing requests to them.
 \lijl{One way to rephrase this point: guarantees of traditional DHT assume that each node always accepts a store request. Violating that assumption will break the guarantees.}
+\gd{Updated.}
 
 We simulate Swarm to provide a comprehensive study on the available capacities of storage nodes in a DHT storage network.
 The setup details of the simulation are stated in \autoref{sec:overview}.
@@ -200,15 +205,17 @@ Not to mention in the case of network scaling down, which could due to the norma
 In such case, the overwhelmed nodes have no choice but to evict (either previously-stored or re-replicated contents), which leads to irreversible data loss.
 
 \paragraph{The virtual node approach is not effective.}
-The previous works \xxx{cite} widely use the virtual node approach to load balance in DHT.
+The previous works~\cite{zhu2005efficient, zhang2010novel} widely use the virtual node approach to load balance in DHT.
 In this approach, a storage node spawns variable number of virtual nodes, which participant into DHT normally.
 In this case each virtual node receives similar workload, and the storage nodes that spawn more virtual nodes can receive more workload and utilize more capacity.
-\xxx{Cite Swarm}
 
-\xxx{A heatmap like the previous one but with virtual nodes}
 Unfortunately, the virtual node approach is not as promising as it looks like.
-
-\xxx{A graph shows content size vs. the number of unique physical storage nodes.}
+Our simulation (\autoref{fig:ac-distr}) shows that the AC distribution of nodes of the same size still varies a lot.
+Although the virtual nodes that belong to the same storage node can share their underlying capacities, the small storage nodes with few virtual nodes are still easily overwhelmed.
+Furthermore, the AC of storage nodes are still not balanced even if the AC of virtual nodes is balanced, as the storage nodes that spawn more virtual nodes will have a higher aggregated AC.
+And lastly, the virtual node approach introduce extra implication of correlations among the virtual nodes.
+As DHT is not aware of the ownership of the virtual nodes, it may accidentally allocate redundancy of the same content to different virtual nodes of the same storage node.
+This results in a weaker durability than expected.
 
 In conclusion, while today's DHT can \emph{balance} well across homogeneous nodes, it fails to \emph{differentiate} well across heterogeneous nodes.
 The heterogeneity nature of decentralized systems captures this inability, and results in the suffering durability of DSNs.
