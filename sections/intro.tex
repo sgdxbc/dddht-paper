@@ -128,4 +128,8 @@ Combining the two methods results in balanced AC without degrading DHT performan
 %}
 %\lijl{Do we need to discuss adversarial behaviors and how the protocol handles them?}
 
-Our preliminary evaluation shows that \XXX
+Our preliminary evaluation shows that \dht is an effective design.
+In the case where vanilla DHT is losing 7\% of stored content or rejecting more than 90\% of storing requests because of the overwhelmed nodes, \dht completely eliminates the overwhelmed nodes and prevents both of the problems.
+This is because the available capacities of storage nodes are significantly more balanced in \dht compare to the vanilla DHT.
+In the stress simulation, \dht can store data up to close to 100\% of overall utilization before overwhelming nodes and losing data, which is 60\% more than the vanilla DHT.
+In the future we plan to implement \dht in real and perform real world deployment evaluations.
