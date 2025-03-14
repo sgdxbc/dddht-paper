@@ -131,32 +131,32 @@ The overwhelmed nodes cannot serve any further storing request, and may cause se
 \lijl{One way to rephrase this point: guarantees of traditional DHT assume that each node always accepts a store request. Violating that assumption will break the guarantees.}
 
 We simulate Swarm to provide a comprehensive study on the available capacities of storage nodes in a DHT storage network.
-\xxx{Setup.}
-
-\xxx{A heatmap with x-axis storage nodes size, y-axis available capacity.}
-The AC of storage nodes scatters across the large range, indicating a high imbalance in the serving ability of the storage nodes.
-In general, AC increases as the node capacity.
-This is because the expected utilized capacity of every node is the same, regardless of the storage node size.
-So larger nodes have more AC than the smaller ones.
-Moreover, even AC of the nodes of the similar size varies a lot.
-\lijl{Due to some random distribution?}
-As the result, while some nodes have already hit zero AC and been overwhelmed, \XXX nodes still have at least \XXX AC, and the overall utilization is just \XXX\%.
-
-\paragraph{Problem with overwhelmed nodes.}
-If DHT still pushes storing requests to an overwhelmed node, it can only choose between reject the requests or evict previously-stored contents.
+The setup details of the simulation are stated in \autoref{sec:overview}.
+As shown in \autoref{fig:ac-distr}, the AC of storage nodes in DHT scatters across the wide range.
+For the nodes with the same size, their AC distributes across 10 different magnitudes (of the powers of two).
+And the average AC of nodes of different sizes monotonically increases as the node sizes, ranging in 9 magnitudes even though the node sizes only spans across 7 magnitudes.
+This is because the expected \emph{utilized} capacity of every node is the same, regardless of the storage node size.
+And that same utilized capacity would bring the AC of smaller nodes more magnitudes down than the larger ones.
+As the result, while some of the smallest ($2^{10}$) nodes have already hit zero AC and been overwhelmed, the largest $2^{17}$ nodes also utilized around $2^{10}$ which is less than 1\% of their capacities, and the overall utilization is just single digit percentages.
 
 \begin{figure}
     \centering
     \includegraphics[width=\linewidth]{data/simulation/graphs/overwhelm}
-    \caption{Left: the overall utilization and rejection rate when overwhelmed nodes reject storing requests.
-    Right: the data loss rate and the overall utilization when overwhelmed nodes evicts randomly.}
+    \caption{Left: the overall utilization (solid) and rejection rate (dashed) when overwhelmed nodes reject storing requests.
+    Right: the data loss rate (solid) and the overall utilization (dashed) when overwhelmed nodes evicts randomly.}
     \label{fig:overwhelm}
 \end{figure}
+
+\paragraph{Problem with overwhelmed nodes.}
+If DHT still pushes storing requests to an overwhelmed node, it can only choose to either reject the requests or evict previously-stored contents.
+\autoref{fig:overwhelm} shows the consequences of both choices.
+With rejection, the storage network hardly accepts any further requests when only about 10\% of overall capacity is utilized, and the rejection rate already increase to more than 90\%.
+With eviction, the storage network starts to evict at only 6\% of overall utilization, and starts to lose data soon after that.
 
 And even worse, the durability can be affected even when no new request is coming externally.
 When the nearby nodes churn, internal re-replication may be pushed to overwhelmed nodes as well.
 Not to mention in the case of network scaling down, which could due to the normal fluctuation or simply false positive caused by transient network partitioning, the redundancy kept by the left nodes ``collapses'' on the remaining nodes.
-\xxx{A graph shows number of remaining nodes vs. data loss}.
+In such case, the overwhelmed nodes have no choice but to evict (either previously-stored or re-replicated contents), which leads to irreversible data loss.
 
 \paragraph{The virtual node approach is not effective.}
 The previous works \xxx{cite} widely use the virtual node approach to load balance in DHT.

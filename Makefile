@@ -4,8 +4,9 @@ PAPER := paper
 TEX := $(shell find ./ -type f -name "*.tex")
 CLS := $(shell find ./ -type f -name "*.cls" -o -name "*.sty")
 BIB := $(shell find ./ -type f -name "*.bib")
+FIG := $(shell find ./ -type f -name "figs/*.pdf" -o -name "data/*.pdf")
 
-PAPER_DEPS := $(TEX) $(CLS) $(BIB)
+PAPER_DEPS := $(TEX) $(CLS) $(BIB) $(FIG)
 
 .PHONY: all clean
 
