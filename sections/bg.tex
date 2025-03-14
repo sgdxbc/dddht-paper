@@ -99,7 +99,7 @@ We also assume the identities of Byzantine nodes are uniformly distributed acros
 We have different kinds of DSNs curated in \autoref{tab:dsn}.
 We compare the DSNs in three metrics.
 The first is whether they require explicitly maintaining metadata about contents \emph{placement group} i.e. where to find them.
-The second is whether they are \emph{competitive} \ie whether they must compete for the same share of reward. 
+The second is whether they are \emph{competitive} \ie whether they must compete for the same share of reward.
 The last one is whether they can efficiently achieve durable, that is, the data size that they are durably stored versus the total storage supply.
 \lijl{What is a competitive environment?}
 \gd{Explained.}
@@ -112,7 +112,7 @@ A storage node's profit may decrease because the other nodes store more.
 As the result, the large-scale storage nodes take advantage in such systems for their lower amortized storage cost and the ability of deployment local redundancy schemes to better reliability.
 Indeed, there are only 1.6k active miners in Filecoin network~\cite{filecoin-node}, 1.1k for Arweave~\cite{arweave-stats} and 468 for Sia~\cite{siascan}.
 This increases the centralization in the system, giving more power to individual nodes which may lead to faulty behaviors like content censorship.
-It's also harder to argue for durability in a more centralized system. 
+It's also harder to argue for durability in a more centralized system.
 Moreover, in these DSNs the storage nodes frequently poll the blockchain or directly participant in the BFT protocols.
 This is also an unfriendly requirement to lightweight storage nodes.
 
@@ -143,14 +143,14 @@ So the probability of data loss in a time unit $\epsilon$ can be derived from th
 If the failure rate is set to $f=\frac{1}{3}$, a redundancy level $r=13$ yields $1-\epsilon>99.9999\%$ \ie the durability is over ``six nines''.
 The mean time to data lost (MTTDL) can further be derived as $\frac{1}{\epsilon}$ time units, which are about 4368 years when a time unit equals one day or 182 years when equals to an hour.
 
-The DHT approach is the most ideal one for DSN with lightweight storage nodes.
-Metadata management has always been the key blocker for DSNs.
-Fully-replicated metadata on blockchains is not accessible to lightweight nodes.
-IPFS~\cite{benet2014ipfs} decentralized the metadata \emph{storing} with DHT, but the management \ie the assignment of placement groups still happens on-chain (in Filecoin).
-Only with the DHT approach, DSN can allocate placement groups for contents in a decentralized way.
-On the other hand, the nodes do not and cannot decide what to store, so they do not compete with each other.
-\lijl{Decentralized metadata is the key problem here. IPFS address how to store metadata in a decentralized network, but it doesn't solve how the assignment metadata is generated in a decentralized manner. The other approaches help, but their assignment strategies still have issues.}
-\gd{Rephrased.}
+%The DHT approach is the most ideal one for DSN with lightweight storage nodes.
+%Metadata management has always been the key blocker for DSNs.
+%Fully-replicated metadata on blockchains is not accessible to lightweight nodes.
+%IPFS~\cite{benet2014ipfs} decentralized the metadata \emph{storing} with DHT, but the management \ie the assignment of placement groups still happens on-chain (in Filecoin).
+%Only with the DHT approach, DSN can allocate placement groups for contents in a decentralized way.
+%On the other hand, the nodes do not and cannot decide what to store, so they do not compete with each other.
+%\lijl{Decentralized metadata is the key problem here. IPFS address how to store metadata in a decentralized network, but it doesn't solve how the assignment metadata is generated in a decentralized manner. The other approaches help, but their assignment strategies still have issues.}
+%\gd{Rephrased.}
 
 \subsection{The Problem with DHT}
 \label{sec:bg:problem}
@@ -161,7 +161,7 @@ This is because DHT's consistent hashing is symmetrically applied to \fput and \
 The lack of stored metadata means that the outcomes of \fput cannot affect the later \fget.
 \lijl{Why is this the case?}
 \gd{Explained.}
-However, as previously mentioned, DHT actually randomly samples the nodes in a uniform manner.
+However, as previously mentioned, DHT randomly samples the nodes in a uniform manner.
 This means that similar amount of storing requests are pushed to every node.
 
 The durability guarantees of traditional DHTs assume that the storage nodes always accept store requests.
