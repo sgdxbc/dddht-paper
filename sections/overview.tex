@@ -103,7 +103,7 @@ In \autoref{fig:freq} we show the CDF and per-class averages of \emph{capacity d
 In this simulation we perform 1 million \ffind with uniformly random \vid{}s.
 The node discoverability is measured by the frequencies of the nodes appears in the results, and we report capacity discoverability, which is node discoverability divided by the node's capacity.
 The CDF shows that \dht's capacity discoverability is more balanced while the vanilla DHT has a long tail \ie some capacity has much higher discoverability than the others.
-The per-class averages reveal the source of this difference: in the vanilla DHT, the storage nodes with lower classes has exponentially higher capacity discoverability, while \sys correctly balance across nodes of various sizes.
+The per-class averages reveal the source of this difference: in the vanilla DHT, the storage nodes with lower classes has exponentially higher capacity discoverability, while in \sys, thanks to the macro-differentiation, capacities that belong to various sizes of nodes have balanced discoverability.
 
 Then, we perform 10 million \fput of random contents into the simulated DSNs.
 With \dht there is no single node that is overwhelmed, while the results with the vanilla DHT is shown in \autoref{fig:overwhelm} and described in \autoref{sec:bg:problem}.
