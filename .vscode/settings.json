@@ -1,3 +1,7 @@
 {
-    "latex.linter.enabled": false
+    "latex.linter.enabled": false,
+    "cSpell.words": [
+        "Kademlia",
+        "permissionless"
+    ]
 }

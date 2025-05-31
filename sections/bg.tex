@@ -1,6 +1,145 @@
 \section{Background}
 \label{sec:bg}
 
+\subsection{Distributed Hash Tables}
+
+In this section we first introduce the elementary on distributed hash tables, and then elaborate in their recent usages in decentralized storage networks.
+
+The core of distributed hash tables is consistent hashing~\cite{chash}.
+Consistent hashing is an efficient solution for assigning and balancing workload in various key-value stores or block stores.
+By applying consistent hashing, a hash function universally maps the keys and the storage nodes on to the same hash domain.
+And the values are assigned to one or more storing nodes based on their relations after mapping.
+For example, some consistent hashing organizes the hash domain into a ring (by wrapping around), and the values are assigned to the first node(s) encountered by clockwise walking on the ring.
+The assigned storing nodes are called the \emph{placement} of the values.
+
+Consistent hashing guarantees that during resizing, only minimal number of keys (\ie, the average number of keys per node) need to be remapped and relocated on average.
+This property enables consistent hashing to become a desirable placement solution in dynamical node or fault tolerate scenarios.
+Consistent hashing is preferred in data center storage because it does not rely on a centralized controller or metadata server.
+Nodes and clients can locate the data independently, which improves performance and fault tolerance.
+Consistent hashing is adopted by industrial-level storage systems like Ceph~\cite{weil2006ceph}, Cassandra~\cite{lakshman2010cassandra} and Dynamo~\cite{decandia2007dynamo} and is extensively studied for applying in distributed database~\cite{shu2020th,liu2019distcache,chung2019lightstore}, network load balancer~\cite{eisenbud2016maglev} and cloud infrastructures~\cite{nakatani2021structured,wu2019autoscaling}.
+
+In some highly dynamical scenarios such as in public peer-to-peer (P2P) networks or with high failure-rate nodes, there may be difficulties to timely propagate the list of the current online nodes to every node in the system.
+Also, the systems may scale up to tens or even hundreds of thousands of nodes, rendering impractical to record all node identities and contacts (\eg IP addresses) on every individual node.
+Distributed hash tables (DHT)~\cite{maymounkov2002kademlia,chord,rowstron2001pastry} are built around consistent hashing to cope with these issues.
+With DHT protocols, nodes can look up and access a key without knowing about all participates and their contacts of the network, potentially including the node(s) storing for the key.
+Essentially, DHT protocols assemble the nodes into an \emph{overlay network}, which routes the key accesses to the nodes who store the keys.
+Underneath, DHT distributes the records who pair node identities with their contacts across the nodes, and each record is stored only by part of the nodes.
+DHT features a record retaining policy where the nodes decide which records to preserve locally, and a lookup protocol that iteratively look up the node(s) storing a key.
+DHT protocols ensure efficient network and storage consumption.
+
+The most prevalent DHT protocol is Kademlia~\cite{maymounkov2002kademlia}, and our study is mainly performed around it.
+Kademlia guarantees logarithm network and storage consumption.
+In a network consists of $N$ nodes, each node store $O(\log{N})$ records, and the lookups of keys are expected to conclude in $O(\log{N})$ message steps.
+The consistent hashing algorithm of Kademlia is simple.
+Given a key $k$, the \emph{distance} $d$ between the key and a node whose identity is $id$ is the unsigned integer represented by the \texttt{xor} of $k$ and $id$\footnote{For brevity, we use \emph{key} and \emph{identity} to refer the hash values of them, which should be in the same hash domain (\ie has same length).}
+\[
+    d(k,id)=k\ \texttt{xor}\ id
+\]
+then, the key is assigned to the nodes $G_k$ who have the smallest distances to the key for storing
+\[
+    G_k=\{id_i\mid{}d(k,id_i)<d(k,id),id\in{}ID\setminus{}G_k,i\in{}[1,\dots,r]\}
+\]
+where $r$ is the configurable \emph{redundancy rate} of the network, \ie, the number of nodes storing a key.
+In practice $r$ is usually set to $20$ to tolerate frequent node churning and failures in permissionless systems.
+
+In Kademlia, each node keeps a set of node records that can be considered as being randomly sampled from all nodes.
+The density of the sampled nodes depends on the distance between identities of the storing node and the record.
+Nodes sample more record from the near records, and the sampling rate decreases exponentially to the distance.
+For looking up a key, nodes start from the locally-stored records that are the closest one to the key locally, and query each of the nodes.
+The queried nodes respond with the closest records according to their local stores, and the querying node iteratively perform the querying until the responses converge.
+Readers can refer to the original work~\cite{maymounkov2002kademlia} for details.
+The takeaway is that this iterative procedure is proved to terminate with the records that are globally closest in the key, matching the key placement equation above.
+Then the node can either store or update the value associated for the key on those recorded nodes, or it can retrieve the value from them.
+
+Since its emergence in early 2000s, consistent hashing and DHT protocols have been widely adopted in P2P storage networks~\cite{kubiatowicz2000oceanstore,ratnasamy2001scalable,benet2014ipfs,trautwein2022design,haeberlen2005glacier}, for its desirable functionality in such permissionless settings.
+The concept of decentralized storage networks (DSN) has gained wide attention, influenced by the recent progress in decentralized technologies~\cite{bitcoin,ethereum}.
+One of the most well-known DSNs is FileCoin~\cite{filecoin}, which is building upon the decentralized file-discovery network IPFS~\cite{benet2014ipfs,trautwein2022design}.
+In IPFS, files and directories are represented as Merkle directed acyclic graphs (DAG), and the contacts of the \emph{providers}, \ie, the storage nodes who store the content of DAG vertexes, are stored in a Kademlia DHT.
+The client can look up the DAG vertexes in the DHT to \emph{discover} their providers and subsequently download the content from them.
+Similarly, BitTorrent uses Mainline DHT~\cite{wang2013measuring,xinxing2016measurement} to perform peer discovery since 2005, which is a variant of Kademlia DHT.
+A recent work~\cite{cortes2024scalability} proposes to use Kademlia DHT in Ethereum~\cite{ethereum} to discover the validators that store the blob shards in order to perform data availability sampling~\cite{hall2023foundations} against the blob storage network in a privacy-preservation way.
+
+Beside storing the indexes of the storage nodes, most of the storage systems directly issue the data placement with consistent hashing and DHT protocols, that is, stored data \emph{as} the values associated to the keys.
+These works include the centrally-managed storage systems mentioned above~\cite{weil2006ceph,lakshman2010cassandra,decandia2007dynamo}, and various DSNs including Glacier~\cite{haeberlen2005glacier}, OceanStore~\cite{kubiatowicz2000oceanstore}, CFS~\cite{dabek2001wide} and PAST~\cite{druschel2001past}.
+\gd{OceanStore dates before the invention of DHT and uses some ``distributed data structure'' for routing which looks extremely like DHT...}
+% FARSITE~\cite{adya2002farsite}, ~\cite{bakkaloglu2002correlated}.
+More recently, Swarm~\cite{team2021swarm} is a novel DSN that reliably manages data with a hybrid approach mixing DHT and replication.
+All nodes join and can discover each other in a Kademlia overlay network, and the nodes whose distances to each other is smaller than a threshold (\ie their identities has a common prefix of certain length) compose a ``neighbor'', the members of whom fully replicate the data stored by each other.
+Essentially, Kademlia assigns the data to the neighbors, and the assigned neighbors replicate the data within to ensure high availability.
+
+While in centrally-managed environment consistent hashing and DHT are deployed mostly for performance reason or eliminating single point of failure, in permissionless DSNs DHT protocols are usually the substantial machinery to overcome the restrictions brought by the highly-dynamical and P2P nature, enforcing decent data placement that is well-balanced distributed across the nodes that lack central coordination.
+
+\subsection{The Problem with DHT}
+\label{sec:bg:problem}
+
+DHT relives the burden of the storage nodes by taking the responsibility of placing contents on them, so it becomes critical that how well DHT can make proper placement decisions.
+Since the network \emph{pushes} storing requests to the storage nodes, it's hard for the storage nodes to reject the requests or hand off to other nodes.
+This is because DHT's consistent hashing is symmetrically applied to \fput and \fget{}: no matter whether the requested nodes store the contents or not, the following retrieval will be routed to them nonetheless.
+The lack of stored metadata means that the outcomes of \fput cannot affect the later \fget.
+\lijl{Why is this the case?}
+\gd{Explained.}
+However, as previously mentioned, DHT randomly samples the nodes in a uniform manner.
+This means that similar amount of storing requests are pushed to every node.
+
+The durability guarantees of traditional DHTs assume that the storage nodes always accept store requests.
+The assumption is valid for metadata service like IPFS, where the actual content is stored external to the DHT, and only MB-scale data is stored on each node.
+However, it's not the case for DSNs like Swarm which directly utilize DHT as content storage, and the durability guarantee may be broken because of this.
+The storage capacity on the nodes may be exhausted.
+We measure how far the storage nodes are from exhausted with \emph{available capacity}, the number of contents a node can hold with its unused storage capacity.
+\footnote{In this work we only consider fixed-size contents and state that varied-size contents can be split into fixed-size chunks.}
+A node with zero AC is considered \emph{overwhelmed}.
+The overwhelmed nodes cannot serve any further storing request, and may cause serious durability problems if DHT keeps pushing storing requests to them.
+\lijl{One way to rephrase this point: guarantees of traditional DHT assume that each node always accepts a store request. Violating that assumption will break the guarantees.}
+\gd{Updated.}
+
+We simulate Swarm to provide a comprehensive study on the available capacities of storage nodes in a DHT storage network.
+The setup details of the simulation are stated in \autoref{sec:overview}.
+As shown in \autoref{fig:ac-distr}, the AC of storage nodes in DHT scatters across the wide range.
+For the nodes with the same size, their AC distributes across 10 different magnitudes (of the powers of two).
+And the average AC of nodes of different sizes monotonically increases as the node sizes, ranging in 9 magnitudes even though the node sizes only spans across 7 magnitudes.
+This is because the expected \emph{utilized} capacity of every node is the same, regardless of the storage node size.
+And that same utilized capacity would bring the AC of smaller nodes more magnitudes down than the larger ones.
+As the result, while some of the smallest ($2^{10}$) nodes have already hit zero AC and been overwhelmed, the largest $2^{17}$ nodes also utilized around $2^{10}$ which is less than 1\% of their capacities, and the overall utilization is just single digit percentages.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{data/simulation/graphs/overwhelm}
+    \caption{Left: the overall utilization (solid) and rejection rate (dashed) when overwhelmed nodes reject storing requests.
+    Right: the data loss rate (solid) and the overall utilization (dashed) when overwhelmed nodes evicts randomly.
+    The straight dashed line hints the utilization should be occupied with stored contents; the difference between dashed lines are evicted.}
+    \label{fig:overwhelm}
+    \Description{}
+\end{figure}
+
+\paragraph{Problem with overwhelmed nodes.}
+If DHT still pushes storing requests to an overwhelmed node, it can only choose to either reject the requests or evict previously-stored contents.
+\autoref{fig:overwhelm} shows the consequences of both choices.
+With rejection, the storage network hardly accepts any further requests when only about 10\% of overall capacity is utilized, and the rejection rate already increase to more than 90\%.
+With eviction, the storage network starts to evict at only 6\% of overall utilization, and starts to lose data soon after that.
+
+And even worse, the durability can be affected even when no new request is coming externally.
+When the nearby nodes churn, internal re-replication may be pushed to overwhelmed nodes as well.
+Not to mention in the case of network scaling down, which could due to the normal fluctuation or simply false positive caused by transient network partitioning, the redundancy kept by the left nodes ``collapses'' on the remaining nodes.
+In such case, the overwhelmed nodes have no choice but to evict (either previously-stored or re-replicated contents), which leads to irreversible data loss.
+
+\paragraph{The virtual node approach is not effective.}
+The previous works~\cite{zhu2005efficient, zhang2010novel} widely use the virtual node approach to load balance in DHT.
+In this approach, a storage node spawns variable number of virtual nodes, which participant into DHT normally.
+In this case each virtual node receives similar workload, and the storage nodes that spawn more virtual nodes can receive more workload and utilize more capacity.
+
+Unfortunately, the virtual node approach is not as promising as it looks like.
+Our simulation (\autoref{fig:ac-distr}) shows that the AC distribution of nodes of the same size still varies a lot.
+Although the virtual nodes that belong to the same storage node can share their underlying capacities, the small storage nodes with few virtual nodes are still easily overwhelmed.
+Furthermore, the AC of storage nodes are still not balanced even if the AC of virtual nodes is balanced, as the storage nodes that spawn more virtual nodes will have a higher aggregated AC.
+And lastly, the virtual node approach introduce extra implication of correlations among the virtual nodes.
+As DHT is not aware of the ownership of the virtual nodes, it may accidentally allocate redundancy of the same content to different virtual nodes of the same storage node.
+This results in a weaker durability than expected.
+
+%In conclusion, while today's DHT can \emph{balance} well across homogeneous nodes, it fails to \emph{differentiate} well across heterogeneous nodes.
+%The heterogeneity nature of decentralized systems captures this inability, and results in the suffering durability of DSNs.
+
+\iffalse
+
 \subsection{Decentralized Storage Networks in Blockchains}
 \label{sec:bg:dsn}
 
@@ -151,72 +290,4 @@ The mean time to data lost (MTTDL) can further be derived as $\frac{1}{\epsilon}
 %On the other hand, the nodes do not and cannot decide what to store, so they do not compete with each other.
 %\lijl{Decentralized metadata is the key problem here. IPFS address how to store metadata in a decentralized network, but it doesn't solve how the assignment metadata is generated in a decentralized manner. The other approaches help, but their assignment strategies still have issues.}
 %\gd{Rephrased.}
-
-\subsection{The Problem with DHT}
-\label{sec:bg:problem}
-
-DHT relives the burden of the storage nodes by taking the responsibility of placing contents on them, so it becomes critical that how well DHT can make proper placement decisions.
-Since the network \emph{pushes} storing requests to the storage nodes, it's hard for the storage nodes to reject the requests or hand off to other nodes.
-This is because DHT's consistent hashing is symmetrically applied to \fput and \fget{}: no matter whether the requested nodes store the contents or not, the following retrieval will be routed to them nonetheless.
-The lack of stored metadata means that the outcomes of \fput cannot affect the later \fget.
-\lijl{Why is this the case?}
-\gd{Explained.}
-However, as previously mentioned, DHT randomly samples the nodes in a uniform manner.
-This means that similar amount of storing requests are pushed to every node.
-
-The durability guarantees of traditional DHTs assume that the storage nodes always accept store requests.
-The assumption is valid for metadata service like IPFS, where the actual content is stored external to the DHT, and only MB-scale data is stored on each node.
-However, it's not the case for DSNs like Swarm which directly utilize DHT as content storage, and the durability guarantee may be broken because of this.
-The storage capacity on the nodes may be exhausted.
-We measure how far the storage nodes are from exhausted with \emph{available capacity}, the number of contents a node can hold with its unused storage capacity.
-\footnote{In this work we only consider fixed-size contents and state that varied-size contents can be split into fixed-size chunks.}
-A node with zero AC is considered \emph{overwhelmed}.
-The overwhelmed nodes cannot serve any further storing request, and may cause serious durability problems if DHT keeps pushing storing requests to them.
-\lijl{One way to rephrase this point: guarantees of traditional DHT assume that each node always accepts a store request. Violating that assumption will break the guarantees.}
-\gd{Updated.}
-
-We simulate Swarm to provide a comprehensive study on the available capacities of storage nodes in a DHT storage network.
-The setup details of the simulation are stated in \autoref{sec:overview}.
-As shown in \autoref{fig:ac-distr}, the AC of storage nodes in DHT scatters across the wide range.
-For the nodes with the same size, their AC distributes across 10 different magnitudes (of the powers of two).
-And the average AC of nodes of different sizes monotonically increases as the node sizes, ranging in 9 magnitudes even though the node sizes only spans across 7 magnitudes.
-This is because the expected \emph{utilized} capacity of every node is the same, regardless of the storage node size.
-And that same utilized capacity would bring the AC of smaller nodes more magnitudes down than the larger ones.
-As the result, while some of the smallest ($2^{10}$) nodes have already hit zero AC and been overwhelmed, the largest $2^{17}$ nodes also utilized around $2^{10}$ which is less than 1\% of their capacities, and the overall utilization is just single digit percentages.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=\linewidth]{data/simulation/graphs/overwhelm}
-    \caption{Left: the overall utilization (solid) and rejection rate (dashed) when overwhelmed nodes reject storing requests.
-    Right: the data loss rate (solid) and the overall utilization (dashed) when overwhelmed nodes evicts randomly.
-    The straight dashed line hints the utilization should be occupied with stored contents; the difference between dashed lines are evicted.}
-    \label{fig:overwhelm}
-    \Description{}
-\end{figure}
-
-\paragraph{Problem with overwhelmed nodes.}
-If DHT still pushes storing requests to an overwhelmed node, it can only choose to either reject the requests or evict previously-stored contents.
-\autoref{fig:overwhelm} shows the consequences of both choices.
-With rejection, the storage network hardly accepts any further requests when only about 10\% of overall capacity is utilized, and the rejection rate already increase to more than 90\%.
-With eviction, the storage network starts to evict at only 6\% of overall utilization, and starts to lose data soon after that.
-
-And even worse, the durability can be affected even when no new request is coming externally.
-When the nearby nodes churn, internal re-replication may be pushed to overwhelmed nodes as well.
-Not to mention in the case of network scaling down, which could due to the normal fluctuation or simply false positive caused by transient network partitioning, the redundancy kept by the left nodes ``collapses'' on the remaining nodes.
-In such case, the overwhelmed nodes have no choice but to evict (either previously-stored or re-replicated contents), which leads to irreversible data loss.
-
-\paragraph{The virtual node approach is not effective.}
-The previous works~\cite{zhu2005efficient, zhang2010novel} widely use the virtual node approach to load balance in DHT.
-In this approach, a storage node spawns variable number of virtual nodes, which participant into DHT normally.
-In this case each virtual node receives similar workload, and the storage nodes that spawn more virtual nodes can receive more workload and utilize more capacity.
-
-Unfortunately, the virtual node approach is not as promising as it looks like.
-Our simulation (\autoref{fig:ac-distr}) shows that the AC distribution of nodes of the same size still varies a lot.
-Although the virtual nodes that belong to the same storage node can share their underlying capacities, the small storage nodes with few virtual nodes are still easily overwhelmed.
-Furthermore, the AC of storage nodes are still not balanced even if the AC of virtual nodes is balanced, as the storage nodes that spawn more virtual nodes will have a higher aggregated AC.
-And lastly, the virtual node approach introduce extra implication of correlations among the virtual nodes.
-As DHT is not aware of the ownership of the virtual nodes, it may accidentally allocate redundancy of the same content to different virtual nodes of the same storage node.
-This results in a weaker durability than expected.
-
-%In conclusion, while today's DHT can \emph{balance} well across homogeneous nodes, it fails to \emph{differentiate} well across heterogeneous nodes.
-%The heterogeneity nature of decentralized systems captures this inability, and results in the suffering durability of DSNs.
+\fi
