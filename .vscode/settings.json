@@ -2,6 +2,7 @@
     "latex.linter.enabled": false,
     "cSpell.words": [
         "Kademlia",
+        "Merkle",
         "permissionless"
     ]
 }

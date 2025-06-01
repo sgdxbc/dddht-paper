@@ -4,7 +4,7 @@ PAPER := paper
 TEX := $(shell find ./ -type f -name "*.tex")
 CLS := $(shell find ./ -type f -name "*.cls" -o -name "*.sty")
 BIB := $(shell find ./ -type f -name "*.bib")
-FIG := $(shell find ./ -type f -name "*.pdf")
+FIG := $(shell find ./figs ./data/simulation/graphs -type f -name "*.pdf")
 
 PAPER_DEPS := $(TEX) $(CLS) $(BIB) $(FIG)
 
