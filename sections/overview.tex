@@ -175,52 +175,13 @@ By \emph{balancing} the AC of the nodes, \dht manages to \emph{differentiate} th
 \fi
 
 \paragraph{Simulation setup.}
-We than verify the effectiveness of \dht with various simulations.
-Without further statement the simulations are performed with 12k nodes, and each node can store $2^{10}$ contents at minimum and $2^{17}$ at maximum.
-This means the node classes are between 10 and 17.
+We evaluate \sys with a simulated DSN.
+Without further clarification, the simulations are performed with 12k nodes, and each node can store $2^{10}$ contents at minimum and $2^{17}$ at maximum.
+So the node class values are between 10 and 17.
 The node capacities follow a shifted Zipf distribution~\cite{zipf} with skewness set to $1$.
-Besides \dht, we also simulate a vanilla DHT as the compared baseline.
-We replicate each content with 3 copies.
+Besides \dht, we also simulate a vanilla Kademlia DHT as the compared baseline.
+We replicate each content with 3 copies, \ie, $r=3$.
 Finally, we repeat each simulation 100 times and report the average and error of the results.
-
-\begin{figure}
-    \centering
-    \includegraphics[width=\linewidth]{data/simulation/graphs/capacity-freq}
-    \caption{The CDF and per-class averages of capacity discoverability.}
-    \label{fig:freq}
-    \Description{}
-\end{figure}
-
-In \autoref{fig:freq} we show the CDF and per-class averages of \emph{capacity discoverability}.
-In this simulation we perform 1 million \ffind with uniformly random \vid{}s.
-The node discoverability is measured by the frequencies of the nodes appears in the results, and we report capacity discoverability, which is node discoverability divided by the node's capacity.
-The CDF shows that \dht's capacity discoverability is more balanced while the vanilla DHT has a long tail \ie some capacity has much higher discoverability than the others.
-The per-class averages reveal the source of this difference: in the vanilla DHT, the storage nodes with lower classes has exponentially higher capacity discoverability, while in \dht, thanks to the macro-differentiation, capacities that belong to various sizes of nodes have balanced discoverability.
-
-Then, we perform 10 million \fput of random contents into the simulated DSNs.
-With \dht there is no single node that is overwhelmed, while the results with the vanilla DHT is shown in \autoref{fig:overwhelm} and described in \autoref{sec:bg:problem}.
-
-\begin{figure}
-    \centering
-    \includegraphics[align=t,width=0.16\linewidth]{data/simulation/graphs/ac-distr}
-    \includegraphics[align=t,width=0.53\linewidth]{data/simulation/graphs/nc-ac}
-    \caption{Available capacity distribution of the nodes of the same size, and the average available capacities of nodes of different sizes.}
-    \label{fig:ac-distr}
-    \Description{}
-\end{figure}
-
-To further study how well \dht can balance the availability capacity, in \autoref{fig:ac-distr} we plot the AC of all nodes with $2^{10}$ capacity, and the average AC of nodes of different sizes.
-In \dht the nodes with $2^{10}$ capacity have basically all their capacities available, because \dht tends to first utilize the larger nodes for their higher AC.
-As shown in the line plot, the AC of larger nodes is significantly lower than the vanilla DHT.
-The saw shape line is because of the error introduced by node class: the node capacity is approximated with the closest power-of-two, which causes over- and under-utilization of nodes whose capacities are in the middle of consecutive power-of-two.
-
-Finally, we perform a stress simulation by continuing \fput random contents (with random eviction on overwhelmed nodes) until data loss, and report the overall utilization in \autoref{fig:util-loss}.
-We simulate with different skewness of node capacities, from 1 where the capacities are highly nonuniform, to 2 where most of the nodes have the same $2^{10}$ capacity.
-We further perform ablation study on the effectiveness of the macro- and micro-differentiation.
-The results show that both differentiation provide improvement.
-The macro-differentiation is effective with imbalance capacity, and degrade to vanilla DHT when the skewness is high and most nodes have the same node class.
-The micro-differentiation, on the other hand, yields perfect utilization at high skewness, but becomes ineffective when the capacity is imbalanced.
-\dht combines the two improvement and outperforms vanilla DHT by more than 60\% utilization at any skewness, and can reach at most 100\% utilization at high skewness.
 
 \begin{figure}
     \centering
@@ -229,3 +190,47 @@ The micro-differentiation, on the other hand, yields perfect utilization at high
     \label{fig:util-loss}
     \Description{}
 \end{figure}
+
+In the first simulation, we perform a stress simulation by continuously storing random data (with random eviction on storage exhaustion) until data loss, and report the overall utilization in \autoref{fig:util-loss}.
+We simulate with different skewnesses of node capacities, from 1 where the capacities are highly nonuniform, to 2 where most of the nodes have the same $2^{10}$ capacity.
+We further perform ablation study on the effectiveness of the classified distance equation and the 2RC design.
+The results show that both designs provide improvement, but in distinct ways.
+The classified distance equation is effective by its own with diverse capacities, but degrade to Kademlia's performance when the skewness is high and most nodes have the lowest node class.
+2RC, on the other hand, yields perfect utilization under high skewness, but becomes ineffective when the capacity is imbalanced.
+Finally, \dht combines the improvement by both of them and outperforms Kademlia by more than 60\% utilization at any skewness, and can reach at most 100\% utilization at high skewness.
+The simulation shows that \dht accomplish its goal of optimizing effective overall utilization, and both designs are effective as expected.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{data/simulation/graphs/capacity-freq}
+    \caption{The CDF and per-class averages of the storing likelihoods.}
+    \label{fig:freq}
+    \Description{}
+\end{figure}
+
+We continue with a series of micro-benchmarks to analyze \dht's performance in depth.
+In \autoref{fig:freq} we show the CDF and per-class averages of the storing likelihoods.
+In this simulation we generate 1 million data keys with uniform randomness.
+The per-node storing likelihoods are measured with the frequencies of the nodes appears in the placement groups, and we report per-storage likelihoods, which are the per-node likelihoods divided by the nodes' storage capacities.
+The CDF shows that \dht's likelihood is more balanced than the Kademlia's one, which has a long tail \ie some units of storage capacity has much higher likelihood than the others.
+The per-class averages reveal the source of this difference: in the Kademlia, the storage nodes with lower classes has exponentially higher likelihood.
+This is because those nodes has exponentially smaller storage capacities, but this heterogeneity is not respected by Kademlia and those nodes are assigned with overwhelming storing likelihoods.
+
+Then, we perform 10 million storing attempts with the simulated DSNs.
+With \dht all storing attempts are successful, and no node is running out of space. 
+The results of Kademlia are shown in \autoref{fig:overwhelm} and described in \autoref{sec:bg:problem}.
+
+\begin{figure}
+    \centering
+    \includegraphics[align=t,width=0.16\linewidth]{data/simulation/graphs/ac-distr}
+    \includegraphics[align=t,width=0.53\linewidth]{data/simulation/graphs/nc-ac}
+    \caption{The comparisons of the available storage space distributions.}
+    \label{fig:ac-distr}
+    \Description{}
+\end{figure}
+
+To further study how well \dht can equalize the availability storage space, in \autoref{fig:ac-distr} we plot the distribution of the available storage space of the nodes with $2^{10}$ capacity on the left, and we average the available storage space of nodes of different sizes and plot them on the right.
+In \dht the nodes with the smallest $2^{10}$ capacity have basically 0 utilization and have all their capacities available, and the nodes with larger capacities have significantly less available spaces compared to Kademlia. 
+This is because \dht tends to first utilize the larger nodes as stated earlier in this section.
+The saw shape line is because of the error introduced by node class: the node capacity is approximated with the closest power-of-two, which causes over- and under-utilization of nodes whose capacities are in the middle of consecutive power-of-two.
+As shown later, the affection of this error is minor, and we presume this is because 2RC effectively fixes it.

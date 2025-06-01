@@ -41,7 +41,7 @@ then, the key is assigned to the nodes $G_k$ who have the smallest distances to 
     G_k=\{n\mid{}d(k,ID[n_i])<d(k,ID[n]),n\in{}\mathfrak{N}\setminus{}G_k,i\in{}[1,\dots,r]\}
 \]
 where $ID$ is the mapping from nodes to their identities, $\mathfrak{N}$ is the set of all nodes and $r$ is the configurable \emph{redundancy rate} of the network, \ie, the size of the placement groups.
-In practice $r$ is usually set to $20$ to tolerate frequent node churning and failures in permissionless systems.
+% In practice $r$ is usually set to $20$ to tolerate frequent node churning and failures in permissionless systems.
 
 In Kademlia, each node keeps a set of node records that are effectively randomly sampled from all nodes.
 The density of the sampled nodes depends on the distance between identities of the storing node and the record.
