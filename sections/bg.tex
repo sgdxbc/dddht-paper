@@ -2,6 +2,7 @@
 \label{sec:bg}
 
 \subsection{Distributed Hash Tables}
+\label{sec:bg:dht}
 
 In this section we first introduce the elementary on distributed hash tables, and then elaborate in their recent usages in decentralized storage networks.
 
@@ -37,9 +38,9 @@ Given a key $k$, the \emph{distance} $d$ between the key and a node whose identi
 \]
 then, the key is assigned to the nodes $G_k$ who have the smallest distances to the key for storing
 \[
-    G_k=\{id_i\mid{}d(k,id_i)<d(k,id),id\in{}ID\setminus{}G_k,i\in{}[1,\dots,r]\}
+    G_k=\{n\mid{}d(k,ID[n_i])<d(k,ID[n]),n\in{}\mathfrak{N}\setminus{}G_k,i\in{}[1,\dots,r]\}
 \]
-where $r$ is the configurable \emph{redundancy rate} of the network, \ie, the size of the placement groups.
+where $ID$ is the mapping from nodes to their identities, $\mathfrak{N}$ is the set of all nodes and $r$ is the configurable \emph{redundancy rate} of the network, \ie, the size of the placement groups.
 In practice $r$ is usually set to $20$ to tolerate frequent node churning and failures in permissionless systems.
 
 In Kademlia, each node keeps a set of node records that are effectively randomly sampled from all nodes.
@@ -129,7 +130,7 @@ In the case of the whole network scaling down, which may just be caused by ordin
 \paragraph{Problem settings.}
 In summary, we show the problem of combining a DHT that homogeneously distributes the storage load and the storage nodes with heterogeneous storage capabilities.
 The ultimate goal is to optimize for the \emph{effective overall utilization}: the faction of the aggregated storage capacity of the nodes that a DSN can utilize before it exhausts the storage space of individual storage nodes and suffers from responsiveness and/or availability degradation.
-The primary ability required for DHTs to achieve the goal is to allocate placement groups respecting to the storage heterogeneity, including the nodes with more storage capacities into more placement groups.
+The primary ability required for DHTs to achieve the goal is to allocate placement groups respecting to the storage heterogeneity, forwarding more store requests to the nodes with more storage.
 As we discuss in the following section, previous works fail to enhance DHTs with such ability.
 
 \subsection{Previous Studies}
@@ -159,7 +160,9 @@ Also, as they concern nonuniform per-key load, they are helpful on balancing ban
     In this work we consider fixed-length values/data blocks, and assume large data is split into segments like ~\cite{benet2014ipfs}.
 }.
 On the other hand, weighted DHT~\cite{schindelhauer2005weighted} purposes to assign weights to the nodes according to certain heterogeneity aspects, which seems to fit the problem settings.
-However, without a global view of the storage capacity distribution, a node cannot assign a proper weight to itself only according to its own storage capacity.
+However, the semantic of \emph{weighted} is subtly different from the desired \emph{bounded}.
+Specifically, the load should be distributed proportional to the remaining available storage spaces of the nodes instead of their total storage capacities.
+We will elaborate on this difference in \autoref{sec:overview}.
 Also, the work requires spawning multiple virtual nodes, so it does not suit the storage heterogeneity as discussed previously.
 
 Recently, \cite{mirrokni2018consistent} designs a consistent hashing scheme that respects bounded loads.

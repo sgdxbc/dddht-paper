@@ -1,6 +1,98 @@
 \section{Design and Preliminary Evaluation}
 \label{sec:overview}
 
+In this section we propose \dht, a novel DHT design that optimized for \emph{effective overall utilization} of heterogeneous storage nodes (\autoref{sec:bg:problem}).
+As shown later, the key to improve effective overall utilization is to allocate nodes with more available storage spaces into more placement groups, so the storage resources on the nodes are exhausted in the same pace.
+\dht's main idea is to assign different likelihoods of being included into the placement groups of random keys to the nodes with different available storage spaces.
+It realizes this idea with two designs.
+The first design is classified distance equation, which is similar to the weighted equation proposed by \cite{schindelhauer2005weighted}, but features a simpler design and does not require the assistance from virtual node.
+The second design employs the power of two random choices~\cite{sitaraman2001power}.
+Next, we will give intuitions on the designs and refer to future work for a detailed DHT specification.
+Finally, we will end the section by discussing the preliminary results.
+
+\paragraph{Equalize the available storage spaces.}
+Given two storage nodes, one with $100\times$ storage capacity than the other one, how can we store as much data into them as possible without overwhelming any of them?
+One naive approach may be to set the likelihood of the store request landing on the larger node $100\times$ to the likelihood of landing on the smaller one.
+However, a better approach would be set the storing likelihood of the smaller node to 0, until the larger one has stored lots of data and has exactly same available storage capacity as the smaller one, then we adjust the storing likelihood of the smaller node to be the same as the larger one.
+Let's say the larger node can store 100 data while the smaller one can store only one.
+With the naive approach, we have around $1\%$ probability of exhausting the smaller node on every store request, and the probability of storing 99 data without exhausting the smaller node (\ie, all store requests landed on the larger node) is only $37.3\%$.
+While with the better approach, we can store the first 99 data and $100\%$ not exhaust any node.
+In conclusion, we should not \emph{statically} assign the likelihood for each node to be picked up for storing based on their total storage capacities.
+Instead, the likelihoods should be \emph{dynamically} adjusted so that ideally the nodes are not utilized at all when there are existing nodes whose available storage spaces are larger than theirs.
+
+Notice that the preference of nodes with more available storage space does not affect the data availability.
+Although the small nodes will be idle and cannot participate into fault tolerance when the overall utilization is low, the copies of the same data will always reside on different nodes.
+Thus, the nonuniform distribution of the storage resource is still the only source of undesired failure correlation, about what we can do nothing.
+
+This dynamical adjustment is obviously challenging in decentralization networks.
+Our solution consists of two designs.
+We first replace Kademlia's distance equation with classified distance equation to provide ``a first approximation'', achieving the effect of the naive approach.
+Then we introduce the power of two random choices to probabilistically offset the error.
+
+\paragraph{Classified distance equation.}
+Recall from \autoref{sec:bg:dht} that Kademlia's distance $d$ between a key $k$ and a node whose identity is $id$ is calculated as $k\ \texttt{xor}\ id$.
+We associate each node with a \emph{class}, a non-negative integer whose value is limited by the bit length of $id$ and $k$ (\eg, less than 256 for a $2^{256}$ hash space).
+Nodes can set their class values to the logarithm of their storage capacities, so the class value increases by one when the storage capacity doubles.
+Then, we modify Kademlia's distance equation to take the node's class $c$ into account
+\[
+    d'(k, id, c)=(k\ \texttt{xor}\ id)\ \texttt{mod}\ 2^{K-c}
+\]
+where $K$ is the bit length of $k$ and $id$ (\eg, $K=256$).
+We call $d'$ the \emph{classified distance equation}.
+Then, the data placement equation of Kademlia is modified to use $d'$ instead of $d$
+\begin{multline*}
+    G_k=\{n\mid{}d'(k,ID[n_i],C[n_i])<d'(k,ID[n],C[n]),\\
+    n\in{}\mathfrak{N}\setminus{}G_k,i\in{}[1,\dots,r]\}
+\end{multline*}
+where $C$ is the mapping from nodes to their classes.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\linewidth]{figs/distance}
+    \caption{A node with $id=0100$ and different class values.
+    The gray regions are ``covered'' by the studied node, \ie, the node has the closest distance to any point in the regions.}
+    \label{fig:distance}
+    \Description{}
+\end{figure}
+
+One way to intuitively perceive the classified distance equation is that, it effectively assigns multiple identities to a node, the number of whom depends on the node's class.
+And each of those identities calculates a distance with the original equation $d$.
+And finally, the smallest distance produced by the identities is selected.
+\autoref{fig:distance} illustrates a concrete example, where the studied node is marked with star and other nodes are marked with circles.
+The node whose $id=0100$ is additionally ``assigned'' with $id_1=1100$ when it's class $c=1$ (showing as a ghost star in the illustration), and $d'$ yield distance $1$ for key $k=1101$, which is the smaller one between the original distances $d(id,k)$ and $d(id_1,k)$.
+When $c=2$, two more identities are assigned to the node, and so on.
+As the result, the node is getting closer to more keys in the hash space, and it will be picked for storing more and more keys as its class increases, marked with the gray regions.
+The storing key range of a node is approximately doubled as its class increases by one, which means its storage capacities doubles.
+Eventually, the storing key range is proportional to the node's storage capacity, which means the likelihood of receiving store request is proportional to the storage capacity.
+
+While the final effect is similar to what virtual node achieves, the fundamental difference is that we are not \emph{actually} assign multiple identities to a (physical) node.
+Instead of indirectly express our heterogeneous intent to an unmodified DHT, we extend the DHT to be able to be aware of the heterogeneity by itself, \ie, its consistent hashing scheme not accepts extra class values indicating the heterogeneity.
+We argue that modify the DHT design is necessary to express both the storage heterogeneity and the \emph{correct} storage failure correlation.
+
+In order to support classified distance equation, the retaining policy of node records and the iterative lookup procedure (\autoref{sec:bg:dht}) need to be modified accordingly.
+We refer to future work for these details and a reconfiguration protocol for nodes to adjust their classes based on the dynamical changes of their storage capacities.
+Noticeably, nodes must relocate the placement groups of the stored data and transfer them away if necessary before decrementing their classes to avoid DHT forward the following accessing to the reallocated nodes of the placement groups while they are not storing the data.
+
+\paragraph{The power of two choices (2RC).}
+As discussed previously, classified distance equation, which corresponds to the naive approach, leaves a small chance for forwarding the store requests to the nodes with less available storage space.
+To counter this, we introduce 2RC into Kademlia's lookup procedure.
+Each key is hashed twice with distinct hashing algorithms, and for brevity, we say that each data has two distinct keys.
+The lookup procedure will discover the placement groups for both of the keys.
+Then, if the node is storing or modifying the data, the store request goes to one of the placement group whose nodes have larger available space.
+Otherwise, if the node is retrieving the data, the retrieve request is sent to both of the groups and the one storing the data will respond.
+
+In most other practice, 2RC picks two (homogeneous) backend nodes with uniform randomness.
+However, in our case, it is used in conjunction with a biased randomness yielded by the classified distance equation, which help it to perform better in the heterogeneous case.
+Before the whole storage network is saturated (by when our goal of optimizing overall utilization has been nicely done!), the nodes with larger storage capacities probably have more available storage than the smaller ones.
+The classified distance equation reduces our chance to pick those small nodes, and the chance of picking two small nodes at the same time is even smaller, only when we will first utilize the nodes with less available storage space.
+
+In conclusion, the design of \dht consists of two components at different \emph{scales}.
+The classified distance equation performs at the largest scale, globally affecting all nodes but with certain rigidity and approximation.
+2RC, on the other hand, performs at the smallest scale, only affecting nodes from two placement groups at a time, but provides the most accurate adjustment.
+By combining both components, \dht can optimize the effective overall utilization as desired.
+Next, we present our preliminary results, showing \dht's effectiveness.
+
+\iffalse
 \dht is a decentralized storage system that can provide better durability guarantee by preventing overwhelming storage nodes.
 Similar to other DSNs, \dht provides two operations
 \begin{itemize}
@@ -80,6 +172,7 @@ This may due to probabilistic fluctuation of their empirical discoverability, or
 To compensate for the real time dynamics, \dht performs \emph{micro} differentiation with 2RC.
 However unlike the typical employment of 2RC that pick the nodes with lighter load, \dht picks the nodes with more AC.
 By \emph{balancing} the AC of the nodes, \dht manages to \emph{differentiate} the discoverability of nodes with different AC, as the nodes with more AC will be more discoverable until their AC is balanced with the others.
+\fi
 
 \paragraph{Simulation setup.}
 We than verify the effectiveness of \dht with various simulations.
