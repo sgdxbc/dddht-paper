@@ -1,12 +1,6 @@
 \section{Future Work}
 
-As \dht is proved to be a promising solution with our preliminary results, we plan to complete the work as described here.
-We will develop a formal theory for \dht.
-Starting from the formal definition of node and capacity discoverability, and then formulate the probability of overwhelming any node while placing certain amount of contents, and finally the probability of losing data in a certain duration.
-Because the sample rate of nodes of different capacities (hence different classes) is different in \dht, the probability of losing data will be related to the skewness of the nodes' capacities, and it will be a nontrivial task to formulate.
-Next we will complete our simulation with discrete event simulations.
-We will simulate \dht and vanilla DHT baseline for a certain amount of time and collect various statistics, like how much overhead is brought by 2RC and whether dynamically adjusting node class will work as expected.
-We will also simulate the vanilla DHT with the virtual node approach for a more complete comparison.
-Finally, we will implement \dht and deploy it in real.
-We will set up DSN on cloud such as AWS across the worldwide regions, measure \dht's real-world \fput and \fget performances and compare with the vanilla DHT.
-We expect noticeable but acceptable overhead from \dht.
+Building upon the promising preliminary results, we intend to finalize this work as outlined.
+We will develop a formal theoretical framework for \dht. This will begin with a probabilistic definition of effective overall utilization, followed by the formulation of probabilistic utilization in terms of system parameters and the consistent hashing scheme.
+Subsequently, we will enhance our simulation efforts with discrete event simulations. These simulations will model \dht and the Kademlia baseline over a defined time period, collecting various statistics, including the overhead introduced by 2RC and the efficacy of dynamically adjusting node classes. We will also simulate Kademlia with the virtual node approach to provide a more comprehensive comparison.
+Finally, we will implement \dht and deploy it in a real-world setting. This will involve setting up DSNs on cloud infrastructure such as AWS across various global regions to measure \dht's actual data storage and retrieval performance, comparing it against Kademlia. We anticipate a noticeable but acceptable performance overhead associated with \dht.
