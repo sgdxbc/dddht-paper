@@ -63,15 +63,15 @@ One way to intuitively understand the classified distance equation is that it ef
 Each of these virtual identities then calculates a distance to a given key using the original Kademlia distance equation ($d$).
 Finally, the smallest distance among those calculated by the virtual identities is selected as the classified distance ($d'$).
 \autoref{fig:distance} provides a visual example, where the node under consideration is marked with a star, and other nodes are marked with circles.
-When the node with $id=0100$ has a class $c=1$, it is effectively "assigned" an additional virtual identity $id_1=1100$ (represented as a ghost star in the illustration). For a key $k=1101$, the classified distance $d'$ yields a value of $1$, which is the smaller of the original distances $d(id,k)$ and $d(id_1,k)$.
+When the node with $id=0100$ has a class $c=1$, it is effectively ``assigned'' an additional virtual identity $id_1=1100$ (represented as a ghost star in the illustration). For a key $k=1101$, the classified distance $d'$ yields a value of $1$, which is the smaller of the original distances $d(id,k)$ and $d(id_1,k)$.
 When the class $c$ increases to $2$, two more virtual identities are associated with the node, and so forth.
-Consequently, as its class increases, the node effectively becomes "closer" to a greater number of keys within the hash domain, increasing its likelihood of being selected for storing those keys, as indicated by the expanding gray regions.
+Consequently, as its class increases, the node effectively becomes ``closer'' to a greater number of keys within the hash domain, increasing its likelihood of being selected for storing those keys, as indicated by the expanding gray regions.
 The range of keys for which a node is responsible for storing approximately doubles with each increment of its class by one, mirroring a doubling of its storage capacity.
 Ultimately, the range of storing keys becomes proportional to the node's storage capacity, implying that the probability of a node receiving a storage request is proportional to its capacity.
 
 While the resulting effect is similar to that achieved by virtual nodes, the fundamental distinction lies in the fact that we do not \emph{actually} assign multiple identities to a single physical node.
 The DSNs' underlying assumption that each node identity corresponds to a unique physical node (i.e., a distinct failure domain) remains valid.
-Instead of operating with an unmodified DHT and indirectly representing heterogeneity in an "equivalent" manner, classified distance directly extends the DHT to be \emph{heterogeneity-aware}. Its consistent hashing scheme now inherently incorporates class values that reflect the heterogeneity of nodes.
+Instead of operating with an unmodified DHT and indirectly representing heterogeneity in an ``equivalent'' manner, classified distance directly extends the DHT to be \emph{heterogeneity-aware}. Its consistent hashing scheme now inherently incorporates class values that reflect the heterogeneity of nodes.
 We contend that modifying the DHT design is a superior approach for simultaneously addressing heterogeneity and the correct modeling of storage failure correlations.
 
 To accommodate classified distance, both the node record retention policy and the iterative lookup procedure (\autoref{sec:bg:dht}) require corresponding modifications.

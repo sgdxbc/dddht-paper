@@ -10,8 +10,8 @@ The fundamental principle of distributed hash tables is consistent hashing~\cite
 Consistent hashing provides an effective method for allocating and balancing workload across key-value and block storage systems.
 Given $m$ keys and $n$ nodes, a consistent hashing algorithm assigns $k$ nodes to each key and ensures a uniform distribution, where each node is expected to manage $\frac{km}{n}$ keys.
 Employing consistent hashing, a hash function uniformly maps both keys and storage nodes to the same hash domain, and values are assigned to one or more nodes based on their relative positions within this domain.
-For instance, certain consistent hashing schemes arrange the hash domain as a ring, and values are assigned to the initial node(s) encountered by traversing the ring in a clockwise direction.
-These designated nodes constitute the \emph{placement groups} for the values.
+For instance, certain consistent hashing schemes arrange the hash domain as a ring, and keys are assigned to the initial node(s) encountered by traversing the ring in a clockwise direction.
+These designated nodes constitute the \emph{placement groups} for the keys.
 
 Consistent hashing ensures that during resizing, only a minimal quantity of keys (specifically, the average number of keys per node) will, on average, be reassigned to a different node.
 This attribute renders consistent hashing a desirable placement strategy in environments with dynamic node changes or fault tolerance requirements.
@@ -19,20 +19,18 @@ Consistent hashing is favored in datacenter storage solutions due to its indepen
 Nodes and clients can independently determine data locations, enhancing both performance and resilience.
 Consistent hashing is implemented in industrial-scale storage systems like Ceph~\cite{weil2006ceph}, Cassandra~\cite{lakshman2010cassandra}, and Dynamo~\cite{decandia2007dynamo}, and is extensively researched for application in distributed databases~\cite{shu2020th,liu2019distcache,chung2019lightstore}, network load balancers~\cite{eisenbud2016maglev}, and cloud infrastructures~\cite{nakatani2021structured,wu2019autoscaling}.
 
-In highly dynamic or asynchronous environments, such as public peer-to-peer (P2P) networks with frequent node failures, maintaining an updated list of online nodes can be challenging for each participant.
-Furthermore, systems may expand to encompass tens or hundreds of thousands of nodes, making it impractical for every individual node to store all node identities and contact information (\eg IP addresses).
+In highly dynamic or asynchronous environments, such as public peer-to-peer (P2P) networks with frequent node failures, maintaining an updated list of online nodes can be challenging for individual participants.
+Furthermore, systems may expand to encompass tens or hundreds of thousands of nodes, making it impractical for every individual node to store all node identities and contact information (\eg IP addresses)~\cite{trautwein2022design}.
 Distributed hash tables (DHTs)~\cite{maymounkov2002kademlia,chord,rowstron2001pastry} are constructed upon consistent hashing to address these challenges.
 Utilizing DHT protocols, nodes can dynamically \emph{discover} the current placement groups of keys while locally storing contact details for only a small fraction of the nodes.
 Fundamentally, DHT protocols organize nodes into an \emph{overlay network} that directs keys to their respective placement groups.
 Behind the scene, DHTs distribute node records, associating node identities with their contact information, across the network.
-DHT protocols incorporate a record retention policy, where nodes determine which records to store locally, and a lookup protocol that iteratively identifies the node(s) forming the placement group for a given key.
+DHT protocols incorporate a record retention policy, where nodes determine which records to store locally, and a lookup protocol that iteratively identifies the nodes forming the placement group for a given key.
 DHT protocols promote efficient network and storage utilization.
-
-Understood, "hash space" will be replaced with "hash domain."
 
 Kademlia~\cite{maymounkov2002kademlia} is the most prevalent DHT protocol, and serves as the primary focus of our investigation.
 Kademlia ensures logarithmic network and storage overhead.
-Within a network of $N$ nodes, each node maintains $O(\log{N})$ records, and key lookups are expected to conclude within $O(\log{N})$ message exchanges.
+Within a network of $N$ nodes, each node maintains $O(\log{N})$ records, and key lookups are expected to conclude after consulting $O(\log{N})$ nodes.
 The consistent hashing algorithm employed by Kademlia is straightforward.
 Given a key $k$ and a node with identity $id$, the \emph{distance} $d$ between them is the unsigned integer derived from the bitwise exclusive OR operation of $k$ and $id$\footnote{For brevity, \emph{key} and \emph{identity} are used to denote their respective mapped hash values, which reside within the same hash domain and possess identical length.}
 \[
@@ -40,14 +38,14 @@ Given a key $k$ and a node with identity $id$, the \emph{distance} $d$ between t
 \]
 Subsequently, the key is assigned for storage to the set of nodes $G_k$ exhibiting the smallest distances to the key
 \[
-    G_k=\{n\mid{}d(k,ID[n_i])<d(k,ID[n]),n\in{}\mathfrak{N}\setminus{}G_k,i\in{}[1,\dots,r]\}
+    G_k=\{n_i\mid{}d(k,ID[n_i])<d(k,ID[n]),n\in{}\mathfrak{N}\setminus{}G_k,i\in{}[1,\dots,r]\}
 \]
 where $ID$ represents the mapping from nodes to their identities, $\mathfrak{N}$ denotes the set of all nodes, and $r$ signifies the configurable \emph{redundancy rate} of the network, corresponding to the size of the placement groups.
 % In practice $r$ is usually set to $20$ to tolerate frequent node churning and failures in permissionless systems.
 
 Within Kademlia, each node maintains a collection of node records that are effectively a random sampling of all participating nodes.
 The concentration of these sampled nodes is configured to decrease exponentially with increasing distance between the identity of the local node and the identity of the recorded node.
-Conceptually, each node possesses a comprehensive understanding of its immediate "neighbors" while having limited knowledge of more distant peers.
+Conceptually, each node possesses a comprehensive understanding of its immediate ``neighbors'' while having limited knowledge of more distant peers.
 To locate a key, nodes initialize a candidate list with the locally stored records that exhibit the smallest distance to the target key and subsequently query each candidate.
 The queried nodes respond by providing the closest records from their own local storage, and the querying node updates its candidate list accordingly.
 This querying node then iteratively contacts subsequent candidates until the list stabilizes at a fixed set of nodes, which constitutes the placement group for the key.
@@ -55,20 +53,23 @@ For detailed information, readers are directed to the original publication~\cite
 Consequently, the node can either store or modify the value associated with the key on these identified nodes or retrieve a previously stored value from them.
 
 Since its emergence in the early 2000s, DHT protocols have been widely adopted in P2P storage networks~\cite{kubiatowicz2000oceanstore,ratnasamy2001scalable,benet2014ipfs,trautwein2022design,haeberlen2005glacier}, for its desirable functionality in such permissionless settings.
+\gd{OceanStore dates before DHT, but its distributed data structure is highly similar...}
 These storage networks are modernized into the concept of decentralized storage network (DSN) and gaining wide attention, influenced by the recent progress in decentralized technologies~\cite{bitcoin,ethereum}.
 One of the most well-known DSNs is FileCoin~\cite{filecoin}, a decentralized storage network built upon the InterPlanetary File System (IPFS)~\cite{benet2014ipfs,trautwein2022design}.
-IPFS is a protocol and peer-to-peer network for storing and sharing data using content addressing. Files and directories in IPFS are represented as Merkle directed acyclic graphs (DAGs). In FileCoin, the contact information of \emph{providers}, the storage nodes hosting the content of DAG vertices, is stored in a Kademlia DHT.
+IPFS is a protocol and P2P network for storing and sharing data using content addressing~\cite{ratnasamy2001scalable}, \ie, the key of data depends on its content.
+Files and directories in IPFS are represented as Merkle directed acyclic graphs (DAGs).
+The contact information of \emph{providers}, the storage nodes hosting the content of DAG vertices, is stored in a Kademlia DHT.
 Clients can query the DHT to discover the providers of specific DAG vertices\footnote{
     This discovery process differs from the placement group discovery within the DHT itself.
-    Looking up the DHT locates the placement group responsible for storing provider contact details; retrieving these details from the placement group then reveals the providers.
+    Looking up the DHT locates the placement groups responsible for storing provider contact details; retrieving these details from the placement groups then reveals the providers.
 } and subsequently download the content from them.
 Similarly, since 2005, BitTorrent has employed Mainline DHT~\cite{wang2013measuring,xinxing2016measurement}, a Kademlia DHT variant, for peer discovery.
 Recent research~\cite{cortes2024scalability} proposes the use of Kademlia DHT in Ethereum~\cite{ethereum} to discover validators storing blob shards, enabling privacy-preserving data availability sampling~\cite{hall2023foundations} against the blob storage network.
 
 While these DSNs utilize DHTs to organize nodes for storing lightweight metadata about the actual stored data, numerous storage systems directly employ DHT protocols for data placement, meaning the actual data is stored as the values associated with keys.
 These systems encompass various DSNs, including Glacier~\cite{haeberlen2005glacier}, OceanStore~\cite{kubiatowicz2000oceanstore}, CFS~\cite{dabek2001wide}, and PAST~\cite{druschel2001past}.
-More recently, Swarm~\cite{team2021swarm} presents an innovative DSN that reliably manages data through a hybrid strategy combining DHTs and replication.
-All nodes join a Kademlia overlay network, enabling mutual discovery. Nodes whose identities exhibit a distance below a specific threshold (i.e., sharing a common prefix of a certain length) form a "neighborhood," where members fully replicate each other's stored data.
+More recently, Swarm~\cite{team2021swarm} presents an innovative DSN that reliably manages data through a hybrid strategy combining DHT and replication.
+All nodes join a Kademlia overlay network, enabling mutual discovery. Nodes whose identities exhibit a distance below a specific threshold (i.e., sharing a common prefix of a certain length) form a ``neighborhood'', where members fully replicate each other's stored data.
 Essentially, Kademlia assigns data to these neighborhoods, and the designated neighborhoods ensure high availability by replicating the data internally.
 
 In contrast to centrally managed environments where consistent hashing is primarily implemented for performance enhancement or to mitigate single points of failure, DHT protocols in permissionless DSNs serve as a fundamental mechanism to address the inherent limitations posed by their highly dynamic and P2P nature. They facilitate a reasonably balanced distribution of data placement across nodes that operate without central coordination.
@@ -125,8 +126,6 @@ If the reassigned node lacks sufficient free storage to accommodate the transfer
 In situations where the entire network scales down, potentially due to normal fluctuations or temporary network partitioning, such data discarding can occur on a massive scale. Any data loss resulting from this process is irreversible, even if the network typically scales back up shortly thereafter.
 
 % \xxx{Summary the problem. Declare all the goals we want to achieve/all the issues we want to address.}
-Understood, the word "heterogeneous" will be used instead of synonyms like "diverse."
-
 \paragraph{Problem settings.}
 In summary, we highlight the challenge of integrating a DHT, which distributes the storage load homogeneously, with storage nodes possessing heterogeneous storage capacities within permissionless storage networks.
 The overarching objective is to optimize the \emph{effective overall utilization}: the proportion of the total storage capacity across all nodes that a DSN can utilize before any individual storage node reaches its capacity limit, leading to a decline in usability or availability.
