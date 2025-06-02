@@ -81,16 +81,16 @@ While IPFS and BitTorrent store only indexing metadata in DHTs, resulting in min
 In fact, managing data placement in DSNs to keep individual node storage utilization within their capacity limits is considerably more challenging than in centrally managed systems.
 Firstly, the decentralized nature of these networks means nodes are not centrally managed, orchestrated, or monitored, making it difficult to ascertain their real-time status and ensure timely reactions from them.
 Secondly, unlike the typically homogeneous machines in centrally managed systems, DSNs can comprise nodes with vastly different storage capacities, ranging from mobile devices contributing tens of gigabytes of spare storage to professional storage clusters providing terabytes of dedicated capacity.
-Assigning equal storage load to such heterogeneous nodes can lead to large-capacity nodes being significantly underutilized even at low overall utilization, while, more critically, the smallest-capacity nodes can become overwhelmed at relatively low overall utilization levels.
+Assigning equal storage load to such heterogeneous nodes can lead to large-capacity nodes being significantly underutilized, while, more critically, the smallest-capacity nodes can become overwhelmed at relatively low overall utilization levels.
 
 Surprisingly, the data placement in DHTs is inherently uniform across all nodes, irrespective of their storage capacities, a factor that prior DSNs have largely disregarded.
 In Kademlia, both keys and node identities are uniformly distributed throughout the hash value domain\footnote{
-    While users can theoretically select arbitrary keys for storing data, which may not be uniformly distributed (and some prior work has leveraged this), this approach is not readily applicable to permissionless environments.
+    While users can theoretically select arbitrary keys for storing data, which may not be uniformly distributed (and some prior work has leveraged this), this approach is not readily applicable to permissionless and untrusted environments.
 }.
 Consequently, the probability of any given node being included in the placement group of a key is equal for all nodes, leading to the same expected number of placement group memberships for every node.
 The fundamental challenge is that Kademlia, along with other DHTs mentioned earlier, does not incorporate node \emph{heterogeneity} into its consistent hashing algorithm, despite the critical importance of acknowledging storage heterogeneity for efficient and even correct utilization of available storage.
 Previous DSN research has not adequately addressed this specific issue.
-For instance, Glacier simply rejects storage requests when nodes within the designated placement group have reached their storage limit.
+For instance, Glacier simply rejects storage requests when nodes within the designated placement group have reached their storage limits.
 Swarm proposes an economic eviction policy where nodes discard stored data with the lowest bid value when they run out of space, thus failing to provide a strict guarantee of data availability.
 
 % too niche and maybe not a problem, forget about it for now
@@ -127,10 +127,10 @@ In situations where the entire network scales down, potentially due to normal fl
 
 % \xxx{Summary the problem. Declare all the goals we want to achieve/all the issues we want to address.}
 \paragraph{Problem settings.}
-In summary, we highlight the challenge of integrating a DHT, which distributes the storage load homogeneously, with storage nodes possessing heterogeneous storage capacities within permissionless storage networks.
+In summary, we highlight the challenge of integrating a DHT, which distributes the storage load uniformly, with storage nodes possessing heterogeneous storage capacities within permissionless storage networks.
 The overarching objective is to optimize the \emph{effective overall utilization}: the proportion of the total storage capacity across all nodes that a DSN can utilize before any individual storage node reaches its capacity limit, leading to a decline in usability or availability.
 Unlike centrally managed systems, DSNs cannot readily migrate stored data away from overwhelmed nodes easily due to their passive data placement approach.
-Therefore, the fundamental capability required for DHTs to achieve this goal is the ability to allocate placement groups while respecting the heterogeneous storage, directing more store requests towards the nodes with more storage.
+Therefore, the fundamental capability required for DHTs to achieve this goal is to allocate placement groups while respecting the heterogeneous storage, directing more store requests towards the nodes with more storage.
 As elaborated in the subsequent section, prior research has not successfully endowed DHTs with this crucial capability.
 
 \subsection{Previous Studies}
