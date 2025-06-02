@@ -84,7 +84,10 @@ Secondly, unlike the centrally managed machines which are usually homogeneous, i
 If we assign these nodes with equal storage load, at low overall utilization the giant nodes will be almost idle; and even worse, the tiniest nodes could be overwhelmed by a relatively low overall utilization.
 
 Surprisingly, the data placement of DHTs is indeed uniform across the nodes regardless of their storage capacities, and previous DSNs have overlooked this issue.
-In Kademlia, the keys and the identities are uniformly distributed across the hash value space.
+In Kademlia, the keys and the identities are uniformly distributed across the hash value space\footnote{
+    Theoretically, user can choose arbitrary keys for the storing data, which are unnecessary to be uniformly distributed (and some previous works exploit this observation).
+    However, this approach cannot be easily applied to permissionless setting. 
+}.
 As the result, the placement groups of the keys include every node with the same probability, so the expected number of placement groups that a node is included is the same for every node.
 The crux is that Kademlia, along with other aforementioned DHTs, does not take the \emph{heterogeneity} of nodes into the considerations of its consistent hashing algorithm, while realizing the storage heterogeneity is crucial for efficiently or even correctly utilizing the available storage capacity.
 This particular issue has not been (carefully enough) covered by the previous DSN works.
@@ -110,7 +113,7 @@ As the result, the nodes whose identities locate in the ``sparser'' regions will
     \Description{}
 \end{figure}
 
-And the consequence of overlooking is the significant negative impact on the usability and availability of DSNs.
+And the consequence of this overlooking is the significant negative impact on the usability and availability of DSNs.
 To demonstrate its effect, we simulate a DSN with heterogeneous storage nodes whose identities are generated with uniform randomness. 
 The detailed parameters of the simulated network are presented in \autoref{sec:overview}.
 In the simulation, we continuously attempt to store uniformly random data into the network.

@@ -2,12 +2,12 @@
 \label{sec:overview}
 
 In this section we propose \dht, a novel DHT design that is optimized for \emph{effective overall utilization} of heterogeneous storage nodes (\autoref{sec:bg:problem}).
-As shown later, the key to improve effective overall utilization is to allocate nodes with more available storage spaces into more placement groups, so the storage resources on the nodes are exhausted in the same pace.
+As shown later, the key to improve effective overall utilization is to allocate nodes with the most available storage spaces into placement groups first, so the remaining storage resources on the nodes are \emph{equalized}.
 \dht's main idea is to assign different \emph{storing likelihoods}, \ie, the likelihoods of being assigned into the placement groups of random keys and storing data for them, to the nodes with different available storage spaces.
-It realizes this idea with two designs.
-The first design is classified distance, which is similar to the weighted equation proposed by \cite{schindelhauer2005weighted}, but features a simpler design and does not require the assistance from virtual node.
-The second design employs the power of two random choices~\cite{sitaraman2001power}.
-Next, we give intuitions on the designs and refer to future work for a detailed DHT specification.
+It realizes this idea with two design components.
+The first component is classified distance, which is similar to the weighted equation proposed by \cite{schindelhauer2005weighted}, but features a simpler design and does not require the assistance from virtual node.
+The second component is to employ the power of two random choices~\cite{sitaraman2001power}.
+Next, we give intuitions on the designs and defer to future work for a detailed DHT specification.
 We conclude the section by discussing the preliminary results.
 
 \paragraph{Equalize the available storage spaces.}
@@ -16,11 +16,13 @@ One naive approach is to set the likelihood of the store request landing on the 
 However, a better approach would be set the storing likelihood of the smaller node to 0, until the larger one has stored lots of data and has exactly same available space as the smaller one, then we adjust the storing likelihood of the smaller node to be the same as the larger one.
 Let's say the larger node can store 100 data while the smaller one can store only one.
 With the naive approach, we have around $1\%$ probability of exhausting the smaller node on every data placement, and the probability of storing 99 data without exhausting the smaller node (\ie, all store requests landed on the larger node) is only $37.3\%$.
-While with the better approach, we can store the first 99 data and $100\%$ not exhaust any node.
+While with the better approach, we can always store the first 99 data and $100\%$ not exhaust any node.
 In conclusion, we should not \emph{statically} assign the likelihood of each node receiving store requests based on their total capacities.
-Instead, the likelihoods should be \emph{dynamically} adjusted so that ideally the nodes are not utilized at all when there exists nodes who have more available spaces than them.
+Instead, the likelihoods should be \emph{dynamically} adjusted so that ideally the nodes are not utilized at all when there exists nodes who have more available spaces than them\footnote{
+    In practice, they still need to be utilized for fault tolerance \ie the requirement of distributing the data copies to multiple nodes.
+}.
 
-% a bit too detour
+% a bit too detour so summarized as the footnote above
 \iffalse
 Notice that the preference of nodes with more available space does not affect the data availability.
 Although the small nodes will be idle and cannot participate into fault tolerance when the overall utilization is low, the distinct copies of the same data will always reside on distinct nodes.
@@ -70,12 +72,12 @@ Eventually, the storing key range is proportional to the node's capacity, which 
 
 While the final effect is similar to what virtual node achieves, the fundamental difference between it and the classified distance approach is that we are not \emph{actually} assign multiple identities to a (physical) node.
 The DSNs' assumption about each node identity identifies a unique physical node (\ie failure domain) still holds.
-Instead of indirectly express our heterogeneous intent to an unmodified DHT, classified distance extends the DHT to be able to be aware of the heterogeneity by itself, \ie, its consistent hashing scheme now accepts extra class values indicating the heterogeneity.
-We argue that modify the DHT design is necessary to express both the storage heterogeneity and the \emph{correct} storage failure correlation.
+Instead of working with an unmodified DHT and indirectly express our heterogeneous in an ``equivalent'' way, classified distance extends the DHT to be \emph{heterogeneity-aware}, \ie, its consistent hashing scheme now accepts extra class values indicating the heterogeneity.
+We argue that modifying the DHT design is a better approach to deal with the heterogeneity and the failure correlation of storage correctly at the same time.
 
 In order to support classified distance, the retaining policy of node records and the iterative lookup procedure (\autoref{sec:bg:dht}) need to be modified accordingly.
-We refer to future work for these details and a reconfiguration protocol for nodes to adjust their classes based on the dynamical changes of their storage capacities.
-Noticeably, nodes must relocate the placement groups of the stored data and transfer them away if necessary before decrementing their classes to avoid DHT forward the following accessing to the reallocated nodes of the placement groups while they are not storing the data.
+We defer to future work for these details and a reconfiguration protocol for nodes to adjust their classes based on the dynamical changes of their storage capacities.
+We do mention, though, that nodes must relocate the placement groups of the stored data and transfer them away if necessary before decrementing their classes to avoid DHT forward the following accessing to the reallocated nodes of the placement groups while they are not storing the data.
 
 \paragraph{The power of two random choices (2RC)\@.}
 As discussed previously, classified distance, which corresponds to the naive approach, leaves a small chance for forwarding the store requests to the nodes with less available storage space.
@@ -88,9 +90,9 @@ Otherwise, if the node is retrieving the data, the retrieve request is sent to b
 In most other practice, 2RC picks two (homogeneous) backend nodes with uniform randomness.
 However, in our case, it is used in conjunction with a biased randomness yielded by the classified distance, which help it to perform better in the heterogeneous case.
 Before the whole storage network is nearly saturated (by when our goal of optimizing overall utilization has been nicely done!), the nodes with larger capacities probably have more available storage spaces than the smaller ones.
-The classified distance reduces our chance to pick those small nodes, and the chance of picking two small nodes at the same time is even smaller, only when we will first utilize the nodes with less available space.
+The classified distance reduces our chance to pick those small nodes, and the chance of picking two small nodes at the same time is even smaller than picking one, only when we will first utilize the nodes with less available space.
 
-In conclusion, the design of \dht consists of two components at different \emph{scales}.
+In a sense, the design of \dht consists of two components at different \emph{scales}.
 The classified distance performs at the largest scale, globally affecting all nodes but with certain rigidity and approximation.
 2RC, on the other hand, performs at the smallest scale, only affecting nodes from two placement groups at a time, but provides the most accurate adjustment.
 By combining both components, \dht can optimize the effective overall utilization as desired.
@@ -180,8 +182,7 @@ By \emph{balancing} the AC of the nodes, \dht manages to \emph{differentiate} th
 
 \paragraph{Simulation setup.}
 We evaluate \dht with a simulated DSN.
-Without further clarification, the simulations are performed with 12k nodes, and each node can store $2^{10}$ contents at minimum and $2^{17}$ at maximum.
-So the node class values are between 10 and 17.
+Without further clarification, the simulations are performed with 12k nodes, and each node can store $2^{10}$ data at minimum and $2^{17}$ at maximum, so the node class values are between 10 and 17.
 The node capacities follow a shifted Zipf distribution~\cite{zipf} with skewness set to $1$.
 Besides \dht, we also simulate a vanilla Kademlia DHT as the compared baseline.
 We replicate each content with 3 copies, \ie, $r=3$.
@@ -195,17 +196,17 @@ Finally, we repeat each simulation 100 times and report the average and error of
     \Description{}
 \end{figure}
 
-Firstly, we perform 10 million storing attempts with the simulated DSNs.
+Firstly, we perform 10 million storing attempts to the simulated DSNs with uniformly random keys.
 With \dht all storing attempts are successful, and no node is running out of space. 
 The results of Kademlia are shown in \autoref{fig:overwhelm} and described in \autoref{sec:bg:problem}.
 
-Next, we further perform a stress simulation by continuously storing random data (with random eviction on node storage exhaustion) until data loss, and report the overall utilization in \autoref{fig:util-loss}.
+Next, we further perform a stress simulation by continuously storing data with random keys (with random eviction on node storage exhaustion) until data loss, and report the overall utilization in \autoref{fig:util-loss}.
 We simulate with different skewnesses of node capacities, from 1 where the capacities are highly diverse, to 2 where most of the nodes have the same $2^{10}$ capacity.
 We further perform ablation study on the effectiveness of classified distance and 2RC designs.
 The results show that both designs provide improvement, but in distinct ways.
 The classified distance is effective when the node capacities are diverse, but degrade to Kademlia's performance when the skewness is high and most nodes have the same (lowest) node class.
 2RC, on the other hand, yields perfect utilization under high skewness, but becomes ineffective when the capacity is significantly heterogeneous.
-Finally, \dht combines the improvement by both of them and outperforms Kademlia by more than 60\% utilization at any skewness, and can reach at most 100\% utilization at high skewness.
+Finally, \dht combines the improvement from both of them and outperforms Kademlia by more than 60\% utilization under any skewness, and can reach almost 100\% utilization at high skewness.
 The simulation shows that \dht accomplish its goal of optimizing effective overall utilization, and both designs are effective in their expected ways.
 
 \begin{figure}
@@ -235,9 +236,9 @@ This is because those nodes has exponentially smaller capacities, but this heter
 \end{figure}
 
 The next evaluation studies how DSNs perform on equalizing the available spaces of the storage nodes.
-We store the same number of data into both Kademlia and \sys so that the first node runs out of its space in Kademlia.
+We store the same number of data into both Kademlia and \dht so that the first exhausted node appears in Kademlia.
 We snapshot the available spaces of the nodes at this point in both networks.
 In \autoref{fig:ac-distr} we plot the distribution of the available spaces of the nodes with $2^{10}$ capacity on the left, and we average the available spaces of nodes of different sizes and plot them on the right.
-In \dht the nodes with the smallest $2^{10}$ capacity have basically 0 utilization and have all their capacities available, and the nodes with larger capacities have significantly less available spaces compared to Kademlia.
-This shows that \dht can preserve the available spaces on small nodes by preferring the larger nodes, while Kademlia already utilizes these nodes and starts to exhaust some of them.
-The saw-shaped line of \dht is because of the error introduced by node class: the node capacity is approximated with the closest power-of-two, which causes over- and under-utilization of nodes whose capacities are in the middle of consecutive power-of-two.
+In \dht the nodes with the smallest $2^{10}$ capacity have basically 0 utilization and all their capacities are still available, and the nodes with larger capacities have significantly less available spaces compared to Kademlia.
+At the same time, Kademlia consume available space from nodes of all capacities and has exhausted one of the smallest nodes.
+The saw-shaped line of \dht is because of the error introduced by node class: the node capacity is approximated with the closest power-of-two, which causes over- and under-utilization of nodes whose capacities are in the middle of consecutive power-of-twos.
