@@ -166,7 +166,7 @@ Specifically, the load should be distributed proportionally to the available sto
 Additionally, this approach necessitates the creation of multiple virtual nodes, which, as previously discussed, should be avoided by DSNs.
 
 More recently, the work in \cite{mirrokni2018consistent} proposes a consistent hashing scheme that accounts for bounded loads.
-It treats node overload analogously to \emph{hash collision} and resolves it using linear probing, similar to a basic hash table.
+It treats node overload analogously to \emph{hash collision} and resolves it using linear probing, similar to a genuine hash table.
 Random jump consistent hashing~\cite{chen2021revisiting} builds upon this by addressing the issue of cascading overflows.
 While these approaches directly target the bounded load scenario and could be applied to heterogeneous storage nodes, they presuppose a centrally managed environment where every node can readily communicate with others based on its local knowledge.
 Without an effective DHT design to underpin it, these methods are not directly applicable to DSNs.

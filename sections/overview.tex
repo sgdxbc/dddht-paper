@@ -3,9 +3,9 @@
 
 In this section, we introduce \dht, a novel DHT design specifically optimized for effective overall utilization of heterogeneous storage nodes (\autoref{sec:bg:problem}).
 As will be demonstrated, the key to enhancing effective overall utilization lies in preferentially allocating nodes with the largest available storage spaces to placement groups first, so the remaining storage resources on the nodes are \emph{equalized}.
-The central concept of \dht is to assign varying \emph{storing likelihoods} -- the probabilities of being included in the placement groups of random keys and storing associated data – to nodes based on their respective available storage spaces.
+The central concept of \dht is to assign varying \emph{storing likelihoods} -- the probabilities of being included in the placement groups of random keys and storing associated data -- to nodes based on their respective available storage spaces.
 This concept is realized through two design components.
-The first component is classified distance, which shares similarities with the weighted equation proposed by \cite{schindelhauer2005weighted} but features a simpler architecture and does not necessitate the use of virtual nodes.
+The first component is classified distance, which shares similarities with the weighted equation proposed by \cite{schindelhauer2005weighted} but features a simpler form and does not necessitate the use of virtual nodes.
 The second component involves leveraging the power of two random choices~\cite{sitaraman2001power}.
 We will now provide an intuitive overview of these design elements, with a detailed DHT specification reserved for future work.
 The section concludes with a discussion of preliminary results.
@@ -45,7 +45,7 @@ where $K$ represents the bit length of $k$ and $id$ (e.g., $K=256$).
 We term $d'$ the \emph{classified distance equation}.
 Subsequently, Kademlia's data placement equation is adapted to utilize $d'$ in place of $d$:
 \begin{multline*}
-    G_k=\{n\mid{}d'(k,ID[n_i],C[n_i])<d'(k,ID[n],C[n]),\\
+    G_k=\{n_i\mid{}d'(k,ID[n_i],C[n_i])<d'(k,ID[n],C[n]),\\
     n\in{}\mathfrak{N}\setminus{}G_k,i\in{}[1,\dots,r]\}
 \end{multline*}
 where $C$ denotes the mapping from nodes to their classes.
@@ -78,16 +78,16 @@ To accommodate classified distance, both the node record retention policy and th
 We will elaborate on these details and a reconfiguration protocol that allows nodes to adjust their classes in response to dynamic changes in their storage capacities in future work.
 However, it is important to note that nodes must relocate the placement groups of their stored data and transfer them accordingly before decreasing their class values. This is crucial to prevent the DHT from directing subsequent access requests to the newly reallocated nodes of the placement groups before they actually possess the data.
 
-\paragraph{The power of two random choices (2RC).}
+\paragraph{The power of two random choices (2RC)\@.}
 As previously discussed, classified distance, while an improvement, still carries a non-negligible probability of directing storage requests to nodes with less available storage space.
-To mitigate this, we integrate the power of two random choices (2RC) into Kademlia's lookup procedure.
+To mitigate this, we integrate 2RC into Kademlia's lookup procedure.
 Each data item has a single key, which is then hashed twice using two different hashing algorithms, resulting in two distinct hash values. The lookup process then identifies the placement groups corresponding to both of these hash values.
 When a node intends to store or modify data, the storage request is directed to the placement group whose constituent nodes exhibit greater available storage space.
 Conversely, when a node seeks to retrieve data, the retrieval request is sent to both placement groups, and the group containing the data will respond.
 
 In most standard applications, 2RC selects two (homogeneous) backend nodes with uniform randomness.
 However, in our implementation, it operates in conjunction with the biased randomness introduced by the classified distance, which enhances its performance in heterogeneous scenarios.
-Before the entire storage network approaches saturation (at which point our objective of optimizing overall utilization has largely been achieved), nodes with larger capacities are likely to have more available storage space than smaller ones.
+Before the entire storage network approaches saturation (at which point our objective of optimizing overall utilization has largely been achieved!), nodes with larger capacities are likely to have more available storage space than smaller ones.
 The classified distance reduces the probability of selecting smaller nodes, and the likelihood of selecting two small nodes simultaneously is even lower than selecting one.
 And it is only when it happens that we would utilize nodes with less available space.
 
@@ -200,7 +200,7 @@ With \dht, all storage attempts were successful, and no node exhausted its stora
 The outcomes for Kademlia are illustrated in \autoref{fig:overwhelm} and detailed in \autoref{sec:bg:problem}.
 
 Next, we conducted a stress simulation by continuously storing data with random keys (with random eviction upon node storage exhaustion) until data loss occurred, and we report the overall utilization in \autoref{fig:util-loss}.
-We performed simulations with varying skewness of node capacities, ranging from 1 (highly diverse capacities) to 2 (where most nodes have the same $2^{10}$ capacity).
+We performed simulations with varying skewness of node capacities, ranging from 1 (highly diverse capacities) to 2 (where almost all nodes have the same $2^{10}$ capacity).
 We also conducted an ablation study to assess the effectiveness of the classified distance and 2RC designs independently.
 The results indicate that both designs contribute to improved utilization, but in different scenarios.
 Classified distance is particularly effective when node capacities are diverse (low skewness), but its performance approaches that of Kademlia as the skewness increases and most nodes converge to the same (lowest) node class.
@@ -237,7 +237,7 @@ This occurs because these nodes have exponentially smaller capacities, a heterog
 The subsequent evaluation examines how well DSNs equalize the available storage space across nodes.
 We store an equivalent amount of data in both Kademlia and \dht until the first node in Kademlia reaches its capacity limit.
 At this point, we capture a snapshot of the available storage space on all nodes in both networks.
-In \autoref{fig:ac-distr}, the left plot shows the distribution of available space for nodes with a capacity of $2^{10}$ units, while the right plot displays the average available space for nodes of different capacity sizes.
-In \dht, the nodes with the smallest capacity ($2^{10}$) retain almost their entire storage space, indicating minimal utilization. Conversely, nodes with larger capacities in \dht have significantly less available space compared to their counterparts in Kademlia.
-Simultaneously, Kademlia consumes available space from nodes of all capacities and has already exhausted one of the smallest nodes.
+In \autoref{fig:ac-distr}, the left plot shows the distribution of available space for nodes with the smallest capacity of $2^{10}$ units, while the right plot displays the average available space for nodes of different capacity sizes.
+In \dht, the nodes with the smallest capacity retain almost their entire storage space, indicating minimal utilization, and nodes with larger capacities in \dht have significantly less available space compared to their counterparts in Kademlia.
+Conversely, Kademlia consumes available space from nodes of all capacities and has already exhausted one of the smallest nodes.
 The saw-tooth pattern observed in the \dht plot arises from the approximation inherent in the node class assignment: node capacity is rounded to the nearest power of two, leading to over-utilization of nodes whose capacities fall slightly below a power of two and under-utilization of those slightly above.
