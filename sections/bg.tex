@@ -4,6 +4,8 @@
 \subsection{Distributed Hash Tables}
 \label{sec:bg:dht}
 
+\lijl{For the workshop version, this part could be condensed.}
+
 This section first introduces the basics of distributed hash tables, and then explains how they are used now in decentralized storage networks.
 
 The fundamental principle of distributed hash tables is consistent hashing~\cite{chash}.
@@ -16,6 +18,7 @@ These designated nodes constitute the \emph{placement groups} for the keys.
 Consistent hashing ensures that during resizing, only a minimal quantity of keys (specifically, the average number of keys per node) will, on average, be reassigned to a different node.
 This attribute renders consistent hashing a desirable placement strategy in environments with dynamic node changes or fault tolerance requirements.
 Consistent hashing is favored in datacenter storage solutions due to its independence from a central controller or metadata server.
+\lijl{This claim is probably too strong. Most datacenter storage still uses metadata service.}
 Nodes and clients can independently determine data locations, enhancing both performance and resilience.
 Consistent hashing is implemented in industrial-scale storage systems like Ceph~\cite{weil2006ceph}, Cassandra~\cite{lakshman2010cassandra}, and Dynamo~\cite{decandia2007dynamo}, and is extensively researched for application in distributed databases~\cite{shu2020th,liu2019distcache,chung2019lightstore}, network load balancers~\cite{eisenbud2016maglev}, and cloud infrastructures~\cite{nakatani2021structured,wu2019autoscaling}.
 
@@ -78,8 +81,10 @@ In contrast to centrally managed environments where consistent hashing is primar
 \label{sec:bg:problem}
 
 While IPFS and BitTorrent store only indexing metadata in DHTs, resulting in minimal storage consumption (several megabytes) per node, DSNs that directly use DHTs for data placement can store significant amounts of data on individual nodes under reasonable utilization, potentially reaching their storage capacity limits.
+\lijl{Should we also discuss limitations of using DHT only for metadata?}
 In fact, managing data placement in DSNs to keep individual node storage utilization within their capacity limits is considerably more challenging than in centrally managed systems.
 Firstly, the decentralized nature of these networks means nodes are not centrally managed, orchestrated, or monitored, making it difficult to ascertain their real-time status and ensure timely reactions from them.
+\lijl{Another benefit of a centrally managed system is that admin has full control over data placement and capacity planning.}
 Secondly, unlike the typically homogeneous machines in centrally managed systems, DSNs can comprise nodes with vastly different storage capacities, ranging from mobile devices contributing tens of gigabytes of spare storage to professional storage clusters providing terabytes of dedicated capacity.
 Assigning equal storage load to such heterogeneous nodes can lead to large-capacity nodes being significantly underutilized, while, more critically, the smallest-capacity nodes can become overwhelmed at relatively low overall utilization levels.
 
@@ -105,8 +110,11 @@ As the result, the nodes whose identities locate in the ``sparser'' regions will
     \centering
     \includegraphics[width=\linewidth]{data/simulation/graphs/overwhelm}
     \caption{Left: overall storage utilization (solid line) and storage request rejection rate (dashed line) under a rejection policy.
+    \lijl{Dashed line here is not very clear. Might need to note that D3HT has zero rejection rate (?).}
     Right: data loss rate (solid line) and overall storage utilization (dashed line) under an eviction policy.
-    The straight dashed line indicates the expected utilization level if all stored content were retained; the vertical difference between the dashed lines represents the amount of evicted data.}
+    The straight dashed line indicates the expected utilization level if all stored content were retained; the vertical difference between the dashed lines represents the amount of evicted data.
+    \lijl{Interesting that the eviction policy has a slightly higher utilization. Might also want to point that D3HT has no data loss.}
+    }
     \label{fig:overwhelm}
     \Description{}
 \end{figure}
@@ -129,6 +137,7 @@ In situations where the entire network scales down, potentially due to normal fl
 \paragraph{Problem settings.}
 In summary, we highlight the challenge of integrating a DHT, which distributes the storage load uniformly, with storage nodes possessing heterogeneous storage capacities within permissionless storage networks.
 The overarching objective is to optimize the \emph{effective overall utilization}: the proportion of the total storage capacity across all nodes that a DSN can utilize before any individual storage node reaches its capacity limit, leading to a decline in usability or availability.
+\lijl{Would it be easier to understand if we frame the property as balancing the storage utilization rate, which avoids storage exhaustion of any node?}
 Unlike centrally managed systems, DSNs cannot readily migrate stored data away from overwhelmed nodes easily due to their passive data placement approach.
 Therefore, the fundamental capability required for DHTs to achieve this goal is to allocate placement groups while respecting the heterogeneous storage, directing more store requests towards the nodes with more storage.
 As elaborated in the subsequent section, prior research has not successfully endowed DHTs with this crucial capability.
@@ -152,6 +161,7 @@ DSNs operate under the assumption that these placement groups are independent; h
 The fundamental issue is that DSNs are unaware of the underlying correlation patterns among virtual nodes and cannot make informed decisions regarding security parameters (\eg, redundancy rate) without this knowledge.
 Prior research~\cite{schindelhauer2005weighted} also discusses other limitations of the virtual node approach, which we will not detail here.
 \xxx{If have time, plot the difference on availability with and without virtual nodes.}
+\lijl{This part is critical for reviewers to appreciate our design. If time permits, can strengthen this part.}
 
 Beyond the virtual node approach, several solutions address heterogeneous nodes or nodes with bounded load, but none perfectly align with our problem.
 Early research~\cite{karger2004simple,misra2004clash} investigated load (re)balancing schemes for DHTs shortly after their inception.
@@ -163,12 +173,14 @@ Furthermore, as they address nonuniform per-key load, they are more relevant to 
 Conversely, the weighted DHT approach~\cite{schindelhauer2005weighted} aims to assign weights to nodes based on certain heterogeneous attributes, which appears relevant to our problem setting.
 However, the meaning of \emph{weighted} differs subtly from the desired concept of \emph{bounded}.
 Specifically, the load should be distributed proportionally to the available storage space of nodes, not their total storage capacities, as detailed in \autoref{sec:overview}.
+\lijl{Can't fully appreciate the issues by reading the previous sentences. We should also provide clearer definition of ``bounded'' earlier.}
 Additionally, this approach necessitates the creation of multiple virtual nodes, which, as previously discussed, should be avoided by DSNs.
 
 More recently, the work in \cite{mirrokni2018consistent} proposes a consistent hashing scheme that accounts for bounded loads.
 It treats node overload analogously to \emph{hash collision} and resolves it using linear probing, similar to a genuine hash table.
 Random jump consistent hashing~\cite{chen2021revisiting} builds upon this by addressing the issue of cascading overflows.
 While these approaches directly target the bounded load scenario and could be applied to heterogeneous storage nodes, they presuppose a centrally managed environment where every node can readily communicate with others based on its local knowledge.
+\lijl{Is this true? Can't they still work under probabilistic reachability?}
 Without an effective DHT design to underpin it, these methods are not directly applicable to DSNs.
 \xxx{If have time and space, add a table summarizing previous approachs.}
 
