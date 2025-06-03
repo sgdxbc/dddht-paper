@@ -150,12 +150,13 @@ In situations where the entire network scales down, potentially due to normal fl
 % \xxx{Summary the problem. Declare all the goals we want to achieve/all the issues we want to address.}
 \paragraph{Problem settings.}
 Motivated by this undesirable situation, our goal in this work is to optimize the \emph{effective overall utilization} of DSNs.
-We aim to maximize the amount of aggregated storage utilized by DSNs, under the crucial constraint that \emph{no} individual storage node reaches its capacity limit, which would lead to a degradation in usability or availability.
+We aim to utilize the maximum possible aggregated storage across the network, but only in an \emph{effective} manner, ensuring that \emph{no} individual storage node reaches its capacity limit and compromises usability or availability.
 Given the difficulty DSNs face in efficiently migrating data away from overloaded nodes, the fundamental capability required for DHTs to achieve this goal is the ability to allocate placement groups while considering the heterogeneous storage capacities, thereby directing more storage requests towards nodes with greater available space.
 As detailed in the following section, previous research has not successfully equipped DHTs with this essential capability.
 \lijl{Would it be easier to understand if we frame the property as balancing the storage utilization rate, which avoids storage exhaustion of any node?}
 
 \subsection{Previous Studies}
+\label{sec:bg:works}
 
 The most direct method to address this problem involves employing \emph{virtual nodes}~\cite{chord,dabek2001wide,zhu2005efficient, zhang2010novel}.
 % The original work proposing Chord~\cite{chord} mentions deploying $O(\log{N})$ virtual nodes per physical node to significantly mitigate probabilistic nonuniform identity allocation.

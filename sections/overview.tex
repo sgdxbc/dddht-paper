@@ -3,27 +3,21 @@
 
 \lijl{Can move evaluation to a dedicated section. This section could be separated into subsections for clearer structure.}
 
-In this section, we introduce \dht, a novel DHT design specifically optimized for effective overall utilization of heterogeneous storage nodes (\autoref{sec:bg:problem}).
-As will be demonstrated, the key to enhancing effective overall utilization lies in preferentially allocating nodes with the largest available storage spaces to placement groups first, so the remaining storage resources on the nodes are \emph{equalized}.
-The central concept of \dht is to assign varying \emph{storing likelihoods} -- the probabilities of being included in the placement groups of random keys and storing associated data -- to nodes based on their respective available storage spaces.
-This concept is realized through two design components.
-The first component is classified distance, which shares similarities with the weighted equation proposed by \cite{schindelhauer2005weighted} but features a simpler form and does not necessitate the use of virtual nodes.
-The second component involves leveraging the power of two random choices~\cite{sitaraman2001power}.
-We will now provide an intuitive overview of these design elements, with a detailed DHT specification reserved for future work.
+% In this section, we introduce \dht, a novel DHT design specifically optimized for effective overall utilization of heterogeneous storage nodes (\autoref{sec:bg:problem}).
+% As will be demonstrated, the key to enhancing effective overall utilization lies in preferentially allocating nodes with the largest available storage spaces to placement groups first, so the remaining storage resources on the nodes are \emph{equalized}.
+% The central concept of \dht is to assign varying \emph{storing likelihoods} -- the probabilities of being included in the placement groups of random keys and storing associated data -- to nodes based on their respective available storage spaces.
+% This concept is realized through two design components.
+% The first component is classified distance, which shares similarities with the weighted equation proposed by \cite{schindelhauer2005weighted} but features a simpler form and does not necessitate the use of virtual nodes.
+% The second component involves leveraging the power of two random choices~\cite{sitaraman2001power}.
+% We will now provide an intuitive overview of these design elements, with a detailed DHT specification reserved for future work.
 
-\lijl{Can either properly define the system properties here, or in the previous section.}
-
-\paragraph{Equalizing available storage spaces.}
-Imagine two storage nodes, one with $100\times$ the space of the other. How do we store the most data without overwhelming either?
-A basic idea is to make the larger node $100\times$ more likely to receive storage requests.
-However, a better way is to initially prevent the smaller node from storing anything until the larger node's remaining space equals the smaller one's. Then, both become equally likely to store.
-For instance, if the larger node holds 100 data items and the smaller holds one, the basic approach gives a ~1\% chance of overwhelming the small node per item, and only a 37.3\% chance of storing 99 items without overwhelming it (\ie, all data landing on the large node).
-The better approach lets us always store the first 99 items with 0\% risk of overwhelming either.
-Thus, we shouldn't \emph{statically} assign storage request likelihood based on total space.
-Instead, these likelihoods should be \emph{dynamically} adjusted, so nodes ideally aren't used if others have more free space\footnote{
-    In practice, they're still needed for fault tolerance by distributing data copies.
-}.
-\lijl{The proposed approach does not seem to use likelihood, but deterministically store data on nodes with more available space.}
+\lijl{Can either properly define the system properties here, or in the previous section.}\gd{Done.}
+\dht is a DHT protocol designed to allocate appropriate placement groups effectively utilize the node storage.
+In this section, we present the two design components that enable this functionality.
+The first component involves applying classified distance to direct the storage workload to nodes proportionally to their capacities, thus balancing the utilized likelihood per unit of storage across the nodes.
+This approach shares similarities with the weighted equation proposed by \cite{schindelhauer2005weighted} but features a simpler form and avoids the use of virtual nodes.
+While classified distance alone can improve upon Kademlia, we will demonstrate that superior performance can be achieved by equalizing the available storage space across nodes.
+The power of two random choices is the second component we introduce to accomplish this equalization, based on the classified distance.
 
 % a bit too detour so summarized as the footnote above
 \iffalse
@@ -32,17 +26,18 @@ Although the small nodes will be idle and cannot participate into fault toleranc
 In fact, the only source of the undesired failure correlation is still the nonuniform distribution of the storage resources, about what we can do nothing.
 \fi
 
-This dynamic adjustment is inherently difficult in decentralized networks.
-Our solution employs two key designs.
-First, we replace Kademlia's distance metric with a classified distance to provide an initial approximation, mimicking the effect of the basic approach above.
-Second, we introduce the power of two random choices to probabilistically mitigate the resulting inaccuracies.
-\lijl{It's probably better to start with an overview of these two approaches to give an overall idea, before introducing the details.}
+% This dynamic adjustment is inherently difficult in decentralized networks.
+% Our solution employs two key designs.
+% First, we replace Kademlia's distance metric with a classified distance to provide an initial approximation, mimicking the effect of the basic approach above.
+% Second, we introduce the power of two random choices to probabilistically mitigate the resulting inaccuracies.
+\lijl{It's probably better to start with an overview of these two approaches to give an overall idea, before introducing the details.}\gd{Done.}
 
 \paragraph{Classified distance.}
-\lijl{Should start with high-level idea of ``class'' and its association with storage capacity.}
+\lijl{Should start with high-level idea of ``class'' and its association with storage capacity.} \gd{Done.}
+We propose classifying nodes based on their storage capacities, allowing the DHT to utilize nodes from different classes in a differentiated manner by employing distinct methods to calculate their distances to the data keys.
 As described in \autoref{sec:bg:dht}, Kademlia's distance $d$ between a key $k$ and a node with identity $id$ is computed as $k\ \texttt{xor}\ id$.
 We associate each node with a \emph{class}, a non-negative integer constrained by the bit length of $id$ and $k$ (\eg, less than 256 for a $2^{256}$ hash domain).
-Nodes can set their class values to the base-two logarithm of their storage capacities, meaning the class value increments by one for every doubling of capacity.
+Nodes set their class values to the base-two logarithm of their storage capacities, meaning the class value increments by one for every doubling of capacity.
 We then modify Kademlia's distance equation to incorporate the node's class $c$:
 \[
     d'(k, id, c)=(k\ \texttt{xor}\ id)\ \texttt{mod}\ 2^{K-c}
@@ -76,17 +71,34 @@ The range of keys for which a node is responsible for storing approximately doub
 Ultimately, the range of storing keys becomes proportional to the node's storage capacity, implying that the probability of a node receiving a storage request is proportional to its capacity.
 
 While the resulting effect is similar to that achieved by virtual nodes, the fundamental distinction lies in the fact that we do not \emph{actually} assign multiple identities to a single physical node.
-The DSNs' underlying assumption that each node identity corresponds to a unique physical node (i.e., a distinct failure domain) remains valid.
-\lijl{One issue is that the previous paragraph did not discuss replication and failures, so this point is not very clear.}
-Instead of operating with an unmodified DHT and indirectly representing heterogeneity in an ``equivalent'' manner, classified distance directly extends the DHT to be \emph{heterogeneity-aware}. Its consistent hashing scheme now inherently incorporates class values that reflect the heterogeneity of nodes.
-We contend that modifying the DHT design is a superior approach for simultaneously addressing heterogeneity and the correct modeling of storage failure correlations.
-\lijl{Not sure if we have enough evidence to make such a strong claim.}
+The DSNs' underlying assumption that each node identity corresponds to a distinct failure domain (\autoref{sec:bg:works}) remains valid.
+Rather than concealing the complexity of node heterogeneity from the DHT, we choose to expose it, enabling the DHT to perform more effectively.
+\lijl{One issue is that the previous paragraph did not discuss replication and failures, so this point is not very clear.}\gd{Done.}
+% Instead of operating with an unmodified DHT and indirectly representing heterogeneity in an ``equivalent'' manner, classified distance directly extends the DHT to be \emph{heterogeneity-aware}. Its consistent hashing scheme now inherently incorporates class values that reflect the heterogeneity of nodes.
+% We contend that modifying the DHT design is a superior approach for simultaneously addressing heterogeneity and the correct modeling of storage failure correlations.
+\lijl{Not sure if we have enough evidence to make such a strong claim.}\gd{Hopefully weaker now.}
 
 To accommodate classified distance, both the node record retention policy and the iterative lookup procedure (\autoref{sec:bg:dht}) require corresponding modifications.
 We will elaborate on these details and a reconfiguration protocol that allows nodes to adjust their classes in response to dynamic changes in their storage capacities in future work.
 However, it is important to note that nodes must relocate the placement groups of their stored data and transfer them accordingly before decreasing their class values.
 This is crucial to prevent the DHT from directing subsequent access requests to the newly reallocated nodes of the placement groups before they actually possess the data.
-\lijl{Are we assuming all nodes correctly determine and declare their classes?}
+\lijl{Are we assuming all nodes correctly determine and declare their classes?}\gd{Yes.}
+
+\paragraph{Equalizing available storage spaces.}
+Imagine two storage nodes, one with $100\times$ the space of the other. How do we store the most data without overwhelming either?
+The classified distance would make the larger node $100\times$ more likely to receive storage requests.
+However, a better way is to initially prevent the smaller node from storing anything until the larger node's remaining space equals the smaller one's. Then, both become equally likely to store.
+For instance, if the larger node holds 100 data items and the smaller holds one, the basic approach gives a ~1\% chance of overwhelming the small node per item, and only a 37.3\% chance of storing 99 items without overwhelming it (\ie, all data landing on the large node).
+The better approach lets us always store the first 99 items with 0\% risk of overwhelming either.
+Therefore, it is not enough for data to simply have a higher probability of landing on nodes with greater capacity; we should actively \emph{enforce} its placement on nodes with more available space.
+By \emph{equalizing} the available space across nodes, smaller nodes will remain unused as long as larger nodes have more available space than them\footnote{
+    In practice, they are still necessary for fault tolerance by distributing data copies.
+}, thus preventing the smaller nodes from running out of space before the larger ones.
+% Thus, we shouldn't \emph{statically} assign storage request likelihood based on total space.
+% Instead, these likelihoods should be \emph{dynamically} adjusted, so nodes ideally aren't used if others have more free space\footnote{
+%     In practice, they're still needed for fault tolerance by distributing data copies.
+% }.
+\lijl{The proposed approach does not seem to use likelihood, but deterministically store data on nodes with more available space.}\gd{Done.}
 
 \paragraph{The power of two random choices (2RC)\@.}
 As previously discussed, classified distance, while an improvement, still carries a non-negligible probability of directing storage requests to nodes with less available storage space.
