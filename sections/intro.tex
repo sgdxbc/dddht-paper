@@ -21,7 +21,7 @@ Within Kademlia, each node receives an equivalent probabilistic storage load, ir
 \lijl{May consider restructuring these two paragraphs. Are we pointing out two issues? Seems there is just one issue: DHT cannot adjust placement based on node capacity.} \gd{Done.}
 As DSNs utilize more and more storage space, if the expected utilized space is the same across heterogeneous nodes, they will be exhausted at different rates due to their varying storage capacities.
 Concurrently, given the absence of a central controller in DSNs, data cannot be readily migrated away from a full node unless it exits the network; however, the node must remain online to serve its existing data.
-Ultimately, DHTs overwhelm smaller nodes even at the low overall utilization and DSN cannot effectively alleviate the strain on them.
+Ultimately, DHTs overwhelm smaller nodes even at the low overall utilization and DSNs cannot effectively alleviate the strain on them.
 
 Given that DHTs directly manage massive data placement in that most DSNs~\cite{kubiatowicz2000oceanstore,ratnasamy2001scalable,haeberlen2005glacier,team2021swarm}, this problem is both real and severe.
 As demonstrated in our simulation in \autoref{sec:bg}, Glacier~\cite{haeberlen2005glacier} rejects new storage requests, leading to the denial of over 90\% of such requests at a mere 10\% overall utilization.
@@ -39,7 +39,7 @@ The virtual node technique has been explored for rebalancing probabilistic nonun
 % However, we contend that virtual nodes obscure the actual failure correlation of the storage, potentially misguiding DSNs in establishing appropriate security parameters, and should be entirely avoided by DSNs.
 \lijl{this sentence is a little too abstract} \gd{Done}
 However, virtual nodes obscure the actual failure correlation of the storage.
-We contend that virtual nodes break the assumption on independent placement groups made by DSNs, causing unexpected correlated failures and harming availability, thus should be entirely avoided by DSNs.
+We contend that virtual nodes break the assumption on per-identity failure domain made by DSNs, causing unexpected correlated failures~\cite{filecoin_loss} and harming availability, thus should be entirely avoided by DSNs.
 % Alternative solutions, encompassing weighted DHTs~\cite{schindelhauer2005weighted}, DHT load balancing schemes for nonuniform key access~\cite{karger2004simple,misra2004clash}, and consistent hashing methods for bounded load~\cite{mirrokni2018consistent,chen2021revisiting}, each present distinct challenges for implementation within our problem setting.
 These are discussed in detail in \autoref{sec:bg:problem}.
 \lijl{Would prefer to at least summarize their shortcoming in the intro.} \gd{Done.}
