@@ -8,7 +8,7 @@ Given the substantial user demand and increasing adoption of DSNs as a storage p
 Considering the inherent volatile nature and asynchronous network condition arising from the permissionless characteristic of DSNs, the development of an efficient methodology for organizing storage nodes to \emph{replicate} stored data without centralized orchestration is essential for attaining these attributes.
 
 Distributed hash tables (DHTs)~\cite{maymounkov2002kademlia,chord,rowstron2001pastry}, underpinned by consistent hashing~\cite{chash} as a core principle, are widely adopted in storage architectures for the allocation of data placement groups, designating the storage nodes responsible for data persistence.
-Although centrally managed storage systems~\cite{weil2006ceph,lakshman2010cassandra,decandia2007dynamo} can circumvent the performance degradation and single point of failure associated with a metadata server by directly implementing consistent hashing, decentralized storage networks (DSNs) can only utilize this technique via DHT protocols that encapsulate it.
+Although centrally managed storage systems~\cite{weil2006ceph,lakshman2010cassandra,decandia2007dynamo} can circumvent the performance degradation and single point of failure associated with a metadata server by directly implementing consistent hashing, decentralized storage networks (DSNs) can only utilize this technique via DHT protocols that encapsulate it \lijl{Not sure what this sentence means}.
 DHT protocols empower nodes within decentralized networks to identify data placement groups through an iterative online query process.
 Consequently, with DHTs, nodes are not required to determine the precise set of currently online peers and their contact information, a challenging endeavor given the permissionless nature and high dynamism of DSN nodes.
 DHTs have thus constituted a foundational element of DSNs and are extensively employed for both peer and placement group discovery.
@@ -17,7 +17,7 @@ However, \emph{heterogeneity}, an intrinsic characteristic of decentralized syst
 In contrast to centrally managed storage platforms that typically operate a set of homogeneous storage nodes, DSNs exhibit substantial variation in the capacities of individual storage nodes, spanning from tens of gigabytes to terabyte scales, rendering them heterogeneous.
 However, Kademlia~\cite{maymounkov2002kademlia}, the most prevalent DHT protocol employed by Bitcoin~\cite{bitcoin}, Ethereum~\cite{ethereum}, BitTorrent, and IPFS~\cite{benet2014ipfs}, does not account for this heterogeneity.
 Within Kademlia, each node receives an equivalent probabilistic storage load, irrespective of its storage capacity and available resources.
-This approach is suitable for DSNs such as FileCoin~\cite{filecoin} and BitTorrent, which utilize DHTs primarily for storing lightweight metadata, such that even nodes with minimal capacity experience trivial space consumption.
+This approach is suitable for DSNs such as FileCoin~\cite{filecoin} and BitTorrent, which utilize DHTs primarily for storing lightweight metadata, such that even nodes with minimal capacity experience trivial space consumption \lijl{Briefly discuss the issues with these approaches?}.
 Conversely, for DSNs that directly manage data placement using DHTs~\cite{kubiatowicz2000oceanstore,ratnasamy2001scalable,haeberlen2005glacier,team2021swarm}, storage nodes with limited capacity can exhaust their available space even when the overall storage utilization of the network remains comparatively low.
 
 Concurrently, given the absence of a central controller in DSNs and the exclusive reliance on passive DHT protocols for data placement, these systems lack the ability to reactively address scenarios where storage nodes have exhausted their capacity for further data allocation by the DHT.
@@ -34,9 +34,10 @@ Conversely, DSNs lack the capability for such real-time reactive adjustments, th
 
 While prior research has extensively examined related subjects, none are directly applicable to our problem context: optimizing \emph{overall utilization} of \emph{heterogeneous storage} within a \emph{permissionless} environment.
 The virtual node technique has been explored for rebalancing probabilistic nonuniform workload distribution~\cite{chord} and for allocating weighted workload to heterogeneous nodes.
-However, we contend that virtual nodes obscure the actual failure correlation of the storage, potentially misguiding DSNs in establishing appropriate security parameters, and should be entirely avoided by DSNs.
+However, we contend that virtual nodes obscure the actual failure correlation of the storage, potentially misguiding DSNs in establishing appropriate security parameters, and should be entirely avoided by DSNs \lijl{this sentence is a little too abstract}.
 Alternative solutions, encompassing weighted DHTs~\cite{schindelhauer2005weighted}, DHT load balancing schemes for nonuniform key access~\cite{karger2004simple,misra2004clash}, and consistent hashing methods for bounded load~\cite{mirrokni2018consistent,chen2021revisiting}, each present distinct challenges for implementation within our problem setting.
 These are discussed in detail in \autoref{sec:bg:problem}.
+\lijl{Would prefer to at least summarize their shortcoming in the intro.}
 
 To address this, we propose \dht\footnote{
     \dht represents Discoverability Differentiable DHT.
