@@ -5,11 +5,12 @@ Decentralized storage networks (DSNs)~\cite{kubiatowicz2000oceanstore,ratnasamy2
 FileCoin~\cite{filecoin}, a prominent contemporary DSN, involves over 1500 storage nodes that collectively offer more than 22 EB ($\approx 2.2\times10^{10} GB$) of effective storage capacity\footnote{\url{https://filfox.info/en}}.
 In 2022, IPFS~\cite{trautwein2022design} documented a daily download volume of 6.57 TB originating from 7.1 million user requests via a single gateway.
 Given the substantial user demand and increasing adoption of DSNs as a storage paradigm for diverse applications~\cite{balduf2022dude,vorick2014sia,li2024sok}, guaranteeing high availability and usability constitutes a primary objective for these networks.
-Considering the inherent volatile nature and asynchronous network condition arising from the permissionless characteristic of DSNs, the development of an efficient methodology for organizing storage nodes to \emph{replicate} stored data without centralized orchestration is essential for attaining these attributes.
+% Considering the inherent volatile nature and asynchronous network condition arising from the permissionless characteristic of DSNs, the development of an efficient methodology for organizing storage nodes to \emph{replicate} stored data without centralized orchestration is essential for attaining these attributes.
+High availability requires DSNs to \emph{replicate} the data on a group of nodes, \ie, its \emph{placement group}, to mask the data loss due to node failures and churns, while usability requires DSNs to locate placement groups whose nodes are able to handle incoming storing requests.
 
 Distributed hash tables (DHTs)~\cite{maymounkov2002kademlia,chord,rowstron2001pastry}, underpinned by consistent hashing~\cite{chash} as a core principle, are widely adopted in storage architectures for the allocation of data placement groups, designating the storage nodes responsible for data persistence.
 % Although centrally managed storage systems~\cite{weil2006ceph,lakshman2010cassandra,decandia2007dynamo} can circumvent the performance degradation and single point of failure associated with a metadata server by directly implementing consistent hashing, decentralized storage networks (DSNs) can only utilize this technique via DHT protocols that encapsulate it.
-\lijl{Not sure what this sentence means} \gd{Sure, removed}.
+\lijl{Not sure what this sentence means} \gd{Sure, removed}
 DHT protocols empower nodes within decentralized networks to identify data placement groups through an iterative online query process.
 Consequently, with DHTs, nodes are not required to determine the precise set of currently online peers and their contact information, a challenging endeavor given the permissionless nature and high dynamism of DSN nodes.
 DHTs have thus constituted a foundational element of DSNs and are extensively employed for both peer and placement group discovery.
@@ -19,38 +20,37 @@ In contrast to centrally managed storage platforms that typically operate a set 
 However, Kademlia~\cite{maymounkov2002kademlia}, the most prevalent DHT protocol employed by Bitcoin~\cite{bitcoin}, Ethereum~\cite{ethereum}, BitTorrent, and IPFS~\cite{benet2014ipfs}, does not account for this heterogeneity.
 Within Kademlia, each node receives an equivalent probabilistic storage load, irrespective of its storage capacity and available resources.
 \lijl{May consider restructuring these two paragraphs. Are we pointing out two issues? Seems there is just one issue: DHT cannot adjust placement based on node capacity.} \gd{Done.}
-As DSNs utilize more and more storage space, if the expected utilized space is the same across heterogeneous nodes, they will be exhausted at different rates due to their varying storage capacities.
+As DSNs utilize more and more storage space, the nodes will be exhausted at different rates due to their varying storage capacities.
 Concurrently, given the absence of a central controller in DSNs, data cannot be readily migrated away from a full node unless it exits the network; however, the node must remain online to serve its existing data.
 Ultimately, DHTs overwhelm smaller nodes even at the low overall utilization and DSNs cannot effectively alleviate the strain on them.
 
-Given that DHTs directly manage massive data placement in that most DSNs~\cite{kubiatowicz2000oceanstore,ratnasamy2001scalable,haeberlen2005glacier,team2021swarm}, this problem is both real and severe.
-As demonstrated in our simulation in \autoref{sec:bg}, Glacier~\cite{haeberlen2005glacier} rejects new storage requests, leading to the denial of over 90\% of such requests at a mere 10\% overall utilization.
-Conversely, Swarm~\cite{team2021swarm} evicts stored content based on economic valuation, resulting in data loss at only 6\% utilization.
+Given that DHTs directly manage massive data placement in most of the DSNs~\cite{kubiatowicz2000oceanstore,ratnasamy2001scalable,haeberlen2005glacier,team2021swarm}, this problem is both real and severe.
+% As demonstrated in our simulation in \autoref{sec:bg}, Glacier~\cite{haeberlen2005glacier} rejects new storage requests, leading to the denial of over 90\% of such requests at a mere 10\% overall utilization.
+% Conversely, Swarm~\cite{team2021swarm} evicts stored content based on economic valuation, resulting in data loss at only 6\% utilization.
 \lijl{Briefly discuss the issues with these approaches?}\gd{Done.}
 FileCoin~\cite{filecoin} and BitTorrent avoid this issue by using DHTs solely for placing lightweight metadata, consuming very little space on the nodes.
 As a result, they can't use DHTs for inherent probabilistic availability guarantees and instead depend on volunteer or economic-driven placement groups.
 
-In this study, the emphasis is on enhancing the \emph{effective overall utilization} within a heterogeneous storage environment.
-Specifically, DSNs should efficiently leverage diverse storage capacities across nodes to attain a favorable overall storage utilization without any individual node exhausting its available space, thereby preventing diminished usability or availability.
+Base on this observation, we are motivated to optimize the \emph{effective overall utilization} of DSNs.
+Specifically, DSNs should maximize the utilization of aggregated storage supply \emph{effectively}: without loading any individual node, thereby preventing diminished usability or availability.
 Achieving this objective presents a greater challenge in DSNs compared to centrally managed storage systems, because data placement strategies must avoid overwhelming nodes at the first place for the lack of the capability for real-time reactive adjustments.
 
-While prior research has extensively examined related subjects, none are directly applicable to our problem context: optimizing \emph{overall utilization} of \emph{heterogeneous storage} within a \emph{permissionless} environment.
+While prior research has extensively examined related subjects, none are directly applicable to our problem context: the \emph{heterogeneity} of \emph{storage} within a \emph{permissionless} environment.
 The virtual node technique has been explored for rebalancing probabilistic nonuniform workload distribution~\cite{chord} and for allocating weighted workload to heterogeneous nodes.
 % However, we contend that virtual nodes obscure the actual failure correlation of the storage, potentially misguiding DSNs in establishing appropriate security parameters, and should be entirely avoided by DSNs.
 \lijl{this sentence is a little too abstract} \gd{Done}
 However, virtual nodes obscure the actual failure correlation of the storage.
 We contend that virtual nodes break the assumption on per-identity failure domain made by DSNs, causing unexpected correlated failures~\cite{filecoin_loss} and harming availability, thus should be entirely avoided by DSNs.
 % Alternative solutions, encompassing weighted DHTs~\cite{schindelhauer2005weighted}, DHT load balancing schemes for nonuniform key access~\cite{karger2004simple,misra2004clash}, and consistent hashing methods for bounded load~\cite{mirrokni2018consistent,chen2021revisiting}, each present distinct challenges for implementation within our problem setting.
-These are discussed in detail in \autoref{sec:bg:problem}.
+% These are discussed in detail in \autoref{sec:bg:problem}.
 \lijl{Would prefer to at least summarize their shortcoming in the intro.} \gd{Done.}
-Furthermore, weighted DHT~\cite{schindelhauer2005weighted} does not respect nodes' real time storage space, DHT load balancing schemes~\cite{karger2004simple,misra2004clash} considers nonuniform key access instead of nonuniform storage capacities, and consistent hashing methods for bounded load~\cite{mirrokni2018consistent,chen2021revisiting} are not suitable to apply in permissionless settings.
+Furthermore, weighted DHT~\cite{schindelhauer2005weighted} does not respect nodes' available storage space, DHT load balancing schemes~\cite{karger2004simple,misra2004clash} considers nonuniform key access instead of nonuniform storage capacities, and consistent hashing methods for bounded load~\cite{mirrokni2018consistent,chen2021revisiting} are not suitable to apply in permissionless settings.
 
-To address this, we propose \dht\footnote{
+In this work, we propose \dht\footnote{
     \dht represents Discoverability Differentiable DHT.
     As we retire the concept of differentiating discoverability in a later refinement of the work, a new interpretation of the abbreviation is under investigation.
 }, a novel DHT that introduces substantial improvement for utilizing heterogeneous storage resources based on the well-established Kademlia protocol.
-To the best of our knowledge, \dht is the first DHT design that can \emph{equalize the available space} across heterogeneous storage nodes.
-By achieving this, \dht can maintain storage consumption within capacity limits on \emph{all} storage nodes while maximizing the utilization of aggregate storage resources, irrespective of their distribution among the nodes.
+To the best of our knowledge, \dht is the first DHT design that can \emph{equalize the available space} across heterogeneous storage nodes, thus maintain storage consumption within capacity limits on \emph{all} storage nodes while maximizing the utilization.
 The \dht architecture comprises two elements.
 % We provide an intuitive description of the design rationale of \dht and present preliminary findings in \autoref{sec:overview}.
 \lijl{We should summarize our main techniques in the intro. The goal should be that anyone can have rough understanding of the system by just reading the intro.} \gd{done.}

@@ -19,7 +19,7 @@
 \ifdraft
 \newcommand{\editorial}[2]{{\leavevmode\color{#1}{#2}}\xspace}
 \else
-\newcommand{\editorial}[2]{}
+\newcommand{\editorial}[2]{\ignorespaces}
 \fi
 \newcommand{\XXX}{\editorial{red}{XXX}}
 \newcommand{\xxx}[1]{\editorial{red}{XXX #1}}
