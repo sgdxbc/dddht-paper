@@ -19,8 +19,10 @@ However, Kademlia~\cite{maymounkov2002kademlia}, the most prevalent DHT protocol
 Within Kademlia, each node receives an equivalent probabilistic storage load, irrespective of its storage capacity and available resources.
 This approach is suitable for DSNs such as FileCoin~\cite{filecoin} and BitTorrent, which utilize DHTs primarily for storing lightweight metadata, such that even nodes with minimal capacity experience trivial space consumption \lijl{Briefly discuss the issues with these approaches?}.
 Conversely, for DSNs that directly manage data placement using DHTs~\cite{kubiatowicz2000oceanstore,ratnasamy2001scalable,haeberlen2005glacier,team2021swarm}, storage nodes with limited capacity can exhaust their available space even when the overall storage utilization of the network remains comparatively low.
+\lijl{What are the consequences?}
 
 Concurrently, given the absence of a central controller in DSNs and the exclusive reliance on passive DHT protocols for data placement, these systems lack the ability to reactively address scenarios where storage nodes have exhausted their capacity for further data allocation by the DHT.
+\lijl{May consider restructuring these two paragraphs. Are we pointing out two issues? Seems there is just one issue: DHT cannot adjust placement based on node capacity.}
 If a placement group includes a storage node with depleted storage, the DHT cannot remove it unless it exits the network; however, the node must remain online to serve its existing data.
 Current DSNs do not offer comprehensive resolutions for this circumstance.
 As demonstrated in our simulation in \autoref{sec:bg}, Glacier~\cite{haeberlen2005glacier} rejects new storage requests, leading to the denial of over 90\% of such requests at a mere 10\% overall utilization.
@@ -47,6 +49,7 @@ To the best of our knowledge, \dht is the first DHT design that can \emph{equali
 By achieving this, \dht can maintain storage consumption within capacity limits on \emph{all} storage nodes while maximizing the utilization of aggregate storage resources, irrespective of their distribution among the nodes.
 The \dht architecture comprises two elements: classified distance and the application of the power of two random choices.
 We provide an intuitive description of the design rationale of \dht and present preliminary findings in \autoref{sec:overview}.
+\lijl{We should summarize our main techniques in the intro. The goal should be that anyone can have rough understanding of the system by just reading the intro.}
 
 Our preliminary evaluation demonstrates the effectiveness of the \dht architecture.
 Under the identical workload previously applied to Glacier and Swarm, \dht entirely eliminates overwhelmed nodes and ensures both availability and usability.
