@@ -63,8 +63,8 @@
 \RequirePackage{subcaption}
 \RequirePackage{tabularx}
 \RequirePackage{tikz}
-\RequirePackage[dvipsnames]{xcolor}
 \RequirePackage{xspace}
+\RequirePackage{xcolor}
 \ifacm
 \else
 \RequirePackage{amsmath}
