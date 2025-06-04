@@ -31,36 +31,5 @@ Conversely, 2RC achieves near-perfect utilization under high skewness but become
 Ultimately, \dht combines the benefits of both classified distance and 2RC, outperforming Kademlia by over 60\% in utilization across all skewness levels and reaching almost 100\% utilization at high skewness.
 These simulation results demonstrate that \dht effectively achieves its goal of optimizing effective overall utilization, and both its constituent designs perform as expected.
 
-\begin{figure}
-    \centering
-    \includegraphics[width=\linewidth]{data/simulation/graphs/capacity-freq}
-    \caption{CDF and per-class averages of storing likelihoods.}
-    \label{fig:freq}
-    \Description{}
-\end{figure}
-
-We proceed with micro-benchmarks to provide an in-depth analysis of \dht.
-\autoref{fig:freq} illustrates the cumulative distribution function (CDF) and per-class averages of the storing likelihoods assigned by classified distance and Kademlia's standard distance metric.
-In this simulation, we generate 1 million data keys with uniform randomness.
-The storing likelihoods of the nodes are represented by the frequency with which they appear in the placement groups.
-To clearly demonstrate how well DSNs manage heterogeneous nodes, we report the storing likelihoods per unit of storage, calculated by dividing the node's likelihood by its storage capacity.
-The CDF reveals that \dht's likelihood distribution is more balanced than Kademlia's, which exhibits a long tail, indicating that some storage units have a significantly higher probability of being utilized than others.
-The per-class averages highlight the origin of this disparity: in Kademlia, nodes with lower class values have exponentially higher storing likelihoods per unit of storage.
-This occurs because these nodes have exponentially smaller capacities, a heterogeneity that Kademlia's distance definition does not account for, leading to the storage units of these smaller nodes being assigned disproportionately high storing likelihoods.
-
-\begin{figure}
-    \centering
-    \includegraphics[align=t,width=0.16\linewidth]{data/simulation/graphs/ac-distr}
-    \includegraphics[align=t,width=0.53\linewidth]{data/simulation/graphs/nc-ac}
-    \caption{Comparisons of the available storage space distributions.}
-    \label{fig:ac-distr}
-    \Description{}
-\end{figure}
-
-The subsequent evaluation examines how well DSNs equalize the available storage space across nodes.
-We store an equivalent amount of data in both Kademlia and \dht until the first node in Kademlia reaches its capacity limit.
-At this point, we capture a snapshot of the available storage space on all nodes in both networks.
-In \autoref{fig:ac-distr}, the left plot shows the distribution of available space for nodes with the smallest capacity of $2^{10}$ units, while the right plot displays the average available space for nodes of different capacity sizes.
-In \dht, the nodes with the smallest capacity retain almost their entire storage space, indicating minimal utilization, and nodes with larger capacities in \dht have significantly less available space compared to their counterparts in Kademlia.
-Conversely, Kademlia consumes available space from nodes of all capacities and has already exhausted one of the smallest nodes.
-The saw-tooth pattern observed in the \dht plot arises from the approximation inherent in the node class assignment: node capacity is rounded to the nearest power of two, leading to over-utilization of nodes whose capacities fall slightly below a power of two and under-utilization of those slightly above.
+We proceed with micro-benchmarks to provide an in-depth analysis of \dht, detailed in appendix due to the lack of space.
+To summarize, the classified distance can effectively balance the probability of utilizing storage units on every node, and the captured available space snapshots prove that \dht perform the equalization well.
