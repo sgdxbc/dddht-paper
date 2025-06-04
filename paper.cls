@@ -34,7 +34,7 @@
 \ProcessOptions
 
 \ifacm
-\LoadClass[sigconf]{acmart}
+\LoadClass[sigconf,10pt]{acmart}
 \renewcommand\footnotetextcopyrightpermission[1]{}
 \settopmatter{printfolios=true, printacmref=false}
 \else
