@@ -8,10 +8,12 @@
 
 % This section first introduces the basics of distributed hash tables, and then explains how they are used now in decentralized storage networks.
 
+\iffalse
 The fundamental principle of distributed hash tables is consistent hashing~\cite{chash}, which is implemented in industrial-scale storage systems like Ceph~\cite{weil2006ceph}, Cassandra~\cite{lakshman2010cassandra}, and Dynamo~\cite{decandia2007dynamo}, and is extensively researched for application in distributed databases~\cite{shu2020th,liu2019distcache,chung2019lightstore}, network load balancers~\cite{eisenbud2016maglev}, and cloud infrastructures~\cite{nakatani2021structured,wu2019autoscaling}.
 Consistent hashing provides an effective method for allocating and balancing workload across key-value and block storage systems.
 Given $m$ keys and $n$ nodes, a consistent hashing algorithm assigns $k$ nodes to each key and ensures a uniform distribution, where each node is expected to manage $\frac{km}{n}$ keys.
 These designated nodes constitute the \emph{placement groups} for the keys.
+\fi
 % Employing consistent hashing, a hash function uniformly maps both keys and storage nodes to the same hash domain, and values are assigned to one or more nodes based on their relative positions within this domain.
 % For instance, certain consistent hashing schemes arrange the hash domain as a ring, and keys are assigned to the initial node(s) encountered by traversing the ring in a clockwise direction.
 % Consistent hashing ensures that during resizing, only a minimal quantity of keys (specifically, the average number of keys per node) will, on average, be reassigned to a different node.
@@ -22,13 +24,15 @@ These designated nodes constitute the \emph{placement groups} for the keys.
 
 % In highly dynamic or asynchronous environments, such as public peer-to-peer (P2P) networks with frequent node failures, maintaining an updated list of online nodes can be challenging for individual participants.
 % Furthermore, systems may expand to encompass tens or hundreds of thousands of nodes, making it impractical for every individual node to store all node identities and contact information (\eg IP addresses)~\cite{trautwein2022design}.
+
+Consistent hashing~\cite{chash} provides an effective method for allocating and balancing workload across key-value and block storage systems.
 Distributed hash tables (DHTs)~\cite{maymounkov2002kademlia,chord,rowstron2001pastry}, built on consistent hashing, address public peer-to-peer (P2P) network challenges.
-P2P networks feature dynamic nodes, asynchronous conditions, and can expand to encompass tens or hundreds of thousands of nodes~\cite{trautwein2022design}, making full node contact maintenance impractical.
+P2P networks feature dynamic nodes, asynchronous conditions, and can expand to encompass tens or hundreds of thousands of nodes~\cite{trautwein2022design}.
 DHT protocols allow nodes to dynamically discover key placement groups while storing only a fraction of contact details.
 Consequently, major DSNs like Filecoin~\cite{filecoin} and BitTorrent~\cite{wang2013measuring,xinxing2016measurement}, and research including Glacier~\cite{haeberlen2005glacier}, OceanStore~\cite{kubiatowicz2000oceanstore}, CFS~\cite{dabek2001wide}, and PAST~\cite{druschel2001past}, favor DHTs for their ability to facilitate dynamic discovery of data placement groups and provider records.
 Filecoin, supported by IPFS~\cite{benet2014ipfs,trautwein2022design}, uses Kademlia DHT for provider record storage and content-addressed discovery~\cite{ratnasamy2001scalable}.
-Recent research~\cite{cortes2024scalability} proposes Kademlia DHT use in Ethereum~\cite{ethereum} to discover validators storing blob shards, enabling privacy-preserving data availability sampling~\cite{hall2023foundations} in the blob storage network.
-More recently, Swarm~\cite{team2021swarm} introduced an innovative DSN reliably managing data via a hybrid DHT and replication strategy for high availability.
+%Recent research~\cite{cortes2024scalability} proposes Kademlia DHT use in Ethereum~\cite{ethereum} to discover validators storing blob shards, enabling privacy-preserving data availability sampling~\cite{hall2023foundations} in the blob storage network.
+%More recently, Swarm~\cite{team2021swarm} introduced an innovative DSN reliably managing data via a hybrid DHT and replication strategy for high availability.
 
 % Fundamentally, DHT protocols organize nodes into an \emph{overlay network} that directs keys to their respective placement groups.
 % Behind the scene, DHTs distribute node records, associating node identities with their contact information, across the network.
@@ -54,10 +58,14 @@ where $ID$ represents the mapping from nodes to their identities, $\mathfrak{N}$
 Readers are directed to the original publication~\cite{maymounkov2002kademlia} for detailed Kademlia specification.
 
 Kademlia distributes keys uniformly across nodes~\cite{chord}, aligning with the principles of consistent hashing.
-Both keys and node identities are uniformly distributed within the hash value domain\footnote{
+Both keys and node identities are uniformly distributed within the hash value domain.
+\iffalse
+\footnote{
     While users can theoretically select arbitrary keys for storing data, which may not be uniformly distributed (and some prior work has leveraged this), this approach is not readily applicable to permissionless and untrusted environments.
 }.
-Consequently, each node exhibits an equivalent probability of inclusion in a key's placement group, resulting in a uniform expected count of placement group memberships.
+\fi
+Consequently, each node has identical probability of inclusion in a key's placement group.
+%resulting in a uniform expected count of placement group memberships.
 
 % Within Kademlia, each node maintains a collection of node records that are effectively a random sampling of all participating nodes.
 % The concentration of these sampled nodes is configured to decrease exponentially with increasing distance between the identity of the local node and the identity of the recorded node.
@@ -126,7 +134,7 @@ As the result, the nodes whose identities locate in the ``sparser'' regions will
     Left: overall utilization (solid) and the rejection rate (dashed).
     \dht has 0 rejection rate, and its utilization is also plotted for reference.
     Right: overall utilization (solid) and data loss rate (dashed).
-    The straight line indicates the expected utilization level if all stored content were retained; the vertical difference between the lines represents the amount of evicted data.
+    The straight line indicates the expected utilization if all stored content were retained; the vertical gap between the lines represents the amount of evicted data.
     \lijl{Dashed line here is not very clear. Might need to note that D3HT has zero rejection rate (?).} \gd{Done.}
     \lijl{Interesting that the eviction policy has a slightly higher utilization. Might also want to point that D3HT has no data loss.} \gd{Done}
     }
@@ -143,21 +151,23 @@ Under rejection, the network's rejection rate surpassed 90\%, halting new reques
 Under an eviction policy, the storage network begins evicting data at a mere 6\% overall utilization and starts to experience data loss shortly thereafter.
 Thus, the network compromises either usability or availability.
 
+\iffalse
 Compounding the issue, DSNs can experience a loss of availability even without external operations.
 Node churn triggers DHTs to reassign and relocate stored data to another placement group node via consistent hashing.
 If the reassigned node lacks storage, it must discard either its existing or incoming data.
 This data discarding can occur massively when the network scales down, for instance, due to normal node churn fluctuations or temporary network partitioning.
 Any data loss resulting from this process is irreversible, even if the network typically scales back up shortly thereafter.
+\fi
 
 % \xxx{Summary the problem. Declare all the goals we want to achieve/all the issues we want to address.}
 \paragraph{Problem settings.}
 Motivated by this undesirable situation, our goal in this work is to optimize the \emph{effective overall utilization} of DSNs.
 We aim to utilize the maximum possible aggregated storage across the network, but only in an \emph{effective} manner, ensuring that \emph{no} individual storage node reaches its capacity limit and compromises usability or availability.
-Given the difficulty DSNs face in efficiently migrating data away from overloaded nodes, the fundamental capability required for achieving this goal is the ability to allocate considerate placement groups regarding heterogeneous storage capacities, directing more storage requests towards nodes with greater available space.
-As detailed in the following section, previous research has not successfully equipped DHTs with this essential capability.
+Given the difficulty DSNs face in efficiently migrating data away from overloaded nodes, it is critical to consider heterogeneous storage capacities during allocation, directing more storage requests towards nodes with greater available space.
+%As detailed in the following section, previous research has not successfully equipped DHTs with this essential capability.
 \lijl{Would it be easier to understand if we frame the property as balancing the storage utilization rate, which avoids storage exhaustion of any node?}
 
-\subsection{Previous Studies}
+\subsection{Previous Solutions}
 \label{sec:bg:works}
 
 % The original work proposing Chord~\cite{chord} mentions deploying $O(\log{N})$ virtual nodes per physical node to significantly mitigate probabilistic nonuniform identity allocation.
@@ -168,19 +178,19 @@ Virtual nodes, when associated with a single physical node, can share underlying
 Furthermore, assigning a varying count of virtual nodes to physical nodes enables effective weighted workload distribution~\cite{schindelhauer2005weighted}.
 
 However, the virtual node approach is not a panacea for the problem settings in this work.
-Employing virtual nodes proportionally scales the consumption of \emph{all} resource types concurrently.
+%Employing virtual nodes proportionally scales the consumption of \emph{all} resource types concurrently.
 While creating more virtual nodes can enhance storage utilization on nodes with ample storage, it also proportionally increases network overhead, and these storage-rich nodes may not necessarily possess equally abundant network resources~\cite{karger2004simple}.
-The virtual node approach doesn't fully address this work's problem settings.
-Employing virtual nodes proportionally scales \emph{all} concurrent resource consumption.
-While more virtual nodes can boost storage utilization on ample-storage nodes, they also proportionally increase network overhead, and these nodes may lack abundant network resources~\cite{karger2004simple}.
+%The virtual node approach doesn't fully address this work's problem settings.
+%Employing virtual nodes proportionally scales \emph{all} concurrent resource consumption.
+%While more virtual nodes can boost storage utilization on ample-storage nodes, they also proportionally increase network overhead, and these nodes may lack abundant network resources~\cite{karger2004simple}.
 More critically, virtual nodes introduce hidden failure correlation.
 Virtual nodes on the same physical node likely fail simultaneously.
 DSNs, however, typically assume independent failure domains for each node.
-Replication to distinct nodes only truly increases resiliency under this assumption.
+%Replication to distinct nodes only truly increases resiliency under this assumption.
 Violating this assumption can lead to catastrophic consequences.
-For example, FileCoin's 1623 TB data loss~\cite{filecoin_loss} stemmed from redundancy hosted by multiple nodes co-located in the same datacenter.
-Therefore, we generally avoid virtual nodes in storage systems due to their potential interference with replication.
-Prior research~\cite{schindelhauer2005weighted} discusses other virtual node limitations, which we omit here.
+For example, FileCoin lost 1623 TB of data~\cite{filecoin_loss} due to redundancy hosted by multiple nodes co-located in the same datacenter.
+%Therefore, we generally avoid virtual nodes in storage systems due to their potential interference with replication.
+%Prior research~\cite{schindelhauer2005weighted} discusses other virtual node limitations, which we omit here.
 \xxx{If have time, plot the difference on availability with and without virtual nodes.}
 \lijl{This part is critical for reviewers to appreciate our design. If time permits, can strengthen this part.}
 
@@ -195,6 +205,7 @@ However, simply weighting the workload won't achieve optimal results, as Section
 Moreover, this approach necessitates creating multiple virtual nodes, which DSNs should avoid, as previously discussed.
 \lijl{Can't fully appreciate the issues by reading the previous sentences. We should also provide clearer definition of ``bounded'' earlier.} \gd{Done.}
 
+\iffalse
 \cite{mirrokni2018consistent} recently proposed a consistent hashing scheme for bounded loads.
 This scheme treats node overload as a \emph{hash collision}, resolving it via linear probing, akin to a genuine hash table.
 Random jump consistent hashing~\cite{chen2021revisiting} extends this by addressing cascading overflows.
@@ -202,6 +213,7 @@ While targeting bounded loads and applicable to heterogeneous storage nodes, the
 Such probing solutions introduce unacceptable DHT network overhead, rendering them unsuitable for direct DSN application.
 \lijl{Is this true? Can't they still work under probabilistic reachability?}\gd{Done.}
 \xxx{If have time and space, add a table summarizing previous approachs.}
+\fi
 
 %In conclusion, while today's DHT can \emph{balance} well across homogeneous nodes, it fails to \emph{differentiate} well across heterogeneous nodes.
 %The heterogeneity nature of decentralized systems captures this inability, and results in the suffering durability of DSNs.

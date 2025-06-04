@@ -94,9 +94,12 @@ However, a better way is to initially prevent the smaller node from storing anyt
 For instance, if the larger node holds 100 data items and the smaller holds one, the basic approach gives a ~1\% chance of overwhelming the small node per item, and only a 37.3\% chance of storing 99 items without overwhelming it (\ie, all data landing on the large node).
 The better approach lets us always store the first 99 items with 0\% risk of overwhelming either.
 Therefore, it is not enough for data to simply have a higher probability of landing on nodes with greater capacity; we should actively \emph{enforce} its placement on nodes with more available space.
-By \emph{equalizing} the available space across nodes, smaller nodes will remain unused as long as larger nodes have more available space than them\footnote{
+By \emph{equalizing} the available space across nodes, smaller nodes will remain unused as long as larger nodes have more available space than them, thus preventing the smaller nodes from running out of space before the larger ones.
+\iffalse
+\footnote{
     In practice, they are still necessary for fault tolerance by distributing data copies.
-}, thus preventing the smaller nodes from running out of space before the larger ones.
+}
+\fi
 % Thus, we shouldn't \emph{statically} assign storage request likelihood based on total space.
 % Instead, these likelihoods should be \emph{dynamically} adjusted, so nodes ideally aren't used if others have more free space\footnote{
 %     In practice, they're still needed for fault tolerance by distributing data copies.
