@@ -39,7 +39,9 @@ Kademlia~\cite{maymounkov2002kademlia} is the most prevalent DHT protocol, and s
 % Kademlia ensures logarithmic network and storage overhead.
 % Within a network of $N$ nodes, each node maintains $O(\log{N})$ records, and key lookups are expected to conclude after consulting $O(\log{N})$ nodes.
 The consistent hashing algorithm employed by Kademlia is straightforward.
-Given a key $k$ and a node with identity $id$, the \emph{distance} $d$ between them is the unsigned integer derived from the bitwise exclusive OR operation of $k$ and $id$\footnote{For brevity, \emph{key} and \emph{identity} are used to denote their respective mapped hash values, which reside within the same hash domain and possess identical length.}
+Given a key $k$ and a node with identity $id$, the \emph{distance} $d$ between them is the unsigned integer derived from the bitwise exclusive OR operation of $k$ and $id$\footnote{
+    For brevity, \emph{key} and \emph{identity} refer to their respective mapped hash values, residing within the same hash domain with identical length.
+}
 \[
     d(k,id)=k\ \texttt{xor}\ id
 \]
@@ -53,7 +55,7 @@ Readers are directed to the original publication~\cite{maymounkov2002kademlia} f
 
 Kademlia distributes keys uniformly across nodes~\cite{chord}, aligning with the principles of consistent hashing.
 Both keys and node identities are uniformly distributed within the hash value domain\footnote{
-    The selection of arbitrary, non-uniformly distributed keys for data storage, though leveraged in some prior work, proves impractical for permissionless, untrusted environments.
+    While users can theoretically select arbitrary keys for storing data, which may not be uniformly distributed (and some prior work has leveraged this), this approach is not readily applicable to permissionless and untrusted environments.
 }.
 Consequently, each node exhibits an equivalent probability of inclusion in a key's placement group, resulting in a uniform expected count of placement group memberships.
 
@@ -93,11 +95,11 @@ Consequently, each node exhibits an equivalent probability of inclusion in a key
 
 % While IPFS and BitTorrent store only indexing metadata in DHTs, resulting in minimal storage consumption (several megabytes) per node, DSNs that directly use DHTs for data placement can store significant amounts of data on individual nodes under reasonable utilization, potentially reaching their storage capacity limits.
 % \lijl{Should we also discuss limitations of using DHT only for metadata?}
-Unlike the typically homogeneous machines with centrally planned capacities in datacenters, DSNs can include nodes with vastly different storage capacities, from mobile devices offering tens of gigabytes of spare storage to professional storage clusters providing terabytes of dedicated capacity.
-Meanwhile, DSNs~\cite{haeberlen2005glacier,kubiatowicz2000oceanstore,dabek2001wide,druschel2001past} commonly use DHTs for data placement to benefit from the inherent probabilistic availability provided by DHT's randomized placement groups.
-This leads to an equal storage load being placed on every node, as demonstrated earlier.
-Assigning equal storage load to such heterogeneous nodes can result in large-capacity nodes being significantly underutilized, while, more critically, the smallest-capacity nodes can become overwhelmed at relatively low overall utilization levels.
-Even worse, this situation cannot be easily resolved by migrating data from full nodes and globally reconfiguring placement groups due to the absence of a central controller in DSNs.
+Unlike the typically homogeneous machines in datacenters, DSNs incorporate heterogeneous nodes with capacities varying from gigabytes to terabytes.
+DSNs~\cite{haeberlen2005glacier,kubiatowicz2000oceanstore,dabek2001wide,druschel2001past} commonly employ DHTs for data placement, leveraging their inherent probabilistic availability through randomized placement groups.
+This results in an equal storage load on each node.
+However, this equal load allocation causes underutilization of large nodes and overwhelms smaller ones, even at low overall network utilization.
+The absence of a central controller precludes easy resolution of this issue, as data migration from full nodes and global placement group reconfiguration are not readily achievable.
 \lijl{Another benefit of a centrally managed system is that admin has full control over data placement and capacity planning.}\gd{Done.}
 
 % Surprisingly, the data placement in DHTs is inherently uniform across all nodes, irrespective of their storage capacities, a factor that prior DSNs have largely disregarded.
@@ -106,10 +108,9 @@ Even worse, this situation cannot be easily resolved by migrating data from full
 % }.
 % Consequently, the probability of any given node being included in the placement group of a key is equal for all nodes, leading to the same expected number of placement group memberships for every node.
 % The fundamental challenge is that Kademlia, along with other DHTs mentioned earlier, does not incorporate node \emph{heterogeneity} into its consistent hashing algorithm, despite the critical importance of acknowledging storage heterogeneity for efficient and even correct utilization of available storage.
-Previous DSN research has not adequately addressed this specific issue.
-For instance, Glacier simply rejects storage requests when nodes within the designated placement group have reached their storage limits.
-Swarm proposes an economic eviction policy where nodes discard stored data with the lowest bid value when they run out of space, thus failing to provide a strict guarantee of data availability.
-
+Prior DSN research has not sufficiently addressed this specific challenge.
+For instance, Glacier~\cite{haeberlen2005glacier} simply declines storage requests when nodes in a placement group reach their capacity limits.
+Similarly, Swarm~\cite{team2021swarm} implements an economic eviction policy, discarding data with the lowest bid value upon capacity exhaustion, which compromises strict data availability guarantees.
 % too niche and maybe not a problem, forget about it for now
 \iffalse
 Besides the storage heterogeneity, the load applied to the nodes are affected by another more subtle effect.
@@ -133,20 +134,20 @@ As the result, the nodes whose identities locate in the ``sparser'' regions will
     \Description{}
 \end{figure}
 
-The consequence of this oversight is a significant detrimental impact on the usability and availability of DSNs.
-To illustrate this effect, we simulate a DSN composed of heterogeneous storage nodes with uniformly randomly generated identities.
-The specific parameters of this simulated network are detailed in \autoref{sec:eval}.
-In this simulation, we continuously attempt to store uniformly random data within the network.
-If the designated placement group for the data includes any node that has reached its storage capacity, the DSN must either reject the storage request or randomly evict previously stored data from that node's storage, mirroring the approaches of Glacier and Swarm, respectively.
-\autoref{fig:overwhelm} depicts the outcomes of both these choices.
-Under a rejection policy, the rejection rate escalates to over 90\%, and the storage network becomes largely unable to accept further requests when only approximately 10\% of the total capacity is utilized.
+Heterogeneous node capacities severely impact DSN usability and availability.
+To illustrate this, we simulated a DSN with uniformly random, heterogeneous node identities (details in Section~\ref{sec:eval}).
+Uniformly random data was continuously stored in this simulation.
+If a placement group node reached capacity, the DSN either rejected the request (like Glacier) or randomly evicted data (like Swarm).
+Figure~\ref{fig:overwhelm} displays both outcomes.
+Under rejection, the network's rejection rate surpassed 90\%, halting new requests at only 10\% overall utilization.
 Under an eviction policy, the storage network begins evicting data at a mere 6\% overall utilization and starts to experience data loss shortly thereafter.
-In summary, the network is forced to choose between a loss of usability or availability, or to compromise between the two.
+Thus, the network compromises either usability or availability.
 
 Compounding the issue, DSNs can experience a loss of availability even without external operations.
-When a node churns from the network, for each piece of data it stores, the DHT reassigns another node to the placement group according to the consistent hashing algorithm and relocates that data to the new node.
-If the reassigned node lacks sufficient free storage to accommodate the transferred storage load, it is compelled to discard either its existing data or the incoming data.
-In situations where the entire network scales down, potentially due to normal fluctuations or temporary network partitioning, such data discarding can occur on a massive scale. Any data loss resulting from this process is irreversible, even if the network typically scales back up shortly thereafter.
+Node churn triggers DHTs to reassign and relocate stored data to another placement group node via consistent hashing.
+If the reassigned node lacks storage, it must discard either its existing or incoming data.
+This data discarding can occur massively when the network scales down, for instance, due to normal node churn fluctuations or temporary network partitioning.
+Any data loss resulting from this process is irreversible, even if the network typically scales back up shortly thereafter.
 
 % \xxx{Summary the problem. Declare all the goals we want to achieve/all the issues we want to address.}
 \paragraph{Problem settings.}
@@ -159,45 +160,47 @@ As detailed in the following section, previous research has not successfully equ
 \subsection{Previous Studies}
 \label{sec:bg:works}
 
-The most direct method to address this problem involves employing \emph{virtual nodes}~\cite{chord,dabek2001wide,zhu2005efficient, zhang2010novel}.
 % The original work proposing Chord~\cite{chord} mentions deploying $O(\log{N})$ virtual nodes per physical node to significantly mitigate probabilistic nonuniform identity allocation.
 % CFS also considers the heterogeneous processing capacity of nodes and suggests allocating virtual nodes proportionally.
 % Subsequent works~\cite{zhu2005efficient, zhang2010novel} further explore the virtual node approach for load balancing in DHTs.
-Virtual nodes associated with the same physical node can share underlying hardware resources and mitigate probabilistic imbalances~\cite{chord}.
-Additionally, assigning a varying number of virtual nodes to physical nodes can effectively apply weighted workload distribution~\cite{schindelhauer2005weighted}.
+Employing \emph{virtual nodes} stands as the most direct method to address this problem~\cite{chord,dabek2001wide,zhu2005efficient,zhang2010novel}.
+Virtual nodes, when associated with a single physical node, can share underlying hardware resources and mitigate probabilistic imbalances~\cite{chord}.
+Furthermore, assigning a varying count of virtual nodes to physical nodes enables effective weighted workload distribution~\cite{schindelhauer2005weighted}.
 
 However, the virtual node approach is not a panacea for the problem settings in this work.
 Employing virtual nodes proportionally scales the consumption of \emph{all} resource types concurrently.
 While creating more virtual nodes can enhance storage utilization on nodes with ample storage, it also proportionally increases network overhead, and these storage-rich nodes may not necessarily possess equally abundant network resources~\cite{karger2004simple}.
+The virtual node approach doesn't fully address this work's problem settings.
+Employing virtual nodes proportionally scales \emph{all} concurrent resource consumption.
+While more virtual nodes can boost storage utilization on ample-storage nodes, they also proportionally increase network overhead, and these nodes may lack abundant network resources~\cite{karger2004simple}.
 More critically, virtual nodes introduce hidden failure correlation.
-Virtual nodes supported by the same physical node have a high probability of failing simultaneously.
-On the other hand, DSNs usually assume that each node is an individual failure domain that fails independently.
-Only with this assumption does replicating to distinct nodes truly increase resiliency and make sense.
+Virtual nodes on the same physical node likely fail simultaneously.
+DSNs, however, typically assume independent failure domains for each node.
+Replication to distinct nodes only truly increases resiliency under this assumption.
 Violating this assumption can lead to catastrophic consequences.
-For example, a 1623 TB data loss experienced by FileCoin~\cite{filecoin_loss} was attributed to redundancy hosted by multiple nodes being physically located in the same datacenter.
-Therefore, we generally avoid virtual nodes in storage systems as they can interfere with the effectiveness of replication.
-Prior research~\cite{schindelhauer2005weighted} also discusses other limitations of the virtual node approach, which we will not detail here.
+For example, FileCoin's 1623 TB data loss~\cite{filecoin_loss} stemmed from redundancy hosted by multiple nodes co-located in the same datacenter.
+Therefore, we generally avoid virtual nodes in storage systems due to their potential interference with replication.
+Prior research~\cite{schindelhauer2005weighted} discusses other virtual node limitations, which we omit here.
 \xxx{If have time, plot the difference on availability with and without virtual nodes.}
 \lijl{This part is critical for reviewers to appreciate our design. If time permits, can strengthen this part.}
 
-Beyond the virtual node approach, several solutions address heterogeneous nodes or nodes with bounded load, but none perfectly align with our problem.
-Early research~\cite{karger2004simple,misra2004clash} investigated load (re)balancing schemes for DHTs shortly after their inception.
-These works concentrated on nonuniform key access workloads rather than nonuniform resources across nodes.
-While effective in balancing load on homogeneous nodes under varying access frequencies to stored data, they are not designed to apply appropriate loads that \emph{correspond} to the capacities of heterogeneous nodes.
-Furthermore, as they address nonuniform per-key load, they are more relevant to balancing bandwidth and computational demands rather than storage demands, given that per-key storage load is constant\footnote{
+Solutions for heterogeneous or bounded-load nodes, beyond virtual nodes, don't perfectly address our problem.
+Early DHT load balancing research~\cite{karger2004simple,misra2004clash} focused on nonuniform key access, not varied node resources.
+Though effective for balancing homogeneous node loads with fluctuating access, these schemes don't apply loads corresponding to heterogeneous capacities.
+Furthermore, addressing nonuniform per-key load makes them more relevant to balancing bandwidth and computational demands than storage, given constant per-key storage load\footnote{
     In this work, we consider fixed-length values/data blocks and assume large data is segmented, as in~\cite{benet2014ipfs}.
 }.
-Conversely, the weighted DHT approach~\cite{schindelhauer2005weighted} aims to assign weights to nodes based on certain heterogeneous attributes, which appears relevant to our problem setting.
-However, simply weighting the workload cannot achieve optimal results, on which we will elaborate in \autoref{sec:overview}.
+The weighted DHT approach~\cite{schindelhauer2005weighted} assigns weights to nodes based on heterogeneous attributes, appearing relevant to our problem.
+However, simply weighting the workload won't achieve optimal results, as Section~\ref{sec:overview} will elaborate.
+Moreover, this approach necessitates creating multiple virtual nodes, which DSNs should avoid, as previously discussed.
 \lijl{Can't fully appreciate the issues by reading the previous sentences. We should also provide clearer definition of ``bounded'' earlier.} \gd{Done.}
-Additionally, this approach necessitates the creation of multiple virtual nodes, which, as previously discussed, should be avoided by DSNs.
 
-More recently, \cite{mirrokni2018consistent} proposes a consistent hashing scheme that accounts for bounded loads.
-It treats node overload analogously to \emph{hash collision} and resolves it using linear probing, similar to a genuine hash table.
-Random jump consistent hashing~\cite{chen2021revisiting} builds upon this by addressing the issue of cascading overflows.
-While these approaches directly target the bounded load scenario and could be applied to heterogeneous storage nodes, they presuppose a centrally managed environment where every node can directly communicate with others based on its local knowledge.
+\cite{mirrokni2018consistent} recently proposed a consistent hashing scheme for bounded loads.
+This scheme treats node overload as a \emph{hash collision}, resolving it via linear probing, akin to a genuine hash table.
+Random jump consistent hashing~\cite{chen2021revisiting} extends this by addressing cascading overflows.
+While targeting bounded loads and applicable to heterogeneous storage nodes, these approaches presuppose a centrally managed environment with direct node communication based on local knowledge.
+Such probing solutions introduce unacceptable DHT network overhead, rendering them unsuitable for direct DSN application.
 \lijl{Is this true? Can't they still work under probabilistic reachability?}\gd{Done.}
-These probing solutions would introduce unacceptable network overhead in a DHT environment, rendering them unsuitable for direct application in DSNs.
 \xxx{If have time and space, add a table summarizing previous approachs.}
 
 %In conclusion, while today's DHT can \emph{balance} well across homogeneous nodes, it fails to \emph{differentiate} well across heterogeneous nodes.
