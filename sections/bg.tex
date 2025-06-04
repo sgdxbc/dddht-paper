@@ -36,8 +36,8 @@ More recently, Swarm~\cite{team2021swarm} presents an innovative DSN that reliab
 % DHT protocols promote efficient network and storage utilization.
 
 Kademlia~\cite{maymounkov2002kademlia} is the most prevalent DHT protocol, and serves as the primary focus of our investigation.
-Kademlia ensures logarithmic network and storage overhead.
-Within a network of $N$ nodes, each node maintains $O(\log{N})$ records, and key lookups are expected to conclude after consulting $O(\log{N})$ nodes.
+% Kademlia ensures logarithmic network and storage overhead.
+% Within a network of $N$ nodes, each node maintains $O(\log{N})$ records, and key lookups are expected to conclude after consulting $O(\log{N})$ nodes.
 The consistent hashing algorithm employed by Kademlia is straightforward.
 Given a key $k$ and a node with identity $id$, the \emph{distance} $d$ between them is the unsigned integer derived from the bitwise exclusive OR operation of $k$ and $id$\footnote{For brevity, \emph{key} and \emph{identity} are used to denote their respective mapped hash values, which reside within the same hash domain and possess identical length.}
 \[
